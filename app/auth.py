@@ -16,7 +16,7 @@ auth = Blueprint('auth', __name__)
 
 @auth.route('/admin-login', methods=['POST', 'GET'])       # this is the overall login ....
 def login():
-    admin = Emp_login.query.filter_by(id=1).first()
+    admin = Emp_login.query.filter_by(email='vsabarinathan1611@gmail.com').first()
     if admin:
         if request.method == 'POST':
             
@@ -40,6 +40,7 @@ def login():
                         session['emp_id'] = dbemail.emp_id
                         session['name'] = dbemail.name
                         session['email'] = email
+                        session['phNumber']=dbemail.phoneNumber
                         session['leave_balance']=dbemail.leave_balance
                         session['late_balance']=dbemail.late_balance
                         return redirect(url_for('views.user_dashboard'))
@@ -57,6 +58,7 @@ def login():
             phoneNumber="123456789",
             password=generate_password_hash("admin"),
             role="admin",
+            emp_id='9999'
         )
         db.session.add(addAdmin)
         db.session.commit()
