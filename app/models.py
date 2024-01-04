@@ -171,3 +171,9 @@ class user_edit(db.Model, UserMixin):
     approved_by = db.Column(db.String(150), default='Pending')
     hr_approval = db.Column(db.String(150), default='Pending')
     date = db.Column(db.DateTime(timezone=True), default=func.now())
+
+class Festival(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    holiday=db.Column(db.String(150), nullable=False)
+    date=db.Column(db.String(150), nullable=False)
+
