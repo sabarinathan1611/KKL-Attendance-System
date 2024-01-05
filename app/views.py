@@ -1046,3 +1046,15 @@ def edit_employee():
     else:
         print(f"Row with emp_id {emp_id} not found.")
     return redirect(url_for('views.admin'))
+
+@views.route('/festival-upload',methods=['POST',"GET"])
+def upload_festival():
+    if request.method == 'POST':
+        file=request.files['excel']
+        filename = secure_filename(file.filename)
+        print(filename)
+        file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
+        file.save(file_path)
+        up_festival(file_path)
+        #return redirect(url_for('views.admin'))
+    return render_template("uploadfesti.html")

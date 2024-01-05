@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from flask import current_app as app
 from flask import  flash,redirect
-from .models import Attendance, Shift_time, Emp_login
+from .models import Attendance, Shift_time, Emp_login,Festival
 from . import db
 from os import path
 import datetime
@@ -488,3 +488,22 @@ def add_employee(file_path):
     except Exception as e:
         print(f"An error occurred: {e}")
         db.session.rollback()  # Rollback changes in case of an exception
+
+def up_festival(file_path):
+    existing = db.session.query(Festival).filter_by(id=1).first()
+    if not existing:
+        if os.path.exists(file_path):
+            sheet_names = pd.ExcelFile(file_path).sheet_names
+
+        for sheet_name in sheet_names:
+            df = None
+            if file_path.lower().endswith('.xlsx'):
+                df = pd.read_excel(file_path, sheet_name, engine='openpyxl')
+            elif file_path.lower().endswith('.xls'):
+                df = pd.read_excel(file_path, sheet_name, engine='xlrd')
+            else:
+                print("Unsupported file format")
+                return  # Handle unsupported format
+
+            for index, row in df.iterrows():
+                print('Holiday',row['holiday'])
