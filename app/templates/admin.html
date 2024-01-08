@@ -161,65 +161,69 @@
         </ul>
       </menu>
 
-      <section class="frame today-attendance" style="display: flex">
+      <section class="frame today-attendance" style="display: flex;" index="0">
         <div class="inner-frame">
-          <div class="frame-header">
-            <div class="frame-details currentShift">
-              <p class="shift name"><span class="tag">A</span> ~ shift</p>
-              <p class="frame-name">Attendance</p>
+            <div class="frame-header">
+                <div class="frame-details">
+                    <p class="shift currentShift name"><span class="tag">A</span> ~ shift</p>
+                    <p class="frame-name">Today Attendance</p>
+                </div>
+                <div class="frame-options">
+                    <button type="button" class="download">
+                        <i class="fas fa-file-excel"></i>
+                    </button>
+                </div>
             </div>
-            <div class="frame-options">
-              <button type="button" class="download">
-                <i class="fas fa-file-excel"></i>
-              </button>
-            </div>
-          </div>
-          <div class="frame-body">
-            <table class="today-attendance-table">
-              <thead>
-                <tr class="tablehead">
-                  <th>EmpId</th>
-                  <th>Name</th>
-                  <th>Date</th>
-                  <th>Shift Intime</th>
-                  <th>Shift Outtime</th>
-                  <th>Intime</th>
-                  <th>Outtime</th>
-                  <th>Late By</th>
-                  <th>Early Go</th>
-                  <th>Total Duration</th>
-                  <th>Extra Time</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody class="tableBody">
-                {% if attendance %} {% for attendance in attendance %}
-                <tr data-shift="{{attendance.shiftType}}">
-                  <td class="id">{{attendance.emp_id }}</td>
-                  <td class="name">{{attendance.name}}</td>
-                  <td>{{attendance.date.date()}}</td>
-                  <td>{{attendance.shiftIntime}}</td>
-                  <td>{{attendance.shift_Outtime}}</td>
-                  <td>{{attendance.inTime}}</td>
-                  <td>{{attendance.outTime}}</td>
-                  <td>{{attendance.lateBy}}</td>
-                  <td>{{attendance.earlyGoingBy}}</td>
-                  <td>{{attendance.TotalDuration}}</td>
-                  <td class="extra">{{attendance.overtime}}</td>
-                  <td>
-                    {% if attendance.attendance == "Present"%}<i
-                      class="fas fa-check-circle"
-                    ></i>
-                    {% else %}<i class="fas fa-times-circle"></i> {% endif %}
-                  </td>
-                </tr>
-                {% endfor %} {% endif %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+            <div class="frame-body">
+                <table class="today-attendance-table">
+                    <thead>
+                        <tr class="tablehead">
+                            <th>EmpId</th>
+                            <th>Name</th>
+                            <th>Date</th>
+                            <th>Shift Intime</th>
+                            <th>Shift Outtime</th>
+                            <th>Intime</th>
+                            <th>Outtime</th>
+                            <th>Late By</th>
+                            <th>Early Go</th>
+                            <th>Total Duration</th>
+                            <th>Extra Time</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="tableBody">
+                        {% if attendance %} {% for attendance in attendance %}
+                        <tr data-shift="{{attendance.shiftType}}">
+                          <td class="id">{{attendance.emp_id }}</td>
+                          <td class="name">{{attendance.name}}</td>
+                          <td>{{attendance.date.date()}}</td>
+                          <td>{{attendance.shiftIntime}}</td>
+                          <td>{{attendance.shift_Outtime}}</td>
+                          <td class="intime">{{attendance.inTime}}</td>
+                          <td class="outtime">{{attendance.outTime}}</td>
+                          <td>{{attendance.lateBy}}</td>
+                          <td>{{attendance.earlyGoingBy}}</td>
+                          <td>{{attendance.TotalDuration}}</td>
+                          <td class="extra">{{attendance.overtime}}</td>
+                          <td>
+                            {% if attendance.attendance == "Present"%}<i
+                              class="fas fa-check-circle"
+                            ></i>
+                            {% else %}<i class="fas fa-times-circle"></i> {% endif %}
+                          </td>
+                          <td class="action"><p class="tag">N/A</p></td>
+                        </tr>
+                     
+                        {% endfor %} {% endif %}
+                        
 
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
       <!-- <script src="static/js/today_attendance.js"></script> -->
     </main>
     <link rel="stylesheet" href="static/css/late.css" />

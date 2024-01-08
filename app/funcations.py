@@ -380,6 +380,8 @@ def attend_excel_data(file_path):
                 emp = db.session.query(Emp_login).filter_by(id=empid).first()
                 print("Shift: ",emp.shift)
                 
+                if str(row['intime']) == "00:00":
+                    l
                 attendance_status = 'Absent' if str(row['intime']) == "00:00" and str(row['outtime']) == "00:00" else 'Present'
                 shift_type = None
                 

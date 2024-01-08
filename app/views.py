@@ -12,6 +12,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from .funcations import *
 from werkzeug.utils import secure_filename
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func
+
 
 
 import csv
@@ -45,15 +47,22 @@ def admin():
     #     db.session.rollback()  # Rollback in case of error
 
     
-    # employee =Employee.query.order_by(Employee.id)
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        employee_attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date).all()
+        print("Current Date: ",current_date)
+        print("Data :",employee_attendance)
+
+        
+
+        
         emp_login=Emp_login.query.order_by(Emp_login.emp_id).all()
-        employee =Attendance.query.order_by(Attendance.date)
+        #employee =Attendance.query.order_by(Attendance.date)
         late_permission=late.query.order_by(late.date).all()
         leave_permission=leave.query.order_by(leave.date).all()
         notification=notifications.query.order_by(notifications.timestamp).all()
         print("notification : ",notification)
         # sihft=Shift_time.query.order_by(Shift_time.id) 
-    return render_template('admin.html',emp_login=emp_login, notification=notification, attendance=employee, late_permission=late_permission, leave_permission=leave_permission)
+    return render_template('admin.html',emp_login=emp_login, notification=notification, attendance=employee_attendance, late_permission=late_permission, leave_permission=leave_permission)
 
 @views.route('/edit', methods=['POST', 'GET'])
 @login_required
