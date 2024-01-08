@@ -35,11 +35,11 @@ function getCurrentShift() {
     const currentHour = currentTime.getHours();
 
     if (currentHour >= 6 && currentHour < 14) {
-        return 'a';
+        return '8a';
     } else if (currentHour >= 14 && currentHour < 22) {
-        return 'b';
+        return '8b';
     } else {
-        return 'c';
+        return '8c';
     }
 }
 
