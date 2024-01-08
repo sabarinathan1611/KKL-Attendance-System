@@ -1067,3 +1067,19 @@ def upload_festival():
         up_festival(file_path)
         #return redirect(url_for('views.admin'))
     return render_template("uploadfesti.html")
+
+@views.route('/getshift',methods = ['POST'])
+def getshift():
+    get_signal = request.get_json()
+    signal = get_signal.get('get', False)
+
+    if signal:
+        # Assuming Shift_time has attributes like 'id', 'start_time', 'end_time', etc.
+        shift_times = Shift_time.query.order_by(Shift_time.id).all()
+
+        # Convert Shift_time objects to dictionaries
+        shift_list = [{"id": shift.id, "start_time": shift.shiftIntime, "end_time": shift.shift_Outtime,"shift":shift.shiftType} for shift in shift_times]
+
+        return jsonify({"res": shift_list})
+
+    return jsonify({"error": "Invalid request"})
