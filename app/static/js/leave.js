@@ -37,10 +37,6 @@ user_input.forEach(input => {
     });
 });
 
-// user
-
-
-
 const changeOpts = document.querySelectorAll('.change');
 
 changeOpts.forEach(change => {
@@ -56,6 +52,9 @@ const unameInput = document.getElementById('uname');
 const user = {};
 
 user.ID = document.querySelector('.uid').innerHTML;
+user.oldName = document.querySelector('.uname').innerHTML;
+user.oldphone = document.querySelector('.uphone').innerHTML;
+user.oldemail = document.querySelector('.uemail').innerHTML;
 console.log(user);
 
 function checkInputType(input) {
@@ -76,6 +75,23 @@ function checkInputType(input) {
     }
 }
 
+console.log(user);
+
+function send_data(data) {
+    fetch('/user-edit', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body:  JSON.stringify(data),
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+        })
+        .catch(error => console.error('Error:', error));
+}
+
 function changeUserDet() {
     const input = unameInput.value;
     if (input) {
@@ -83,9 +99,11 @@ function changeUserDet() {
 
         if (output === 'Number') {
             if (/^\d{10}$/.test(input)) {
-                user.newId = input;
+                user.newMobileNumber = input;
                 document.querySelector('.changeOptContainer').style.display = 'none';
                 document.querySelector('.uphone').innerHTML = input;
+                console.log(user);
+                send_data(user);
             } else {
                 alert('Phone number should have exactly 10 digits.');
             }
@@ -93,38 +111,21 @@ function changeUserDet() {
             user.newName = input;
             document.querySelector('.uname').innerHTML = input;
             document.querySelector('.changeOptContainer').style.display = 'none';
-        } else if (output === 'Date') {
-            user.newDate = input;
-            document.querySelector('.changeOptContainer').style.display = 'none';
-            document.querySelector('.udoj').innerHTML = input;
+            console.log(user);
+            send_data(user);
         } else if (output === 'Email') {
             user.newEmail = input;
             document.querySelector('.changeOptContainer').style.display = 'none';
             document.querySelector('.uemail').innerHTML = input;
+            console.log(user);
+            send_data(user);
         } else {
             alert('Give a valid input!');
         }
-        console.log(user);
+
+
     } else {
         alert('Empty request');
     }
+
 }
-
-const edit_profile_btn=document.querySelector('.edit_profile')
-const main_section = document.querySelectorAll(".mainSection");
-
-    edit_profile_btn.addEventListener("click", () => {
-        let index = edit_profile_btn.getAttribute("index");
-        all_frame.forEach(page => {
-            let pageIndex = page.getAttribute("index");
-            if (index == pageIndex) {
-                page.style.display = "block";
-            } else {
-                page.style.display = "none";
-            }
-        });
-        tag_btns.forEach(buttons => {
-            buttons.classList.remove("active");
-        });
-        btn.classList.add("active");
-    })

@@ -35,38 +35,13 @@ function getCurrentShift() {
     const currentHour = currentTime.getHours();
 
     if (currentHour >= 6 && currentHour < 14) {
-        return '8a';
+        return 'a';
     } else if (currentHour >= 14 && currentHour < 22) {
-        return '8b';
+        return 'b';
     } else {
-        return '8c';
+        return 'c';
     }
 }
 
-
 const currentShift = getCurrentShift();
 filter(currentShift);
-
-all_rows.forEach(row => {
-    let intime = (row.querySelector(".intime"));
-    let outtime = (row.querySelector(".outtime"));
-    if ((intime && (intime.innerHTML == "-" || intime.innerHTML =="")) || (outtime && (outtime.innerHTML == "-" || outtime.innerHTML ==""))) {
-      row.classList.add("mis-pinch");
-      if (intime.innerHTML =="-") {
-        intime.innerHTML = `<div class="table-tag">Punch in</div>`;
-      }else{
-        outtime.innerHTML = `<div class="table-tag">Punch out</div>`;
-      }
-
-      row.querySelector(".action").innerHTML = (`
-        <div class="btns-container">
-            <button type="button" class="table-btn cancel">Cancel</button>
-            <button type="button" class="table-btn continue">Continue</button>
-        </div>
-      `)
-
-    }else{
-      row.classList.remove("mis-pinch");
-    }
-  
-  });

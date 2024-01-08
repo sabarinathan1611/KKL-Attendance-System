@@ -246,7 +246,7 @@ def schedule_function(emp_id):
  
 
 
-def count_attendance_and_update_shift():
+def shiftypdate():
     employees = Emp_login.query.all()  # Fetch all employees
     
     for employee in employees:
@@ -492,20 +492,41 @@ def add_employee(file_path):
         db.session.rollback()  # Rollback changes in case of an exception
 
 def up_festival(file_path):
-    existing = db.session.query(Festival).filter_by(id=1).first()
-    if not existing:
-        if os.path.exists(file_path):
-            sheet_names = pd.ExcelFile(file_path).sheet_names
+    try:
+        # Check if the file exists and is valid
+        if not os.path.exists(file_path):
+            flash("File does not exist", "error")
+            return
 
+        # Get sheet names from the Excel file
+        sheet_names = pd.ExcelFile(file_path).sheet_names
+
+        # Use a context manager for database operations
+        with db.session.begin():
+            # Delete existing records in the Festival table
+            db.session.query(Festival).delete()
+
+        # Iterate through each sheet in the Excel file
         for sheet_name in sheet_names:
             df = None
+            # Read data from the Excel file based on the file extension
             if file_path.lower().endswith('.xlsx'):
                 df = pd.read_excel(file_path, sheet_name, engine='openpyxl')
             elif file_path.lower().endswith('.xls'):
                 df = pd.read_excel(file_path, sheet_name, engine='xlrd')
             else:
-                print("Unsupported file format")
-                return  # Handle unsupported format
+                raise ValueError("Unsupported file format. Only .xlsx and .xls files are supported.")
 
+            # Iterate through rows in the DataFrame and add records to the Festival table
             for index, row in df.iterrows():
-                print('Holiday',row['holiday'])
+                add_festival = Festival(
+                    holiday=row['holiday'],
+                    date=row['date'],
+                )
+                db.session.add(add_festival)
+
+        # Commit the changes to the database
+        db.session.commit()
+        flash("Festivals added successfully", category="success")
+    except Exception as e:
+        flash(f"Error adding festivals: {str(e)}", category="error")
