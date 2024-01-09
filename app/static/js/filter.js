@@ -1,3 +1,4 @@
+console.log("filter.js");
 const all_rows = document.querySelectorAll(".today-attendance-table tbody tr");
 const all_shiftDisplay = document.querySelectorAll(".currentShift");
 
@@ -47,3 +48,29 @@ function getCurrentShift() {
 
 const currentShift = getCurrentShift();
 filter(currentShift);
+
+all_rows.forEach(row => {
+    let id = row.querySelector(".id").innerHTML;
+    let intime = (row.querySelector(".intime"));
+    let outtime = (row.querySelector(".outtime"));
+    if ((intime && (intime.innerHTML == "-" || intime.innerHTML =="")) || (outtime && (outtime.innerHTML == "-" || outtime.innerHTML ==""))) {
+      row.classList.add("mis-pinch");
+      if (intime.innerHTML == "-") {
+        intime.innerHTML = `<div class="table-tag">Punch in</div>`;
+      }else{
+        outtime.innerHTML = `<div class="table-tag">Punch out</div>`;
+      }
+
+      row.querySelector(".action").innerHTML = (`
+        <form class="btns-container">
+            <input type="hidden" name="empid" value="${id}">
+            <button type="button" class="table-btn cancel">Cancel</button>
+            <button type="button" class="table-btn continue">Continue</button>
+        </form>
+      `)
+
+    }else{
+      row.classList.remove("mis-pinch");
+    }
+  
+  });
