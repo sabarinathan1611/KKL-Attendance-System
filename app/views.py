@@ -1165,3 +1165,17 @@ def decline_edit():
     db.session.delete(user)
     db.session.commit()
     return jsonify("Request Declined")
+
+@views.route('/cancel/<int:id>')
+def cancel(id):
+    emp=Emp_login.query.filter_by(emp_id=id).first()
+    Phonenum=emp.phoneNumber
+    email=emp.email
+    message=f"""
+    Dear {emp.name}:
+        it is a gentle remainder to you,
+        You have missed to keep the punch in the biometric machine
+
+                """
+    send_mail(email,message)
+    send_sms(Phonenum,message)  

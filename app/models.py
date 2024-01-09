@@ -82,7 +82,8 @@ class Shift_time(db.Model):
     shiftIntime = db.Column(db.String(150))
     shift_Outtime = db.Column(db.String(150))
     shiftType = db.Column(db.String(150))
-    work_Duration=db.Column(db.String(150))
+    week_off=db.Column(db.DateTime(timezone=True))
+    emp_id=db.Column(db.Integer)
     
     
 class Backup(db.Model):

@@ -4,12 +4,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from flask import current_app as app
 from flask import  flash,redirect
-from .models import Attendance, Shift_time, Emp_login,Festival
+from .models import Attendance, Shift_time, Emp_login,Festival,late,leave
 from . import db
 from os import path
 import datetime
 import sched
-#from twilio.rest import Client
+from twilio.rest import Client
 import schedule
 import time
 from datetime import datetime, timedelta
@@ -376,18 +376,33 @@ def attend_excel_data(file_path):
             for index, row in df.iterrows():
                 empid = row['emp_id']
                 print("Processing: ", empid)
-                # date =datetime.date.today()
+                
                 emp = db.session.query(Emp_login).filter_by(id=empid).first()
-                print("Shift: ",emp.shift)
+                print("Shift: ", emp.shift)
                 
-                if str(row['intime']) == "00:00":
-                    l
-                attendance_status = 'Absent' if str(row['intime']) == "00:00" and str(row['outtime']) == "00:00" else 'Present'
-                shift_type = None
-                
-                    # Assuming you want to access the first attendance record's shift
                 shift_type = emp.shift
-                shitfTime=  Shift_time.query.filter_by(shiftType=emp.shift).first()
+                shitfTime = Shift_time.query.filter_by(shiftType=emp.shift).first()
+
+                # Check if today's date is a holiday
+                today_date = datetime.now().strftime("%Y-%m-%d")
+                is_holiday = db.session.query(Festival).filter_by(date=today_date).first()
+
+                if is_holiday:
+                    attendance_status = 'Holiday'
+
+                else:
+                    if str(row['intime']) == "-":
+                        leave_check = db.session.query(leave).filter_by(emp_id=empid, status='Approved').first()
+                        late_check = db.session.query(late).filter_by(emp_id=empid, status='Approved').first()
+
+                        # Check if either leave or late is approved
+                        if leave_check or late_check:
+                            attendance_status = 'Communicated'
+                        else:
+                            attendance_status = 'Leave'
+                    else:
+                        attendance_status = 'Present'
+
                 attendance = Attendance(
                     emp_id=empid,
                     name=emp.name,
@@ -395,7 +410,6 @@ def attend_excel_data(file_path):
                     outTime=str(row['outtime']),
                     shiftType=shift_type,
                     attendance=attendance_status,
-                    # date=date,
                     shiftIntime=shitfTime.shiftIntime,
                     shift_Outtime=shitfTime.shift_Outtime,
                 )

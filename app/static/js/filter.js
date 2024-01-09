@@ -64,7 +64,7 @@ all_rows.forEach(row => {
       row.querySelector(".action").innerHTML = (`
         <form class="btns-container">
             <input type="hidden" name="empid" value="${id}">
-            <button type="button" class="table-btn cancel">Cancel</button>
+            <a herf="{{url_for('views.cancel',id=${id})}}" class="table-btn cancel">Cancel</a>
             <button type="button" class="table-btn continue">Continue</button>
         </form>
       `)
