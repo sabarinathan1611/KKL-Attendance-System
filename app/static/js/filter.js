@@ -38,8 +38,10 @@ function getCurrentShift() {
         return '8a';
     } else if (currentHour >= 14 && currentHour < 22) {
         return '8b';
-    } else {
+    } else if (currentHour >= 22 && currentHour < 6){
         return '8c';
+    }else{
+        return '8a'; 
     }
 }
 
