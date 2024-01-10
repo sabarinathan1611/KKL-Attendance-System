@@ -18,6 +18,7 @@ from email.mime.text import MIMEText
 from twilio.base.exceptions import TwilioRestException
 from sqlalchemy import func
 import pandas as pd
+from sqlalchemy.orm import aliased
 from .task import *
 scheduler = sched.scheduler(time.time, time.sleep)
 
@@ -181,8 +182,8 @@ def calculate_Attendance(chunk_size=100):
             db.session.commit()
 
 def calculate_time_difference(time1_str, time2_str):
-    print("DEBUG - time1_str:", time1_str)
-    print("DEBUG - time2_str:", time2_str)
+    #print("DEBUG - time1_str:", time1_str)
+    #print("DEBUG - time2_str:", time2_str)
 
     # Convert time strings to datetime objects (without seconds)
     time_format = '%H:%M'
@@ -194,7 +195,7 @@ def calculate_time_difference(time1_str, time2_str):
         time1 = datetime.strptime(time1_str, time_format)
         time2 = datetime.strptime(time2_str, time_format)
     except ValueError as e:
-        print("ValueError:", e)
+        #print("ValueError:", e)
         return "00:00"
 
     # Calculate time difference in seconds
@@ -386,6 +387,7 @@ def process_csv_file(file_path):
 
 
 def attend_excel_data(file_path):
+    print('hello world')
     if os.path.exists(file_path):
         sheet_names = pd.ExcelFile(file_path).sheet_names
 
@@ -412,7 +414,13 @@ def attend_excel_data(file_path):
                 # Check if today's date is a holiday
                 today_date = datetime.now().strftime("%Y-%m-%d")
                 is_holiday = Festival.query.filter(func.DATE(Attendance.date) == today_date).all()
+                # festival_alias = aliased(Festival)
 
+                # is_holiday = (
+                #     db.session.query(Festival)
+                #     .join(festival_alias, func.DATE(Attendance.date) == today_date)
+                #     .all()
+                # )
                 if is_holiday:
                     attendance_status = 'Holiday'
                 else:
@@ -434,10 +442,27 @@ def attend_excel_data(file_path):
                     if str(row['outtime']) == '-':
                         
                        shiftOuttime = session['lastShift']
-                       print(shiftOuttime)
-                       current_time_str = datetime.now().strftime("%H:%M")
-                       if shiftOuttime > current_time_str:
+                    #    print("shift out Time",type(shiftOuttime))
+                       shiftOuttime = datetime.strptime(shiftOuttime, "%H:%M")
+                       shiftOuttime = shiftOuttime.time()
+                    #    print("shift out Time",shiftOuttime)
+                       #print(shiftOuttime)
+                       current_time = datetime.now().time()
+                       print("Current Time",current_time)
+                    #    current_time_str = datetime.now().strftime("%H:%M")
+                    #    if shiftOuttime > current_time + timedelta(minutes=10):
+                       print("shift out Time",shiftOuttime)
+                       print("current time ",(datetime.combine(datetime.today(), current_time)))
+                       time_with_10_minutes_added = (datetime.combine(datetime.today(), shiftOuttime) + timedelta(minutes=10)).time()
+                       print("time_with_10_minutes_added time ",time_with_10_minutes_added)
+                       if current_time > time_with_10_minutes_added:
+                           print("hello")
                            print(send_alter.apply_async(countdown=1))
+                       else:
+                           print("\n\n\n\nits lower in time\n\n\n")
+                    else:
+                        print("out time gave")
+                    
                     
 
                 attendance = Attendance(

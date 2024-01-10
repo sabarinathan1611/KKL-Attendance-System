@@ -49,8 +49,8 @@ def admin():
     
         current_date = datetime.now().strftime('%Y-%m-%d')
         employee_attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date).all()
-        print("Current Date: ",current_date)
-        print("Data :",employee_attendance)
+        # print("Current Date: ",current_date)
+        # print("Data :",employee_attendance)
 
         
 
@@ -984,6 +984,7 @@ def getshift():
 @views.route('/uploadselect', methods=['POST'])
 def upload_select():
     if(request.method=='POST'):
+        print('dei enda')
 
         file_type = request.form.get('filetype')
 
@@ -997,6 +998,7 @@ def upload_select():
                 print(filename)
                 file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
                 file.save(file_path)
+                print('hello')
                 attend_excel_data(file_path)
                 print("babdckzub")
                 return redirect(url_for('views.calculate'))
@@ -1209,7 +1211,7 @@ def send_message_data():
         func.DATE(Attendance.date) == current_date,
         Attendance.shiftType == lastShift
     ).first()
-    print("lastShift : ",lastShift_db.shift_Outtime)
+    #print("lastShift : ",lastShift_db.shift_Outtime)
 
 
    
