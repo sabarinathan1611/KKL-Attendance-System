@@ -3,7 +3,7 @@ import smtplib
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from flask import current_app as app
-from flask import  flash,redirect
+from flask import  flash,redirect,session
 from .models import Attendance, Shift_time, Emp_login,Festival,late,leave
 from . import db
 from os import path
@@ -16,13 +16,15 @@ from datetime import datetime, timedelta
 from sqlalchemy import text 
 from email.mime.text import MIMEText
 from twilio.base.exceptions import TwilioRestException
+from sqlalchemy import func
 import pandas as pd
+from .task import *
 scheduler = sched.scheduler(time.time, time.sleep)
 
 def send_mail(email, subject, body):
     sender_email = "kklimited1013@gmail.com"
     receiver_email = email
-    password = ""  # Use an App Password or enable Less Secure Apps
+    password = "hmupzeoeftrbzmkl"  # Use an App Password or enable Less Secure Apps
 
     # Create the email message
     message = MIMEText(body)
@@ -43,8 +45,8 @@ def send_mail(email, subject, body):
 
 
 def send_sms(numbers_to_message, message_body):
-    account_sid = ''
-    auth_token = ''
+    account_sid = 'ACb1f8718e01bcc3eacf727272ff3a7b2b'
+    auth_token = '04d0a84313b37be6b5b03a469a847282'
     client = Client(account_sid, auth_token)
 
     from_phone_number = '+12069666359'
@@ -257,8 +259,8 @@ def update_wages_for_present_daily_workers():
     next_sunday_midnight = datetime(next_sunday.year, next_sunday.month, next_sunday.day)
     scheduler.enterabs(time.mktime(next_sunday_midnight.timetuple()), 1, run_for_all_employees, ())
     
-def schedule_function(emp_id):
-    schedule.every(2).days.at("00:00").do(count_attendance_and_update_shift, emp_id)
+# def schedule_function(emp_id):
+#     schedule.every(2).days.at("00:00").do(count_attendance_and_update_shift, emp_id)
 
 
 
@@ -360,7 +362,7 @@ def process_csv_file(file_path):
             employee_id, employee_name, *shifts = row
 
             # Create a new NewShift instance and set its attributes
-            new_shift_entry = NewShift(
+            new_shift_entry = Shift_time(
                 name_date_day=employee_name,
                 filename=file_path,
                 monday=shifts[0],
@@ -402,22 +404,24 @@ def attend_excel_data(file_path):
                 print("Processing: ", empid)
                 
                 emp = db.session.query(Emp_login).filter_by(id=empid).first()
-                print("Shift: ", emp.shift)
+                
                 
                 shift_type = emp.shift
                 shitfTime = Shift_time.query.filter_by(shiftType=emp.shift).first()
 
                 # Check if today's date is a holiday
                 today_date = datetime.now().strftime("%Y-%m-%d")
-                is_holiday = db.session.query(Festival).filter_by(date=today_date).first()
+                is_holiday = Festival.query.filter(func.DATE(Attendance.date) == today_date).all()
 
                 if is_holiday:
                     attendance_status = 'Holiday'
-
                 else:
+                    
                     if str(row['intime']) == "-":
                         leave_check = db.session.query(leave).filter_by(emp_id=empid, status='Approved').first()
                         late_check = db.session.query(late).filter_by(emp_id=empid, status='Approved').first()
+                        
+                        
 
                         # Check if either leave or late is approved
                         if leave_check or late_check:
@@ -426,6 +430,15 @@ def attend_excel_data(file_path):
                             attendance_status = 'Leave'
                     else:
                         attendance_status = 'Present'
+
+                    if str(row['outtime']) == '-':
+                        
+                       shiftOuttime = session['lastShift']
+                       print(shiftOuttime)
+                       current_time_str = datetime.now().strftime("%H:%M")
+                       if shiftOuttime > current_time_str:
+                           print(send_alter.apply_async(countdown=1))
+                    
 
                 attendance = Attendance(
                     emp_id=empid,

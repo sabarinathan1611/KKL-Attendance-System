@@ -174,3 +174,8 @@ class user_edit(db.Model, UserMixin):
     old_data=db.Column(db.String(150), nullable=False)
     new_data=db.Column(db.String(150), nullable=False)
     data_type=db.Column(db.String(150), nullable=False)
+
+class Send_message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.DateTime(timezone=True), default=func.now())
+    

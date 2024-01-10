@@ -1057,7 +1057,7 @@ def edit_employee():
     emp_type=request.form.get('editType')
     value=request.form.get('new_value')
     emp=Emp_login.query.filter_by(emp_id=emp_id).first()
-    attenName=Attendance.query.filter_by(emp_id=emp_id).first()
+    attenName=Attendance.query.filter_by(emp_id=emp_id).all()
     if emp and attenName:
         if emp_type != value:
             setattr(emp, emp_type, value)
@@ -1195,3 +1195,23 @@ def fetch_emp_details():
 
     return jsonify(response_data)
 
+@views.route('/send_message_data',methods=['GET'])
+def send_message_data():
+    currentShift=request.args.get('current_shift')
+    lastShift=request.args.get('last_shift')
+    lastShift_db =Shift_time.query.filter_by(shiftType=lastShift).first()
+    session['lastShift']=lastShift_db.shift_Outtime
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    
+    
+    # Assuming 'shift' is an attribute of the Attendance model
+    last_shift_db = db.session.query(Attendance).filter(
+        func.DATE(Attendance.date) == current_date,
+        Attendance.shiftType == lastShift
+    ).first()
+    print("lastShift : ",lastShift_db.shift_Outtime)
+
+
+   
+    
+    return jsonify('received')
