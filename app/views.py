@@ -1057,9 +1057,11 @@ def edit_employee():
     emp_type=request.form.get('editType')
     value=request.form.get('new_value')
     emp=Emp_login.query.filter_by(emp_id=emp_id).first()
-    if emp:
+    attenName=Attendance.query.filter_by(emp_id=emp_id).first()
+    if emp and attenName:
         if emp_type != value:
             setattr(emp, emp_type, value)
+            setattr(attenName,emp_type,value)
             db.session.commit()
             print(f"Employee with emp_id {emp_id} updated successfully.")
         else:
@@ -1068,18 +1070,6 @@ def edit_employee():
         print(f"Row with emp_id {emp_id} not found.")
     return redirect(url_for('views.admin'))
 
-@views.route('/fetch_emp_details',methods=['POST'])
-def fetch_emp_details():
-    form_data = request.form
-    emp_id=form_data['empid']
-    editType=form_data['editType']
-    value=Emp_login.query.filter_by(emp_id=emp_id).first()
-
-    print(form_data)
-
-    response_data = {'value': getattr(value,editType)}
-
-    return jsonify(response_data)
 
 @views.route('/user-edit',methods=['POST'])
 @login_required
@@ -1166,16 +1156,42 @@ def decline_edit():
     db.session.commit()
     return jsonify("Request Declined")
 
-@views.route('/cancel/<int:id>')
-def cancel(id):
-    emp=Emp_login.query.filter_by(emp_id=id).first()
-    Phonenum=emp.phoneNumber
-    email=emp.email
-    message=f"""
-    Dear {emp.name}:
-        it is a gentle remainder to you,
+@views.route('/send_message', methods=['POST'])
+def send_message():
+    data = request.json
+    id = data.get('id')
+    
+    # Assuming Emp_login is a SQLAlchemy model
+    emp = Emp_login.query.filter_by(emp_id=id).first()
+    
+    if emp:
+        Phonenum = emp.phoneNumber
+        email = emp.email
+        sub='Miss punch'
+        message = f"""
+        Dear {emp.name}:
+        It is a gentle reminder to you,
         You have missed to keep the punch in the biometric machine
+        """
+        print("Phone number:", Phonenum)
+        #send_mail(email=email, body=message,subject=sub)
+        send_sms(Phonenum ,message)
+        
+        # Send a JSON response
+        return jsonify({"data": "Message sent"})
+    else:
+        # Send a JSON response indicating the employee was not found
+        return jsonify({"error": "Employee not found"})
+@views.route('/fetch_emp_details',methods=['POST'])
+def fetch_emp_details():
+    form_data = request.form
+    emp_id=form_data['empid']
+    editType=form_data['editType']
+    value=Emp_login.query.filter_by(emp_id=emp_id).first()
 
-                """
-    send_mail(email,message)
-    send_sms(Phonenum,message)  
+    print(form_data)
+
+    response_data = {'value': getattr(value,editType)}
+
+    return jsonify(response_data)
+

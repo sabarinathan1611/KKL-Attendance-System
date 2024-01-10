@@ -423,3 +423,25 @@ function DeclineEdit(id, emp_id, name, data_type, old_data, new_data) {
       bringUserEdit();
     });
 }
+const fetchBtn = document.querySelector(".fetch");
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelector('.fetch').addEventListener('click', function (e) {
+      let form = document.getElementById("fetch-form");
+      fetch('/fetch_emp_details', {
+          method: 'POST',
+          body: new FormData(form),
+      })
+      .then(response => response.json()) // Adjust if the response is JSON
+        .then(data => {
+          console.log(data);
+          // Make sure 'editInput' exists in your HTML
+          let editInput = document.getElementById("editInput");
+          if (editInput) {
+              editInput.value = data.value;
+          } else {
+              console.error("Element with ID 'editInput' not found.");
+          }
+      })
+      .catch(error => console.error('Error:', error));
+    });
+});

@@ -15,6 +15,24 @@ shiftSelect.addEventListener("change",()=>{
     
 
 })
+function sendAlert(id) {
+    console.log("ID: ", id);
+
+    // Create an object with the ID
+    const data = { id: id };
+
+    fetch('/send_message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data.data);
+    });
+}
 
 function filter(currentShift){
     all_rows.forEach(row => {
@@ -64,7 +82,7 @@ all_rows.forEach(row => {
       row.querySelector(".action").innerHTML = (`
         <form class="btns-container">
             <input type="hidden" name="empid" value="${id}">
-            <a herf="{{url_for('views.cancel',id=${id})}}" class="table-btn cancel">Cancel</a>
+            <boutton type="button" onclick="sendAlert(${id})"  class="table-btn cancel">Cancel</a>
             <button type="button" class="table-btn continue">Continue</button>
         </form>
       `)
@@ -74,3 +92,4 @@ all_rows.forEach(row => {
     }
   
   });
+  

@@ -15,14 +15,14 @@ import time
 from datetime import datetime, timedelta
 from sqlalchemy import text 
 from email.mime.text import MIMEText
-
+from twilio.base.exceptions import TwilioRestException
 import pandas as pd
 scheduler = sched.scheduler(time.time, time.sleep)
 
 def send_mail(email, subject, body):
     sender_email = "kklimited1013@gmail.com"
     receiver_email = email
-    password = "hmupzeoeftrbzmkl"  # Use an App Password or enable Less Secure Apps
+    password = ""  # Use an App Password or enable Less Secure Apps
 
     # Create the email message
     message = MIMEText(body)
@@ -43,20 +43,44 @@ def send_mail(email, subject, body):
 
 
 def send_sms(numbers_to_message, message_body):
-    account_sid = 'ACb1f8718e01bcc3eacf727272ff3a7b2b'
-    auth_token = 'e89d5fb009283196464e6ed7faf8bd88'
+    account_sid = ''
+    auth_token = ''
     client = Client(account_sid, auth_token)
 
-    from_phone_number = '+18023289660'
+    from_phone_number = '+12069666359'
+
+    # Ensure numbers_to_message is iterable
+    if not isinstance(numbers_to_message, (list, tuple)):
+        numbers_to_message = [numbers_to_message]
 
     for number in numbers_to_message:
-        message = client.messages.create(
-            from_=from_phone_number,
-            body=message_body,
-            to=number
-        )
+        try:
+            # Validate and format the phone number
+            formatted_number = validate_and_format_phone_number(number)
 
-        print(f"Message SID for {number}: {message.sid}")
+            # Send the SMS using the formatted number
+            message = client.messages.create(
+                from_=from_phone_number,
+                body=message_body,
+                to=formatted_number
+            )
+
+            print(f"Message SID for {formatted_number}: {message.sid}")
+
+        except TwilioRestException as e:
+            print(f"Twilio error: {e}")
+
+def validate_and_format_phone_number(phone_number):
+    # Assuming phone_number is a string
+    # Validate and format the phone number if necessary
+    # Add the country code if missing
+
+    # Example: Assuming Indian country code is +91
+    phone_number=str(phone_number)
+    if not phone_number.startswith('+'):
+        phone_number = '+91' + phone_number
+
+    return phone_number
     
 def update_or_add_shift(shift_type, in_time, out_time):
     existing_shift = Shift_time.query.filter_by(shiftType=shift_type).first()
@@ -65,7 +89,7 @@ def update_or_add_shift(shift_type, in_time, out_time):
         # Update existing shift
         existing_shift.shiftIntime = in_time
         existing_shift.shift_Outtime = out_time
-        existing_shift.work_Duration = "none"
+       
         db.session.commit()
         print("Shift updated")
     else:
@@ -74,7 +98,7 @@ def update_or_add_shift(shift_type, in_time, out_time):
             shiftIntime=in_time,
             shift_Outtime=out_time,
             shiftType=shift_type,
-            work_Duration="none"
+        
         )
         db.session.add(new_shift)
         db.session.commit()
