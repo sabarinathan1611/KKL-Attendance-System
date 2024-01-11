@@ -432,12 +432,28 @@ def attend_excel_data(file_path):
                         attendance_status = 'Present'
 
                     if str(row['outtime']) == '-':
-                        
-                       shiftOuttime = session['lastShift']
-                       print(shiftOuttime)
-                       current_time_str = datetime.now().strftime("%H:%M")
-                       if shiftOuttime > current_time_str:
-                           print(send_alter.apply_async(countdown=1))
+                                            
+                        shiftOuttime = session['lastShift']
+                        #    print("shift out Time",type(shiftOuttime))
+                        shiftOuttime = datetime.strptime(shiftOuttime, "%H:%M")
+                        shiftOuttime = shiftOuttime.time()
+                        #    print("shift out Time",shiftOuttime)
+                        #print(shiftOuttime)
+                        current_time = datetime.now().time()
+                        print("Current Time",current_time)
+                        #    current_time_str = datetime.now().strftime("%H:%M")
+                        #    if shiftOuttime > current_time + timedelta(minutes=10):
+                        print("shift out Time",shiftOuttime)
+                        print("current time ",(datetime.combine(datetime.today(), current_time)))
+                        time_with_10_minutes_added = (datetime.combine(datetime.today(), shiftOuttime) + timedelta(minutes=10)).time()
+                        print("time_with_10_minutes_added time ",time_with_10_minutes_added)
+                        if current_time > time_with_10_minutes_added:
+                            print("hello")
+                            print(send_alter.apply_async(countdown=1))
+                        else:
+                            print("\n\n\n\nits lower in time\n\n\n")
+                    else:
+                            print("out time gave")
                     
 
                 attendance = Attendance(
