@@ -88,6 +88,14 @@
             <p class="menu-name">Attendance</p>
           </a>
         </li>
+        <li class="menu-option action-menu emp-disp-option" index="3">
+          <a>
+            <span class="icon">
+              <i class="fas fa-users"></i>
+            </span>
+            <p class="menu-name">Employees</p>
+          </a>
+        </li>
         <li class="menu-option">
           <a href="/late_req_table">
             <span class="icon">
@@ -107,7 +115,7 @@
 
         <li class="menu-option upload-option" style="margin-top: 7px">
           <span class="icon">
-            <i class="fas fa-upload"></i>+
+            <i class="fas fa-upload"></i>
           </span>
           <p class="menu-name">Upload</p>
         </li>
@@ -125,8 +133,19 @@
           </span>
           <p class="menu-name">Edit Employee</p>
         </li>
+        <li class="menu-option reload-option">
+          <span class="icon">
+            <i class="fas fa-sync"></i>
+          </span>
+          <p class="menu-name">Reload</p>
+        </li>
       </ul>
     </aside>
+    <div class="reload">
+      <div class="circle-box">
+        <div class="circle"></div>
+      </div>
+    </div>
 
     {% block content %}
 
@@ -353,6 +372,465 @@
       </div>
     </section>
 
+    <div
+    class="employee-container page-action"
+    style="display: none"
+    index="3"
+  >
+    <section class="frame today-attendance">
+      <div class="inner-frame">
+        <div class="frame-header">
+          <div class="frame-details">
+            <p class="frame-name">
+              <i class="fas fa-users"></i> Employee Details
+            </p>
+          </div>
+          <div class="frame-options">
+            <button type="button" class="list btn-display active" index="0">
+              <i class="fas fa-list-ul"></i>
+            </button>
+            <button type="button" class="grid btn-display" index="1">
+              <i class="fas fa-grip"></i>
+            </button>
+            <button type="button" class="download">
+              <i class="fas fa-file-excel"></i>
+            </button>
+          </div>
+        </div>
+        <div class="frame-body">
+          <div
+            class="list-container empdisplay"
+            index="0"
+            style="display: flex"
+          >
+            <table class="employee-table" style="margin-top: 10px">
+              <thead>
+                <tr class="tablehead">
+                  <th>EmpId</th>
+                  <th>Name</th>
+                  <th>D-O-J</th>
+                  <th>Current Shift</th>
+                  <th>Leave Available</th>
+                  <th>Late Available</th>
+                  <th>Contact No</th>
+                  <th>Email</th>
+                  <th>Address</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody class="tableBody emp-details-page">
+                <tr>
+                  <td>#001</td>
+                  <td>Employee Name</td>
+                  <td>11/11/1111</td>
+                  <td>8A</td>
+                  <td>20</td>
+                  <td>20</td>
+                  <td>+91 9182736450</td>
+                  <td>empName@gmail.com</td>
+                  <td>
+                    789 Maple Lane Apt 10B, Building C Suburbia City,
+                    District 67890 Territory State Countryland 54321
+                  </td>
+                  <td class="status">Freezed</td>
+                </tr>
+                <tr>
+                  <td>#001</td>
+                  <td>Employee Name</td>
+                  <td>11/11/1111</td>
+                  <td>8A</td>
+                  <td>20</td>
+                  <td>20</td>
+                  <td>+91 9182736450</td>
+                  <td>empName@gmail.com</td>
+                  <td>
+                    789 Maple Lane Apt 10B, Building C Suburbia City,
+                    District 67890 Territory State Countryland 54321
+                  </td>
+                  <td class="status">Active</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div
+            class="grid-container empdisplay"
+            style="margin-top: 10px"
+            index="1"
+            style="display: none"
+          >
+            <div class="card user">
+              <div class="status-tag freeze">freezed</div>
+              <div class="card-head">
+                <div class="default-profile">
+                  <img src="static/img/male.jpeg" alt="" />
+                </div>
+                <div class="content">
+                  <p class="content-display emp-name">
+                    <i class="fas-icon fas fa-user"></i> Employee Name
+                  </p>
+                  <p class="content-display emp-id">
+                    <i class="fas-icon fas fa-hashtag"></i> Employee Id
+                  </p>
+                  <p class="content-display emp-gender">
+                    <i class="fas-icon fas fa-venus-mars"></i> Male
+                  </p>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="basic-details">
+                  <li class="li username">
+                    <i class="fas-icon fas fa-user"></i> EmpName
+                  </li>
+                  <li class="li empid">
+                    <i class="fas-icon fas fa-hashtag"></i> #0001
+                  </li>
+                  <li class="li doj">
+                    <i class="fas-icon fas fa-calendar-alt"></i> 11/11/1111
+                  </li>
+                  <li class="li contact">
+                    <i class="fas-icon fas fa-phone"></i> +91 9081726354
+                  </li>
+                </ul>
+                <ul class="basic-details">
+                  <li class="li email">
+                    <i class="fas-icon fas fa-envelope"></i>
+                    username@gmail.com
+                  </li>
+                  <li class="li address">
+                    <i class="fas-icon fas fa-map-marker-alt"></i> 789 Maple
+                    Lane Apt 10B, Building C Suburbia City, District 67890
+                    Territory State Countryland 54321
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="card user">
+              <div class="status-tag active">active</div>
+              <div class="card-head">
+                <div class="default-profile">
+                  <img src="static/img/female.jpeg" alt="" />
+                </div>
+                <div class="content">
+                  <p class="content-display emp-name">
+                    <i class="fas-icon fas fa-user"></i> Employee Name
+                  </p>
+                  <p class="content-display emp-id">
+                    <i class="fas-icon fas fa-hashtag"></i> Employee Id
+                  </p>
+                  <p class="content-display emp-gender">
+                    <i class="fas-icon fas fa-venus-mars"></i> Female
+                  </p>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="basic-details">
+                  <li class="li username">
+                    <i class="fas-icon fas fa-user"></i> EmpName
+                  </li>
+                  <li class="li empid">
+                    <i class="fas-icon fas fa-hashtag"></i> #0001
+                  </li>
+                  <li class="li doj">
+                    <i class="fas-icon fas fa-calendar-alt"></i> 11/11/1111
+                  </li>
+                  <li class="li contact">
+                    <i class="fas-icon fas fa-phone"></i> +91 9081726354
+                  </li>
+                </ul>
+                <ul class="basic-details">
+                  <li class="li email">
+                    <i class="fas-icon fas fa-envelope"></i>
+                    username@gmail.com
+                  </li>
+                  <li class="li address">
+                    <i class="fas-icon fas fa-map-marker-alt"></i> 789 Maple
+                    Lane Apt 10B, Building C Suburbia City, District 67890
+                    Territory State Countryland 54321
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="card user">
+              <div class="status-tag active">active</div>
+              <div class="card-head">
+                <div class="default-profile">
+                  <img src="static/img/male.jpeg" alt="" />
+                </div>
+                <div class="content">
+                  <p class="content-display emp-name">
+                    <i class="fas-icon fas fa-user"></i> Employee Name
+                  </p>
+                  <p class="content-display emp-id">
+                    <i class="fas-icon fas fa-hashtag"></i> Employee Id
+                  </p>
+                  <p class="content-display emp-gender">
+                    <i class="fas-icon fas fa-venus-mars"></i> Male
+                  </p>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="basic-details">
+                  <li class="li username">
+                    <i class="fas-icon fas fa-user"></i> EmpName
+                  </li>
+                  <li class="li empid">
+                    <i class="fas-icon fas fa-hashtag"></i> #0001
+                  </li>
+                  <li class="li doj">
+                    <i class="fas-icon fas fa-calendar-alt"></i> 11/11/1111
+                  </li>
+                  <li class="li contact">
+                    <i class="fas-icon fas fa-phone"></i> +91 9081726354
+                  </li>
+                </ul>
+                <ul class="basic-details">
+                  <li class="li email">
+                    <i class="fas-icon fas fa-envelope"></i>
+                    username@gmail.com
+                  </li>
+                  <li class="li address">
+                    <i class="fas-icon fas fa-map-marker-alt"></i> 789 Maple
+                    Lane Apt 10B, Building C Suburbia City, District 67890
+                    Territory State Countryland 54321
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="card user">
+              <div class="status-tag active">active</div>
+              <div class="card-head">
+                <div class="default-profile">
+                  <img src="static/img/female.jpeg" alt="" />
+                </div>
+                <div class="content">
+                  <p class="content-display emp-name">
+                    <i class="fas-icon fas fa-user"></i> Employee Name
+                  </p>
+                  <p class="content-display emp-id">
+                    <i class="fas-icon fas fa-hashtag"></i> Employee Id
+                  </p>
+                  <p class="content-display emp-gender">
+                    <i class="fas-icon fas fa-venus-mars"></i> Female
+                  </p>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="basic-details">
+                  <li class="li username">
+                    <i class="fas-icon fas fa-user"></i> EmpName
+                  </li>
+                  <li class="li empid">
+                    <i class="fas-icon fas fa-hashtag"></i> #0001
+                  </li>
+                  <li class="li doj">
+                    <i class="fas-icon fas fa-calendar-alt"></i> 11/11/1111
+                  </li>
+                  <li class="li contact">
+                    <i class="fas-icon fas fa-phone"></i> +91 9081726354
+                  </li>
+                </ul>
+                <ul class="basic-details">
+                  <li class="li email">
+                    <i class="fas-icon fas fa-envelope"></i>
+                    username@gmail.com
+                  </li>
+                  <li class="li address">
+                    <i class="fas-icon fas fa-map-marker-alt"></i> 789 Maple
+                    Lane Apt 10B, Building C Suburbia City, District 67890
+                    Territory State Countryland 54321
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="card user">
+              <div class="status-tag active">active</div>
+              <div class="card-head">
+                <div class="default-profile">
+                  <img src="static/img/male.jpeg" alt="" />
+                </div>
+                <div class="content">
+                  <p class="content-display emp-name">
+                    <i class="fas-icon fas fa-user"></i> Employee Name
+                  </p>
+                  <p class="content-display emp-id">
+                    <i class="fas-icon fas fa-hashtag"></i> Employee Id
+                  </p>
+                  <p class="content-display emp-gender">
+                    <i class="fas-icon fas fa-venus-mars"></i> Male
+                  </p>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="basic-details">
+                  <li class="li username">
+                    <i class="fas-icon fas fa-user"></i> EmpName
+                  </li>
+                  <li class="li empid">
+                    <i class="fas-icon fas fa-hashtag"></i> #0001
+                  </li>
+                  <li class="li doj">
+                    <i class="fas-icon fas fa-calendar-alt"></i> 11/11/1111
+                  </li>
+                  <li class="li contact">
+                    <i class="fas-icon fas fa-phone"></i> +91 9081726354
+                  </li>
+                </ul>
+                <ul class="basic-details">
+                  <li class="li email">
+                    <i class="fas-icon fas fa-envelope"></i>
+                    username@gmail.com
+                  </li>
+                  <li class="li address">
+                    <i class="fas-icon fas fa-map-marker-alt"></i> 789 Maple
+                    Lane Apt 10B, Building C Suburbia City, District 67890
+                    Territory State Countryland 54321
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="card user">
+              <div class="status-tag active">active</div>
+              <div class="card-head">
+                <div class="default-profile">
+                  <img src="static/img/female.jpeg" alt="" />
+                </div>
+                <div class="content">
+                  <p class="content-display emp-name">
+                    <i class="fas-icon fas fa-user"></i> Employee Name
+                  </p>
+                  <p class="content-display emp-id">
+                    <i class="fas-icon fas fa-hashtag"></i> Employee Id
+                  </p>
+                  <p class="content-display emp-gender">
+                    <i class="fas-icon fas fa-venus-mars"></i> Female
+                  </p>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="basic-details">
+                  <li class="li username">
+                    <i class="fas-icon fas fa-user"></i> EmpName
+                  </li>
+                  <li class="li empid">
+                    <i class="fas-icon fas fa-hashtag"></i> #0001
+                  </li>
+                  <li class="li doj">
+                    <i class="fas-icon fas fa-calendar-alt"></i> 11/11/1111
+                  </li>
+                  <li class="li contact">
+                    <i class="fas-icon fas fa-phone"></i> +91 9081726354
+                  </li>
+                </ul>
+                <ul class="basic-details">
+                  <li class="li email">
+                    <i class="fas-icon fas fa-envelope"></i>
+                    username@gmail.com
+                  </li>
+                  <li class="li address">
+                    <i class="fas-icon fas fa-map-marker-alt"></i> 789 Maple
+                    Lane Apt 10B, Building C Suburbia City, District 67890
+                    Territory State Countryland 54321
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="card user">
+              <div class="status-tag active">active</div>
+              <div class="card-head">
+                <div class="default-profile">
+                  <img src="static/img/male.jpeg" alt="" />
+                </div>
+                <div class="content">
+                  <p class="content-display emp-name">
+                    <i class="fas-icon fas fa-user"></i> Employee Name
+                  </p>
+                  <p class="content-display emp-id">
+                    <i class="fas-icon fas fa-hashtag"></i> Employee Id
+                  </p>
+                  <p class="content-display emp-gender">
+                    <i class="fas-icon fas fa-venus-mars"></i> Male
+                  </p>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="basic-details">
+                  <li class="li username">
+                    <i class="fas-icon fas fa-user"></i> EmpName
+                  </li>
+                  <li class="li empid">
+                    <i class="fas-icon fas fa-hashtag"></i> #0001
+                  </li>
+                  <li class="li doj">
+                    <i class="fas-icon fas fa-calendar-alt"></i> 11/11/1111
+                  </li>
+                  <li class="li contact">
+                    <i class="fas-icon fas fa-phone"></i> +91 9081726354
+                  </li>
+                </ul>
+                <ul class="basic-details">
+                  <li class="li email">
+                    <i class="fas-icon fas fa-envelope"></i>
+                    username@gmail.com
+                  </li>
+                  <li class="li address">
+                    <i class="fas-icon fas fa-map-marker-alt"></i> 789 Maple
+                    Lane Apt 10B, Building C Suburbia City, District 67890
+                    Territory State Countryland 54321
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="card user">
+              <div class="status-tag active">active</div>
+              <div class="card-head">
+                <div class="default-profile">
+                  <img src="static/img/female.jpeg" alt="" />
+                </div>
+                <div class="content">
+                  <p class="content-display emp-name">
+                    <i class="fas-icon fas fa-user"></i> Employee Name
+                  </p>
+                  <p class="content-display emp-id">
+                    <i class="fas-icon fas fa-hashtag"></i> Employee Id
+                  </p>
+                  <p class="content-display emp-gender">
+                    <i class="fas-icon fas fa-venus-mars"></i> Female
+                  </p>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="basic-details">
+                  <li class="li username">
+                    <i class="fas-icon fas fa-user"></i> EmpName
+                  </li>
+                  <li class="li empid">
+                    <i class="fas-icon fas fa-hashtag"></i> #0001
+                  </li>
+                  <li class="li doj">
+                    <i class="fas-icon fas fa-calendar-alt"></i> 11/11/1111
+                  </li>
+                  <li class="li contact">
+                    <i class="fas-icon fas fa-phone"></i> +91 9081726354
+                  </li>
+                </ul>
+                <ul class="basic-details">
+                  <li class="li email">
+                    <i class="fas-icon fas fa-envelope"></i>
+                    username@gmail.com
+                  </li>
+                  <li class="li address">
+                    <i class="fas-icon fas fa-map-marker-alt"></i> 789 Maple
+                    Lane Apt 10B, Building C Suburbia City, District 67890
+                    Territory State Countryland 54321
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
     {% block scripts %}
 
     {% endblock %}

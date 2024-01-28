@@ -175,7 +175,8 @@ class user_edit(db.Model, UserMixin):
     new_data=db.Column(db.String(150), nullable=False)
     data_type=db.Column(db.String(150), nullable=False)
 
-class Send_message(db.Model):
+class Week_off(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.DateTime(timezone=True), default=func.now())
-    
+    emp_id = db.Column(db.Integer)
+    # date = db.Column(db.DateTime(timezone=True), default=func.now())
+    date= db.Column(db.String(150), nullable=False)

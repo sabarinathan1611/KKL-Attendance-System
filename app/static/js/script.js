@@ -203,6 +203,12 @@ upload_button.addEventListener("click", () => {
   upload_model.style.display = "flex";
 });
 
+const emp_disp_button = document.querySelector(".emp-disp-option");
+const emp_disp_model = document.querySelector(".employee-container");
+emp_disp_button.addEventListener("click", () => {
+  emp_disp_model.style.display = "flex";
+});
+
 const delete_model= document.querySelector('.delete-model');
 const delete_option = document.querySelector(".delete-option");
 
@@ -445,3 +451,33 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch(error => console.error('Error:', error));
     });
 });
+
+//reload part
+const load_btn = document.querySelector(".reload-option");
+
+function loadPage() {
+  let loadDiv = document.querySelector(".reload");
+  loadDiv.classList.add("active");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadPage();
+});
+
+load_btn.addEventListener("click", () => {
+  loadPage();
+  setTimeout(() => {
+    document.querySelector(".reload").classList.remove("active");
+  }, 2000);
+});
+
+window.addEventListener("load", () => {
+  let loadDiv = document.querySelector(".reload");
+  loadDiv.classList.remove("active");
+});
+
+window.addEventListener("beforeunload", () => {
+  let loadDiv = document.querySelector(".reload");
+  loadDiv.classList.remove("active");
+});
+// reload part end

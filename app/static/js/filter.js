@@ -2,6 +2,8 @@ console.log("filter.js");
 const all_rows = document.querySelectorAll(".today-attendance-table tbody tr");
 const all_shiftDisplay = document.querySelectorAll(".currentShift");
 
+const employe_rows = document.querySelectorAll(".employee-table tbody tr");
+
 let shiftSelect = document.getElementById("shift");
 
 shiftSelect.addEventListener("change", () => {
@@ -13,13 +15,23 @@ shiftSelect.addEventListener("change", () => {
     filter(shift.toLowerCase());
   }
 });
-function sendAlert(id) {
+function sendAlert(id,action) {
   console.log("ID: ", id);
 
   // Create an object with the ID
   const data = { id: id };
+  let route='';
+  if (action === 'cancel') { route = '/send_message' }
+  else if (action === 'continue') { route = '/send_continue_message' }
+  let cancel = document.querySelector(`.cancel-${id}`);
+  let continueBtn = document.querySelector(`.continue-${id}`);
+  
+  cancel.disabled='true';
+  cancel.style.cursor = 'not-allowed';
+  continueBtn.disabled='true';
+  continueBtn.style.cursor = 'not-allowed';
 
-  fetch("/send_message", {
+  fetch(route, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -28,11 +40,23 @@ function sendAlert(id) {
   })
     .then((response) => response.json())
     .then((data) => {
-      console.log(data                                                                                                           );
-      let cancel=document.querySelector(`.cancel-${id}`);
-      cancel.disabled='true';
-      cancel.style.cursor='not-allowed';
+      console.log(data);
+      cancel.disabled='false';
+      cancel.style.cursor = 'pointer';
+      continueBtn.disabled='false';
+      continueBtn.style.cursor = 'pointer';
+      window.location.href = "";
     });
+}
+
+function CancelOt(id) {
+  let cancel = document.querySelector(`.cancel-${id}`);
+  let continueBtn = document.querySelector(`.continue-${id}`);
+  
+  cancel.disabled='false';
+  cancel.style.cursor = 'pointer';
+  continueBtn.disabled='false';
+  continueBtn.style.cursor = 'pointer';
 }
 
 function filter(currentShift) {
@@ -49,23 +73,33 @@ function filter(currentShift) {
   });
 }
 
-function getCurrentShift() {
-  const currentTime = new Date();
-  const currentHour = currentTime.getHours();
-
-  if (currentHour >= 6 && currentHour < 14) {
-    return "8a";
-  } else if (currentHour >= 14 && currentHour < 22) {
-    return "8b";
-  } else if (currentHour >= 22 && currentHour < 6) {
-    return "8c";
+employe_rows.forEach((row) => {
+  let status = row.querySelector(".status");
+  if (status.innerHTML.trim().toLowerCase() == "freezed") {
+    row.classList.add("freezed");
+    status.innerHTML = `<div class="inner-tag">Freezed</div>`;
   } else {
-    return "8a";
+    row.classList.remove("freezed");
+    status.innerHTML = `<div class="tag">Active</div>`;
   }
-}
+});
+// function getCurrentShift() {
+//   const currentTime = new Date();
+//   const currentHour = currentTime.getHours();
 
-const currentShift = getCurrentShift();
-filter(currentShift);
+//   if (currentHour >= 6 && currentHour < 14) {
+//     return "8a";
+//   } else if (currentHour >= 14 && currentHour < 22) {
+//     return "8b";
+//   } else if (currentHour >= 22 && currentHour < 6) {
+//     return "8c";
+//   } else {
+//     return "8a";
+//   }
+// }
+
+// const currentShift = getCurrentShift();
+// filter(currentShift);
 
 all_rows.forEach((row) => {
   let id = row.querySelector(".id").innerHTML;
@@ -85,10 +119,19 @@ all_rows.forEach((row) => {
     row.querySelector(".action").innerHTML = `
         <form class="btns-container">
             <input type="hidden" name="empid" value="${id}">
-            <button type="button" onclick="sendAlert(${id})"  class="table-btn cancel cancel-${id}">Cancel</button>
-            <button type="button" class="table-btn continue">Continue</button>
+            <button type="button" onclick="sendAlert(${id},'cancel')"  class="table-btn cancel cancel-${id}">Cancel</button>
+            <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
         </form>
       `;
+    console.log(row.querySelector('.status').innerHTML);
+    if (row.querySelector('.status').textContent.trim().toLowerCase() == `ot`) {
+      row.querySelector(".action").innerHTML = `
+        <form class="btns-container">
+            <input type="hidden" name="empid" value="${id}">
+            <button type="button" onclick="CancelOt(${id})" class="table-btn cancel-ot cancel-ot-${id}">Cancel OT</button>
+        </form>
+      `;
+    }
   } else {
     row.classList.remove("mis-pinch");
   }
@@ -112,148 +155,120 @@ let shiftDetails = [
   },
 ];
 
-let alertSent = false;
-let elapsedMinutes = 0; // Declare elapsedMinutes outside the functions
+// Function to add 5 minutes to a given time
+function addMinutes(time, minutes) {
+  const [hours, mins] = time.split(":").map(Number);
+  const newTime = new Date(2022, 0, 1, hours, mins + minutes);
+  return newTime.toLocaleTimeString("en-US", { hour12: false });
+}
 
-function getCurrentShiftInfo(currentTime) {
-  const [currentHours, currentMinutes] = currentTime.split(":").map(Number);
+// Iterate through shiftDetails and add 5 minutes to shiftIntime
+shiftDetails.forEach((shift) => {
+  shift.shiftChecktime = addMinutes(shift.shiftIntime, 5);
+});
 
+function getCurrentShift(currentTime, shiftDetails) {
   for (const shift of shiftDetails) {
-    const shiftIntime = shift.shiftIntime.split(":").map(Number);
-    const shiftOuttime = shift.shiftOuttime.split(":").map(Number);
+    const shiftIntime = shift.shiftIntime;
+    const shiftOuttime = shift.shiftOuttime;
 
     if (
-      (currentHours > shiftIntime[0] ||
-        (currentHours === shiftIntime[0] &&
-          currentMinutes >= shiftIntime[1])) &&
-      (currentHours < shiftOuttime[0] ||
-        (currentHours === shiftOuttime[0] && currentMinutes < shiftOuttime[1]))
+      (shiftIntime <= shiftOuttime &&
+        currentTime >= shiftIntime &&
+        currentTime < shiftOuttime) ||
+      (shiftIntime > shiftOuttime &&
+        (currentTime >= shiftIntime || currentTime < shiftOuttime))
     ) {
-      const remainingMinutes =
-        shiftOuttime[0] * 60 +
-        shiftOuttime[1] -
-        (currentHours * 60 + currentMinutes);
-      const shiftStartTime = `${shiftIntime[0]}:${shiftIntime[1]}`;
-
-      return {
-        currentShift: shift.shiftName,
-        timeRemaining: remainingMinutes,
-        shiftStartTime: shiftStartTime,
-        totalShiftTime: shiftOuttime[0] * 60 + shiftOuttime[1],
-      };
+      return shift;
     }
   }
 
-  return {
-    currentShift: "No shift found",
-    timeRemaining: 0,
-    shiftStartTime: "N/A",
-    totalShiftTime: 0,
-  };
+  return null; // No shift found for the current time
 }
 
-function convertMinutesToHoursAndMinutes(minutes) {
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return { hours, minutes: remainingMinutes };
+// Provide the current time as a string in 24-hour format
+// Function to get the current time in 24-hour format
+function getCurrentTime24Hrs() {
+  const currentTime = new Date();
+  const hours = currentTime.getHours();
+  const minutes = currentTime.getMinutes();
+  const seconds = currentTime.getSeconds();
+
+  // Format the time to ensure two digits for hours, minutes, and seconds
+  const formattedTime = `${String(hours).padStart(2, "0")}:${String(
+    minutes
+  ).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+  return formattedTime;
 }
 
-function getTimeSinceShiftStarted(shiftStartTime, currentTime) {
-  const [startHours, startMinutes] = shiftStartTime.split(":").map(Number);
-  const [currentHours, currentMinutes] = currentTime.split(":").map(Number);
+// Get the current time in 24-hour format
+const currentTime24Hrs = getCurrentTime24Hrs();
 
-  const startTotalMinutes = startHours * 60 + startMinutes;
-  const currentTotalMinutes = currentHours * 60 + currentMinutes;
+// Parse the current time as a string
+const currentTimeString = "01:59:00";
 
-  return currentTotalMinutes - startTotalMinutes;
+// Compare the current time with the provided time string
+if (currentTime24Hrs === currentTimeString) {
+  console.log("The current time matches the provided time string.");
+} else {
+  console.log("The current time does not match the provided time string.");
 }
 
-function calculatePercentage(timeTaken, totalShiftTime) {
-  return (timeTaken / totalShiftTime) * 100;
+// Find the current shift
+const currentShift = getCurrentShift(currentTime24Hrs, shiftDetails);
+
+// Display the current shift
+if (currentShift) {
+  console.log(`Current shift: ${currentShift.shiftName}`);
+} else {
+  console.log("No shift currently");
 }
 
-function calculateShiftProgress(elapsedMinutes, totalShiftTime) {
-  const progressPercentage = (elapsedMinutes / totalShiftTime) * 100;
-  return progressPercentage.toFixed(2);
-}
+filter(currentShift.shiftName);
 
-function calculateCompletionPercentage(elapsedMinutes, totalShiftTime) {
-  const completionPercentage = calculatePercentage(
-    elapsedMinutes,
-    totalShiftTime
-  );
-  console.log(`Percentage of Completion: ${completionPercentage.toFixed(2)}%`);
-}
+let canRefresh = true;
 
-function sendAlertMsg(currentShift, lastShift) {
-  if (!alertSent) {
-    // console.log(currentShift,lastShift);
+window.addEventListener("beforeunload", (event) => {
+  if (!canRefresh) {
+    // Display a confirmation dialog
+    const message = "You are about to leave the page. Are you sure?";
+    event.returnValue = message;
+    return message;
+  }
+});
 
-    fetch(
-      `/send_message_data?current_shift=${currentShift}&last_shift=${lastShift}`,
-      {
+setInterval(() => {
+  let currentTime = getCurrentTime24Hrs();
+  let shift = getCurrentShift(currentTime, shiftDetails);
+
+  if (currentTime == shift.shiftIntime) {
+    filter(shift.shiftName);
+  }
+  let lastShift;
+  if (shift.shiftName === '8A') { lastShift = '8C' }
+  else if(shift.shiftName==='8B'){lastShift='8A'}
+  else if (shift.shiftName === '8C') { lastShift = '8B' }
+  console.log(lastShift);
+  if (currentTime === shift.shiftChecktime) {
+  // if (1==1) {
+    if (canRefresh) {
+      fetch(`/send_message_data?currentShift=${shift.shiftName}&lastShift=${lastShift}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
-      }
-    )
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data);
-      });
-  }
-}
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data);
+        });
 
-function logElapsedTime() {
-  const currentTime = new Date();
-  const currentHours = currentTime.getHours();
-  const currentMinutes = currentTime.getMinutes();
-  const formattedCurrentTime = `${currentHours}:${currentMinutes}`;
-
-  const shiftInfo = getCurrentShiftInfo(formattedCurrentTime);
-  // Calculate time elapsed since the shift started
-  if (shiftInfo.currentShift !== "No shift found") {
-    elapsedMinutes = getTimeSinceShiftStarted(
-      shiftInfo.shiftStartTime,
-      formattedCurrentTime
-    );
-    const elapsedHoursAndMinutes =
-      convertMinutesToHoursAndMinutes(elapsedMinutes);
-    //   console.log(`Time Elapsed Since Shift Started: ${elapsedHoursAndMinutes.hours} hours ${elapsedHoursAndMinutes.minutes} minutes`);
-
-    // Log the "Time Remaining for Next Shift" message
-    //   console.log(`Time Remaining for Next Shift: ${convertMinutesToHoursAndMinutes(shiftInfo.timeRemaining).hours} hours ${convertMinutesToHoursAndMinutes(shiftInfo.timeRemaining).minutes} minutes`);
-    let lastShift;
-    if (shiftInfo.currentShift === "8A") {
-      lastShift = "8C";
-    } else if (shiftInfo.currentShift === "8B") {
-      lastShift = "8A";
-    } else if (shiftInfo.currentShift === "8C") {
-      lastShift = "8B";
-    } else {
-      console.log("shift not found");
+      // Disable refresh for 2 seconds
+      canRefresh = false;
+      setTimeout(() => {
+        canRefresh = true;
+      }, 2000);
     }
-    let current_last_shift = [shiftInfo.currentShift, lastShift];
-    // console.log(current_last_shift);
-    return current_last_shift;
-  } else {
-    console.log("No shift found. Unable to calculate elapsed time.");
   }
-}
-
-function checkElapsedTime() {
-  let current_last_shift = logElapsedTime();
-
-  // Check if 17 minutes have elapsed and alert has not been sent
-  if (elapsedMinutes >= 10 && !alertSent) {
-    console.log("Alert: 10 minutes have elapsed since the shift started!");
-    if (!alertSent) {
-      sendAlertMsg(current_last_shift[0], current_last_shift[1]);
-    } // Set flag to true to indicate that the alert has been sent
-    alertSent = true;
-  }
-}
-
-setInterval(checkElapsedTime, 1000); // Check every 1000 milliseconds (1 second)
-setInterval(logElapsedTime, 10000); // Log every 10 seconds
+}, 1000);

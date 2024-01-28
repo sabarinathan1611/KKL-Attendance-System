@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from flask import current_app as app
 from flask import  flash,redirect,session
-from .models import Attendance, Shift_time, Emp_login,Festival,late,leave
+from .models import Attendance, Shift_time, Emp_login,Festival,late,leave,Week_off
 from . import db
 from os import path
 import datetime
@@ -85,14 +85,20 @@ def validate_and_format_phone_number(phone_number):
 
     return phone_number
     
-def update_or_add_shift(shift_type, in_time, out_time):
+def update_or_add_shift(shift_type, in_time, out_time,emp_id,week_off):
     existing_shift = Shift_time.query.filter_by(shiftType=shift_type).first()
-
+    print("update_or_add_shift")
+    new_week_off = Week_off(
+            emp_id=emp_id,
+            date=week_off
+        )
+    db.session.add(new_week_off)
+    db.session.commit()
     if existing_shift:
         # Update existing shift
         existing_shift.shiftIntime = in_time
         existing_shift.shift_Outtime = out_time
-       
+        
         db.session.commit()
         print("Shift updated")
     else:
@@ -101,10 +107,10 @@ def update_or_add_shift(shift_type, in_time, out_time):
             shiftIntime=in_time,
             shift_Outtime=out_time,
             shiftType=shift_type,
-        
         )
         db.session.add(new_shift)
         db.session.commit()
+
         print("New shift added")
 
 def process_excel_data(file_path):
@@ -122,12 +128,22 @@ def process_excel_data(file_path):
                 return  # Handle unsupported format
 
             for index, row in df.iterrows():
-                shift_type = row['Shift']
+                shift_type = str(row['Shift'])
                 in_time = str(row['S. InTime'])
                 out_time = str(row['S. OutTime'])
+                emp_id = str(row['empid'])
+                week_off = str(row['weekoff'])
                 print("Processing: ", shift_type)
+                # existing_week_off=Week_off.query.filter_by(emp_id=emp_id,date=week_off).first()
+                # if not (existing_week_off):
+                #     new_req=Week_off(emp_id=emp_id,date=week_off)
+                #     db.session.add(new_req)
+                #     db.session.commit()
+                # else:
+                #     print("week_off for ,",id," on ",week_off," is exist")
+                
 
-                update_or_add_shift(shift_type, in_time, out_time)
+                update_or_add_shift(shift_type, in_time, out_time,emp_id,week_off)
 
 
 def calculate_Attendance(chunk_size=100):
@@ -140,6 +156,7 @@ def calculate_Attendance(chunk_size=100):
             attendance_records = Attendance.query.filter_by(emp_id=employee.id).all()
 
             for attendance in attendance_records:
+                print(attendance.employee.shift)
                 # Extract attendance information
                 shift = Shift_time.query.filter_by(shiftType=attendance.employee.shift).first()
                 inTime = attendance.inTime
@@ -405,8 +422,8 @@ def attend_excel_data(file_path):
                 empid = row['emp_id']
                 print("Processing: ", empid)
                 
-                emp = db.session.query(Emp_login).filter_by(id=empid).first()
-                
+                emp = db.session.query(Emp_login).filter_by(emp_id=2).first()
+                print(emp)
                 
                 shift_type = emp.shift
                 shitfTime = Shift_time.query.filter_by(shiftType=emp.shift).first()
@@ -414,6 +431,7 @@ def attend_excel_data(file_path):
                 # Check if today's date is a holiday
                 today_date = datetime.now().strftime("%Y-%m-%d")
                 is_holiday = Festival.query.filter(func.DATE(Attendance.date) == today_date).all()
+                week_off=Week_off.query.all()
                 # festival_alias = aliased(Festival)
 
                 # is_holiday = (
@@ -424,6 +442,13 @@ def attend_excel_data(file_path):
                 if is_holiday:
                     attendance_status = 'Holiday'
                 else:
+                    for week_off in week_off:
+                        emp_id=week_off.emp_id
+                        if(row['emp_id']==emp_id):
+                            current_date = datetime.now().strftime('%Y-%m-%d')
+                            attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date,Attendance.emp_id==emp_id).first()
+                            print("befor :",attendance.attendance)
+                            attendance.attendance='Wrong Shift'
                     
                     if str(row['intime']) == "-":
                         leave_check = db.session.query(leave).filter_by(emp_id=empid, status='Approved').first()
@@ -439,10 +464,10 @@ def attend_excel_data(file_path):
                     else:
                         attendance_status = 'Present'
 
+                    '''
                     if str(row['outtime']) == '-':
                         
                        shiftOuttime = session['lastShift']
-                    #    print("shift out Time",type(shiftOuttime))
                        shiftOuttime = datetime.strptime(shiftOuttime, "%H:%M")
                        shiftOuttime = shiftOuttime.time()
                     #    print("shift out Time",shiftOuttime)
@@ -453,16 +478,16 @@ def attend_excel_data(file_path):
                     #    if shiftOuttime > current_time + timedelta(minutes=10):
                        print("shift out Time",shiftOuttime)
                        print("current time ",(datetime.combine(datetime.today(), current_time)))
-                       time_with_10_minutes_added = (datetime.combine(datetime.today(), shiftOuttime) + timedelta(minutes=10)).time()
+                       time_with_10_minutes_added = (datetime.combine(datetime.today(), shiftOuttime) + timedelta(minutes=5)).time()
                        print("time_with_10_minutes_added time ",time_with_10_minutes_added)
                        if current_time > time_with_10_minutes_added:
                            print("hello")
-                           print(send_alter.apply_async(countdown=1))
+                        #    print(send_alter.apply_async(countdown=1))
                        else:
                            print("\n\n\n\nits lower in time\n\n\n")
                     else:
                         print("out time gave")
-                    
+                    '''
                     
 
                 attendance = Attendance(
@@ -606,3 +631,19 @@ def up_festival(file_path):
         flash("Festivals added successfully", category="success")
     except Exception as e:
         flash(f"Error adding festivals: {str(e)}", category="error")
+
+def check_send_sms(emp_id):
+    emp = Emp_login.query.filter_by(emp_id=emp_id).first()
+    
+    if emp:
+        Phonenum = emp.phoneNumber
+        email = emp.email
+        sub='Miss punch'
+        message = f"""
+        Dear {emp.name}:
+        It is a gentle reminder to you,
+        You have missed to keep the punch in the biometric machine
+        """
+        print("Phone number:", Phonenum)
+        send_mail(email=email, body=message,subject=sub)
+        send_sms(Phonenum ,message)

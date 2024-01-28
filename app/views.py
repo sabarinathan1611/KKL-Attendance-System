@@ -1,6 +1,6 @@
 from flask_login import login_required, current_user,login_user
 from . import db
-from .models import Attendance,Shift_time,Backup, late, leave,notifications ,NewShift,Emp_login,user_edit
+from .models import Attendance,Shift_time,Backup, late, leave,notifications ,NewShift,Emp_login,user_edit,Week_off
 from flask import Blueprint, render_template, request, flash, redirect, url_for,jsonify,session
 import json
 import datetime
@@ -48,10 +48,11 @@ def admin():
 
     
         current_date = datetime.now().strftime('%Y-%m-%d')
-        employee_attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date).all()
+        # employee_attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date).all()
         # print("Current Date: ",current_date)
         # print("Data :",employee_attendance)
 
+        employee_attendance = Attendance.query.all()
         
 
         
@@ -983,8 +984,8 @@ def getshift():
 
 @views.route('/uploadselect', methods=['POST'])
 def upload_select():
+    print('dei enda')
     if(request.method=='POST'):
-        print('dei enda')
 
         file_type = request.form.get('filetype')
 
@@ -993,14 +994,14 @@ def upload_select():
             file = request.files['emp']
             # Customize response based on file_type
             if file_type == 'attendance':
-                print("j=ubjxk")
+                # print("j=ubjxk")
                 filename = secure_filename(file.filename)
                 print(filename)
                 file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
                 file.save(file_path)
-                print('hello')
+                # print('hello')
                 attend_excel_data(file_path)
-                print("babdckzub")
+                # print("babdckzub")
                 return redirect(url_for('views.calculate'))
             
             elif file_type == 'addEmployee':
@@ -1014,15 +1015,17 @@ def upload_select():
                 filename = secure_filename(file.filename)
                 print(filename)
                 try:
-                  
-                        file_path = os.path.join(app.config['EXCEL_FOLDER'], str(filename))  # Use correct case 'EXCEL_FOLDER'
-                        process_excel_data(file_path)  # Call the data processing function
+                    file_path = os.path.join(app.config['EXCEL_FOLDER'], str(filename))  # Use correct case 'EXCEL_FOLDER
+                    # print('nuubyv')
+                    process_excel_data(file_path)  # Call the data processing function
 
 
                 except Exception as e:
-                    print("Error occurred:", e)
+                    print("Error type:", type(e).__name__)
+                    print("Error message:", str(e))
                     db.session.rollback()  
         else :
+            print('bjsdbcihbs')
             return 'No file uploaded'
 
     return redirect(url_for('views.admin'))
@@ -1199,21 +1202,54 @@ def fetch_emp_details():
 
 @views.route('/send_message_data',methods=['GET'])
 def send_message_data():
-    currentShift=request.args.get('current_shift')
-    lastShift=request.args.get('last_shift')
-    lastShift_db =Shift_time.query.filter_by(shiftType=lastShift).first()
-    session['lastShift']=lastShift_db.shift_Outtime
-    current_date = datetime.now().strftime('%Y-%m-%d')
-    
-    
-    # Assuming 'shift' is an attribute of the Attendance model
-    last_shift_db = db.session.query(Attendance).filter(
-        func.DATE(Attendance.date) == current_date,
-        Attendance.shiftType == lastShift
-    ).first()
-    #print("lastShift : ",lastShift_db.shift_Outtime)
-
-
-   
-    
+    try:
+        print('hi')
+        currentShift=request.args.get('currentShift')
+        lastShift=request.args.get('lastShift')
+        lastShift_db =Shift_time.query.filter_by(shiftType=lastShift).first()
+        session['lastShift']=lastShift_db.shift_Outtime
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        
+        # Assuming 'shift' is an attribute of the Attendance model
+        last_shift_db = db.session.query(Attendance).filter(
+            func.DATE(Attendance.date) == current_date,
+            Attendance.shiftType == lastShift
+        ).all()
+        print("hello da")
+        for record in last_shift_db:
+            if record.outTime == '-':
+                check_send_sms(record.emp_id)
+                print("lastShift : ",record.outTime)
+    except Exception as e:
+        print(e)
     return jsonify('received')
+
+
+@views.route('/send_continue_message',methods=['POST'])
+def send_continue_message():
+    data = request.json
+    id = data.get('id')
+    print("Continue", id)
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date,Attendance.emp_id==id).first()
+    print("befor :",attendance.attendance)
+    attendance.attendance='O.T'
+    db.session.commit()
+    print("after :",attendance.attendance)
+
+    today = datetime.now()
+
+    # Calculate the date for the next day
+    next_day = today + timedelta(days=1)
+
+    # week_off=Week_off.query.all()
+    existing_week_off=Week_off.query.filter_by(emp_id=id,date=next_day).first()
+    if not (existing_week_off):
+        new_req=Week_off(emp_id=id,date=next_day)
+        db.session.add(new_req)
+        db.session.commit()
+    else:
+        print("week_off for ,",id," on ",next_day," is exist")
+        
+        # Send a JSON response
+    return jsonify({"data": "Message sent"})

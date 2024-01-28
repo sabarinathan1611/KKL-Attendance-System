@@ -80,11 +80,17 @@
                   <td>{{attendance.earlyGoingBy}}</td>
                   <td>{{attendance.TotalDuration}}</td>
                   <td class="extra">{{attendance.overtime}}</td>
-                  <td>
+                  <td class="status">
                     {% if attendance.attendance == "Present"%}<i
                       class="fas fa-check-circle"
-                    ></i>
-                    {% else %}<i class="fas fa-times-circle"></i> {% endif %}
+                    ></i>Present
+                    {% elif attendance.attendance == "O.T"%}<i
+                      class="fas fa-check-circle"
+                    ></i>OT
+                    {% elif attendance.attendance == "Wrong Shift"%}<i
+                      class="fas fa-times-circle"
+                    ></i>Wrong Shift
+                    {% else %}<i class="fas fa-times-circle">Absent</i> {% endif %}
                   </td>
                   <td class="action">
                     <p class="tag">N/A</p>
