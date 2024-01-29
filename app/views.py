@@ -48,11 +48,11 @@ def admin():
 
     
         current_date = datetime.now().strftime('%Y-%m-%d')
-        # employee_attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date).all()
+        employee_attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date).all()
         # print("Current Date: ",current_date)
         # print("Data :",employee_attendance)
 
-        employee_attendance = Attendance.query.all()
+        # employee_attendance = Attendance.query.all()
         
 
         
@@ -516,14 +516,10 @@ def user_dashboard():
         return redirect(url_for('auth.logout'))
     else:
         emp_id = session.get('emp_id')
-        email = session.get('email')
-        name = session.get('name')
         user = Emp_login.query.filter_by(emp_id=emp_id).first()
-        ph_number=user.phoneNumber
-        leave_balance = user.leave_balance
-        shift=user.shift
-        late_balance = user.late_balance
-    return render_template("emp_req_choice.html",shift=shift,ph_number=ph_number,emp_id=emp_id,email=email,name=name,late_balance=late_balance,leave_balance=leave_balance)
+        # date=datetime.strptime(str(user.date), "%Y-%m-%d %H:%M:%S")
+        date = (user.date).strftime("%Y-%m-%d")
+    return render_template("emp_req_choice.html",user=user,date=date)
 
 # @views.route("/attendance_upload_page",methods=['POST','GET'])
 # @login_required
@@ -568,20 +564,22 @@ def attendance_table():
 @login_required
 def late_req_table():
     notification=notifications.query.order_by(notifications.timestamp).all()
+    emp_login=Emp_login.query.order_by(Emp_login.emp_id).all()
     permission_details=late.query.order_by(late.date).all()
-    return render_template("req_table.html",notification=notification,permission=permission_details,permission_type='Late')
+    return render_template("req_table.html",emp_login=emp_login,notification=notification,permission=permission_details,permission_type='Late')
 
 @views.route("/leave_req_table")
 @login_required
 def leave_req_table():
     notification=notifications.query.order_by(notifications.timestamp).all()
+    emp_login=Emp_login.query.order_by(Emp_login.emp_id).all()
     permission_details=leave.query.order_by(leave.date).all()
-    return render_template("req_table.html",notification=notification,permission=permission_details,permission_type='Leave')
+    return render_template("req_table.html",emp_login=emp_login,notification=notification,permission=permission_details,permission_type='Leave')
 
 @views.route("/today_attendance")
 @login_required
 def today_attendance():
-    return render_template("admin.html")
+    return redirect(url_for('views.admin'))
 
 @views.route("/yesterday_attendance")
 @login_required
@@ -694,6 +692,21 @@ def last_month_attendance():
 #     }
 #     session['leave_details']=req_details
 #     return render_template("req_profile.html",req_details=req_details)#,late_permission_dict=late_permission_dict
+
+@views.route('/emp_details')
+@login_required
+def emp_details():
+    emp_login=Emp_login.query.order_by(Emp_login.emp_id).all()
+    
+    # Separate the records with freezed_account=1 and freezed_account=0
+    emp_login_freezed = [emp for emp in emp_login if emp.freezed_account == '1']
+    emp_login_active = [emp for emp in emp_login if emp.freezed_account == '0']
+    
+    # Combine the lists, placing the freezed_account=1 records at the end
+    emp_login_sorted = emp_login_active + emp_login_freezed
+    print(emp_login_sorted)
+
+    return render_template('emp_details.html',emp_login=emp_login_sorted)
 
 @views.route('/late_req_profile')
 @login_required
@@ -838,45 +851,42 @@ def late_approve():
     user_data = json.loads(request.data)
     userID = user_data['userId']
     user = late.query.filter_by(id=userID).first()
-    current_user = 'hr'
-    admin_name=session.get('admin_name')
+    # current_user = 'hr'
+    print(current_user.name)
+    admin_name=current_user.name
     print("current admin: ", admin_name)
-    if current_user == 'hr':
-        user.status='Approved'
-        user.hr_approval = 'Approved'
-        user.approved_by=admin_name
-        db.session.commit()
-
-        # Create a JSON response
-        response_data = {
-            'approved_by':user.approved_by,
-            'userId': userID,
-            'hr_approval': user.hr_approval
-        }
-
-        return jsonify(response_data)
+    # if current_user == 'hr':
+    user.status='Approved'
+    user.hr_approval = 'Approved'
+    user.approved_by=admin_name
+    db.session.commit()
+    # Create a JSON response
+    response_data = {
+        'approved_by':user.approved_by,
+        'userId': userID,
+        'hr_approval': user.hr_approval
+    }
+    return jsonify(response_data)
 
 @views.route('/late_decline', methods=['POST', 'GET'])
 def late_decline():
     user_data = json.loads(request.data)
     userID = user_data['userId']
     user = late.query.filter_by(id=userID).first()
-    admin_name=session.get('admin_name')
-    current_user = 'hr'
-    if current_user == 'hr':
-        user.status='Declined'
-        user.hr_approval = 'Declined'
-        user.approved_by=admin_name
-        db.session.commit()
-        
-        # Create a JSON response
-        response_data = {
-            'approved_by':user.approved_by,
-            'userId': userID,
-            'hr_approval': user.hr_approval
-        }
-
-        return jsonify(response_data)
+    # admin_name=session.get('admin_name')
+    admin_name=current_user.name
+    user.status='Declined'
+    user.hr_approval = 'Declined'
+    user.approved_by=admin_name
+    db.session.commit()
+    
+    # Create a JSON response
+    response_data = {
+        'approved_by':user.approved_by,
+        'userId': userID,
+        'hr_approval': user.hr_approval
+    }
+    return jsonify(response_data)
 
 
 @views.route('/leave_approve',methods=['POST','GET'])
@@ -885,20 +895,18 @@ def leave_approve():
     userID = user_data['userId']
     user = leave.query.filter_by(id=userID).first()
     print(" USER : ",user)
-    current_user='hr'
-    admin_name=session.get('admin_name')
-    if current_user=='hr':
-        user.status='Approved'
-        user.hr_approval='Approved'
-        user.approved_by=admin_name
-        db.session.commit()
-        response_data = {
-            'approved_by':user.approved_by,
-            'userId': userID,
-            'hr_approval': user.hr_approval
-        }
-
-        return jsonify(response_data)
+    admin_name=current_user.name
+    
+    user.status='Approved'
+    user.hr_approval='Approved'
+    user.approved_by=admin_name
+    db.session.commit()
+    response_data = {
+        'approved_by':user.approved_by,
+        'userId': userID,
+        'hr_approval': user.hr_approval
+    }
+    return jsonify(response_data)
 
 @views.route('/leave_decline',methods=['POST','GET'])
 def leave_decline():
@@ -906,20 +914,19 @@ def leave_decline():
     userID = user['userId']
     user = leave.query.filter_by(id=userID).first()
     print(" USER : ",user)
-    current_user='hr'
-    admin_name=session.get('admin_name')
-    if current_user=='hr':
-        user.hr_approval='Declined'
-        user.status='Declined'
-        user.approved_by=admin_name
-        db.session.commit()
-        response_data = {
-            'approved_by':user.approved_by,
-            'userId': userID,
-            'hr_approval': user.hr_approval
-        }
-
-        return jsonify(response_data)
+    # current_user='hr'
+    admin_name=current_user.name
+    # admin_name=session.get('admin_name')
+    user.hr_approval='Declined'
+    user.status='Declined'
+    user.approved_by=admin_name
+    db.session.commit()
+    response_data = {
+        'approved_by':user.approved_by,
+        'userId': userID,
+        'hr_approval': user.hr_approval
+    }
+    return jsonify(response_data)
 
 # @views.route("/req_notify")
 # def req_notify():
@@ -975,7 +982,7 @@ def getshift():
         shift_times = Shift_time.query.order_by(Shift_time.id).all()
 
         # Convert Shift_time objects to dictionaries
-        shift_list = [{"id": shift.id, "start_time": shift.shiftIntime, "end_time": shift.shift_Outtime,"shift":shift.shiftType} for shift in shift_times]
+        shift_list = [{"id": shift.id, "shiftIntime": shift.shiftIntime, "shiftOuttime": shift.shift_Outtime,"shiftName":shift.shiftType} for shift in shift_times]
 
         return jsonify({"res": shift_list})
 
@@ -1011,6 +1018,7 @@ def upload_select():
                 file.save(file_path)
                 add_employee(file_path)
                 return redirect(url_for('views.admin'))
+            
             elif file_type == 'shift':
                 filename = secure_filename(file.filename)
                 print(filename)
@@ -1023,7 +1031,22 @@ def upload_select():
                 except Exception as e:
                     print("Error type:", type(e).__name__)
                     print("Error message:", str(e))
-                    db.session.rollback()  
+                    db.session.rollback() 
+
+            elif file_type=='festival':
+                filename = secure_filename(file.filename)
+                print(filename)
+                try:
+                    file_path = os.path.join(app.config['EXCEL_FOLDER'], str(filename))  # Use correct case 'EXCEL_FOLDER
+                    # print('nuubyv')
+                    up_festival(file_path)  # Call the data processing function
+
+
+                except Exception as e:
+                    print("Error type:", type(e).__name__)
+                    print("Error message:", str(e))
+                    db.session.rollback() 
+
         else :
             print('bjsdbcihbs')
             return 'No file uploaded'
@@ -1065,8 +1088,10 @@ def edit_employee():
     attenName=Attendance.query.filter_by(emp_id=emp_id).all()
     if emp and attenName:
         if emp_type != value:
-            setattr(emp, emp_type, value)
-            setattr(attenName,emp_type,value)
+            setattr(emp,emp_type,value)
+            if emp_type=='name':
+                for attenName in attenName:
+                    setattr(attenName,emp_type,value)
             db.session.commit()
             print(f"Employee with emp_id {emp_id} updated successfully.")
         else:
@@ -1090,6 +1115,13 @@ def handle_user_editform_callback():
         newdata = data.get('newName')
         olddata = data.get('oldName')
         new_req=user_edit(emp_id=emp_id, name=name, old_data=olddata, new_data=newdata, data_type='name')
+
+    elif data.get('newDate'):
+        print('new Date')
+        newdata = data.get('newDate')
+        olddata = data.get('oldDate')
+        new_req=user_edit(emp_id=emp_id, name=name, old_data=olddata, new_data=newdata, data_type='date')
+
 
     elif data.get('newEmail'):
         print('new email')

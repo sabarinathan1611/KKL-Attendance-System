@@ -2,66 +2,22 @@ console.log("filter.js");
 const all_rows = document.querySelectorAll(".today-attendance-table tbody tr");
 const all_shiftDisplay = document.querySelectorAll(".currentShift");
 
-const employe_rows = document.querySelectorAll(".employee-table tbody tr");
-
 let shiftSelect = document.getElementById("shift");
 
 shiftSelect.addEventListener("change", () => {
   let shift = shiftSelect.value;
   if (shift == "" || shift.lenght <= 0) {
-    let currentShift = getCurrentShift();
-    filter(currentShift);
+    filter(currentShift.shiftName.toLowerCase());
   } else {
     filter(shift.toLowerCase());
   }
 });
-function sendAlert(id,action) {
-  console.log("ID: ", id);
-
-  // Create an object with the ID
-  const data = { id: id };
-  let route='';
-  if (action === 'cancel') { route = '/send_message' }
-  else if (action === 'continue') { route = '/send_continue_message' }
-  let cancel = document.querySelector(`.cancel-${id}`);
-  let continueBtn = document.querySelector(`.continue-${id}`);
-  
-  cancel.disabled='true';
-  cancel.style.cursor = 'not-allowed';
-  continueBtn.disabled='true';
-  continueBtn.style.cursor = 'not-allowed';
-
-  fetch(route, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      console.log(data);
-      cancel.disabled='false';
-      cancel.style.cursor = 'pointer';
-      continueBtn.disabled='false';
-      continueBtn.style.cursor = 'pointer';
-      window.location.href = "";
-    });
-}
-
-function CancelOt(id) {
-  let cancel = document.querySelector(`.cancel-${id}`);
-  let continueBtn = document.querySelector(`.continue-${id}`);
-  
-  cancel.disabled='false';
-  cancel.style.cursor = 'pointer';
-  continueBtn.disabled='false';
-  continueBtn.style.cursor = 'pointer';
-}
 
 function filter(currentShift) {
   all_rows.forEach((row) => {
-    if (currentShift == row.getAttribute("data-shift").toLowerCase()) {
+    if (
+      currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase()
+    ) {
       row.style.display = "";
     } else {
       row.style.display = "none";
@@ -69,42 +25,14 @@ function filter(currentShift) {
   });
 
   all_shiftDisplay.forEach((display) => {
-    display.children[0].innerHTML = currentShift.toUpperCase();
+    display.children[0].innerHTML = `<span class="tag">${currentShift.toUpperCase()}</span>`;
   });
 }
 
-employe_rows.forEach((row) => {
-  let status = row.querySelector(".status");
-  if (status.innerHTML.trim().toLowerCase() == "freezed") {
-    row.classList.add("freezed");
-    status.innerHTML = `<div class="inner-tag">Freezed</div>`;
-  } else {
-    row.classList.remove("freezed");
-    status.innerHTML = `<div class="tag">Active</div>`;
-  }
-});
-// function getCurrentShift() {
-//   const currentTime = new Date();
-//   const currentHour = currentTime.getHours();
-
-//   if (currentHour >= 6 && currentHour < 14) {
-//     return "8a";
-//   } else if (currentHour >= 14 && currentHour < 22) {
-//     return "8b";
-//   } else if (currentHour >= 22 && currentHour < 6) {
-//     return "8c";
-//   } else {
-//     return "8a";
-//   }
-// }
-
-// const currentShift = getCurrentShift();
-// filter(currentShift);
-
 all_rows.forEach((row) => {
-  let id = row.querySelector(".id").innerHTML;
   let intime = row.querySelector(".intime");
   let outtime = row.querySelector(".outtime");
+  let status = row.querySelector(".status");
   if (
     (intime && (intime.innerHTML == "-" || intime.innerHTML == "")) ||
     (outtime && (outtime.innerHTML == "-" || outtime.innerHTML == ""))
@@ -117,24 +45,34 @@ all_rows.forEach((row) => {
     }
 
     row.querySelector(".action").innerHTML = `
-        <form class="btns-container">
-            <input type="hidden" name="empid" value="${id}">
-            <button type="button" onclick="sendAlert(${id},'cancel')"  class="table-btn cancel cancel-${id}">Cancel</button>
-            <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
-        </form>
+        <div class="btns-container">
+            <button type="button" class="table-btn cancel">Cancel</button>
+            <button type="button" class="table-btn continue">Continue</button>
+        </div>
       `;
-    console.log(row.querySelector('.status').innerHTML);
-    if (row.querySelector('.status').textContent.trim().toLowerCase() == `ot`) {
-      row.querySelector(".action").innerHTML = `
-        <form class="btns-container">
-            <input type="hidden" name="empid" value="${id}">
-            <button type="button" onclick="CancelOt(${id})" class="table-btn cancel-ot cancel-ot-${id}">Cancel OT</button>
-        </form>
-      `;
-    }
   } else {
     row.classList.remove("mis-pinch");
   }
+
+  if (status.textContent.toLowerCase().trim() == "wrong shift") {
+    status.innerHTML = `<p class="table-tag">Wrong Shift</p>`;
+    row.classList.add("wrongShift");
+    row.querySelector(".action").innerHTML = `
+        <div class="btns-container">
+            <input type="hidden" name="type" id="type" value="wrongShift">
+            <button type="button" class="table-btn cancel">Cancel</button>
+            <button type="button" class="table-btn continue">Continue</button>
+        </div>
+      `;
+  } else if (status.textContent.toLowerCase().trim() == "ot") {
+    status.innerHTML = `<p class="table-tag">OT</p>`;
+    row.classList.add("overTime");
+  } else {
+    row.classList.remove("wrongShift");
+    row.classList.remove("overTime");
+  }
+
+  console.log(status.textContent.trim());
 });
 
 let shiftDetails = [
@@ -245,24 +183,10 @@ setInterval(() => {
   if (currentTime == shift.shiftIntime) {
     filter(shift.shiftName);
   }
-  let lastShift;
-  if (shift.shiftName === '8A') { lastShift = '8C' }
-  else if(shift.shiftName==='8B'){lastShift='8A'}
-  else if (shift.shiftName === '8C') { lastShift = '8B' }
-  console.log(lastShift);
+
   if (currentTime === shift.shiftChecktime) {
-  // if (1==1) {
     if (canRefresh) {
-      fetch(`/send_message_data?currentShift=${shift.shiftName}&lastShift=${lastShift}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log(data);
-        });
+      console.log("message call");
 
       // Disable refresh for 2 seconds
       canRefresh = false;

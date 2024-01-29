@@ -8,7 +8,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Appeal For Leave</title>
+        <title>User Dashboard</title>
         <link rel="stylesheet" href="static/css/leave.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     </head>
@@ -29,16 +29,22 @@
             </div>
             <div class="header">
                 <div class="profile">
-                    <img src="https://th.bing.com/th/id/OIP.Yw4exB-_crv1xcdLRQ6hngHaHx?pid=ImgDet&rs=1" alt="user profile" class="user_prof" style=" height: 100%;">
+                    <!-- <img src="https://th.bing.com/th/id/OIP.Yw4exB-_crv1xcdLRQ6hngHaHx?pid=ImgDet&rs=1" alt="user profile" class="user_prof" style=" height: 100%;"> -->
+                    {% if user.gender == 'Female' %}
+                        <img src="../static/img/female.jpeg" alt="user profile" class="user_prof" style=" height: 100%;">
+                    {% else %}
+                        <img src="../static/img/male.jpeg" alt="user profile" class="user_prof" style=" height: 100%;">
+                    {% endif %}
+                    
                 </div>
                 <div class="userdet">
                     <div class="userName">
-                        <i class="fas fa-user"></i> {{name}}
+                        <i class="fas fa-user"></i> {{user.name}}
                     </div>
                 </div>
                 <div class="userdet">
                     <div class="userName">
-                        <i class="fas fa-user"></i> {{name}}
+                        <i class="fas fa-user"></i> {{user.name}}
                     </div>
                     <div class="menu">
                         <ul class="menuUL">
@@ -52,49 +58,50 @@
             <section class="profileSection mainSection active">
                 <div class="divSection">
                     <div class="userProfilePic">
-                        <img src="https://th.bing.com/th/id/OIP.Yw4exB-_crv1xcdLRQ6hngHaHx?pid=ImgDet&rs=1" alt="user_prof pic" class="userProfilePicImg" style=" height: 100%;">
+                        <img src="../static/img/female.jpeg" alt="user profile" class="user_prof" style=" height: 100%;"> 
+                        <!-- <img src="https://th.bing.com/th/id/OIP.Yw4exB-_crv1xcdLRQ6hngHaHx?pid=ImgDet&rs=1" alt="user_prof pic" class="userProfilePicImg" style=" height: 100%;"> -->
                     </div>
                     <div class="prof_username">
-                        <i class="fas fa-user"></i> {{name}}
+                        <i class="fas fa-user"></i> {{user.name}}
                     </div>
                 </div>
                 <div class="divSection blur">
                     <ul class="detailsList">
                         <li class="detList">
                             <p class="innerP">Emp Id </p>
-                            <p class="innerP uid nochange">{{emp_id}}</p>
+                            <p class="innerP uid nochange">{{user.emp_id}}</p>
                         </li>
     
                         <li class="detList">
                             <p class="innerP">Emp Name </p>
-                            <p class="innerP uname change">{{name}}</p>
+                            <p class="innerP uname change">{{user.name}}</p>
                         </li>
     
                         <li class="detList">
                             <p class="innerP">Emp Mail </p>
-                            <p class="innerP uemail change">{{email}}</p>
+                            <p class="innerP uemail change">{{user.email}}</p>
                         </li>
     
                         <li class="detList">
                             <p class="innerP">Emp Phone </p>
-                            <p class="innerP uphone change">{{ph_number}}</p>
+                            <p class="innerP uphone change">{{user.phoneNumber}}</p>
                         </li>
                         
                         <li class="detList">
                             <p class="innerP">DOJ </p>
-                            <p class="innerP udoj change">11/08/2020</p>
+                            <p class="innerP udoj change">{{date}}</p>
                         </li>
                         <li class="detList">
                             <p class="innerP">No Of Present </p>
-                            <p class="innerP unop nochange">20 </p>
+                            <p class="innerP unop nochange">{{user.leave_balance}} </p>
                         </li>
                         <li class="detList">
                             <p class="innerP">No Of Absent </p>
-                            <p class="innerP unoa nochange">20 </p>
+                            <p class="innerP unoa nochange">{{user.late_balance}} </p>
                         </li>
                         <li class="detList">
                             <p class="innerP">Current Shift </p>
-                            <p class="innerP ushift nochange">{{shift}} </p>
+                            <p class="innerP ushift nochange">{{user.shift}} </p>
                         </li>
                     </ul>
                 </div>

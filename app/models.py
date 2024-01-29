@@ -26,6 +26,7 @@ class Emp_login(db.Model, UserMixin):
     gender = db.Column(db.String(150))
     shift=db.Column(db.String(150),default="8G")
     attendances = db.relationship('Attendance', back_populates='employee', cascade='all, delete-orphan')
+    freezed_account =db.Column(db.String(150),default=False)
 
 
 # class Employee(db.Model, UserMixin):

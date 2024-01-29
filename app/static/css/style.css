@@ -2,6 +2,8 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  list-style: none;
+  text-decoration: none;
 }
 
 /* css to copy  */
@@ -526,7 +528,7 @@ li {
   display: flex;
   align-items: center;
   gap: 10px;
-  background-image: url(../asset/images/cover.jpg);
+  background-image: url(../img/cover.jpg);
   background-size: 100% 100%;
   width: 100%;
   height: 150px;
@@ -579,6 +581,7 @@ li {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: -webkit-fill-available;
 }
 
 .detail-head {
@@ -594,6 +597,7 @@ li {
   border-radius: 5px;
   min-width: 280px;
   overflow-y: scroll;
+  width: -webkit-fill-available;
 }
 
 .message-header {
@@ -921,4 +925,15 @@ option {
   max-height: 460px;
   overflow-y: scroll;
   position: relative;
+}
+
+tr.Approved {
+  background: lightgreen!important;
+}
+
+tr.Declined {
+  background: lightcoral!important;
+}
+tr.Pending {
+  background: lightgoldenrodyellow!important;
 }

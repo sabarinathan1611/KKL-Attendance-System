@@ -421,6 +421,8 @@ def attend_excel_data(file_path):
             for index, row in df.iterrows():
                 empid = row['emp_id']
                 print("Processing: ", empid)
+
+                update_freeze_status_and_remove_absences(empid)
                 
                 emp = db.session.query(Emp_login).filter_by(emp_id=2).first()
                 print(emp)
@@ -504,6 +506,29 @@ def attend_excel_data(file_path):
         db.session.commit()
     else:
         print("File not found")
+
+def update_freeze_status_and_remove_absences(emp_id):
+    try:
+        # Get the employee
+        emp = Emp_login.query.get(emp_id)
+
+        # Get the last 30 days absence records for the employee
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        absent_records = Attendance.query.filter_by(emp_id=emp_id, attendance='Absent').filter(Attendance.date >= thirty_days_ago).all()
+
+        # If the employee has been continuously absent for 30 days, update freeze status and delete attendance records
+        if len(absent_records) == 30:
+            emp.freezed_account = True
+            for record in absent_records:
+                db.session.delete(record)
+
+        db.session.commit()
+
+        return f"Success: Freeze status updated and attendance records deleted for employee {emp_id}."
+
+    except Exception as e:
+        db.session.rollback()
+        return f"Error: {str(e)}"
 
 def delete_all_employees():
     try:
@@ -606,30 +631,40 @@ def up_festival(file_path):
         with db.session.begin():
             # Delete existing records in the Festival table
             db.session.query(Festival).delete()
-
+        print('done')
+    
         # Iterate through each sheet in the Excel file
         for sheet_name in sheet_names:
+            print('done 1')
             df = None
             # Read data from the Excel file based on the file extension
             if file_path.lower().endswith('.xlsx'):
                 df = pd.read_excel(file_path, sheet_name, engine='openpyxl')
             elif file_path.lower().endswith('.xls'):
-                df = pd.read_excel(file_path, sheet_name, engine='xlrd')
+                df = pd.read_excel(file_path, sheet_name, engine='xlrd', skiprows=1)
             else:
                 raise ValueError("Unsupported file format. Only .xlsx and .xls files are supported.")
-
+            print('done 2')
+            print(df)
             # Iterate through rows in the DataFrame and add records to the Festival table
             for index, row in df.iterrows():
-                add_festival = Festival(
-                    holiday=row['holiday'],
-                    date=row['date'],
-                )
-                db.session.add(add_festival)
+                try:
+                    print(row['Public Holidays'])
+                    add_festival = Festival(
+                        holiday=row['Public Holidays'],
+                        date=row['Date'],
+                    )
+                    db.session.add(add_festival)
+                except Exception as e:
+                    # Handle specific errors or print more information for debugging
+                    print(f"Error adding festival at index {index}: {str(e)}")
+            print('done 3')
 
-        # Commit the changes to the database
+                # Commit the changes to the database
         db.session.commit()
         flash("Festivals added successfully", category="success")
     except Exception as e:
+        print("festival upload error",e)
         flash(f"Error adding festivals: {str(e)}", category="error")
 
 def check_send_sms(emp_id):
