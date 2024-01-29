@@ -432,7 +432,7 @@ def attend_excel_data(file_path):
 
                 # Check if today's date is a holiday
                 today_date = datetime.now().strftime("%Y-%m-%d")
-                is_holiday = Festival.query.filter(func.DATE(Attendance.date) == today_date).all()
+                is_holiday = Festival.query.filter(func.DATE(Festival.date) == today_date).all()
                 week_off=Week_off.query.all()
                 # festival_alias = aliased(Festival)
 
