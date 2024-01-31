@@ -206,6 +206,8 @@ tr:nth-child(even) {
   /* position: absolute;
       top: 2px;
       left: 0px; */
+      display: flex;
+      white-space: nowrap;
   background: green;
   color: #fff;
   border-radius: 3px;

@@ -155,7 +155,8 @@ def profileView():
 
 @views.route('/calculate',methods=['POST','GET'])
 def calculate():
-    
+    if current_user.role == 'employee':
+        return redirect(url_for('auth.logout'))
     calculate_Attendance()
     # lol=Shift_time.query.filter_by(id=5).first()
     # lol.shiftIntime="14:00"
@@ -245,90 +246,90 @@ def backup_data():
     db.session.commit()
     return redirect(url_for('views.admin'))
 
-@views.route('/upload_csv_page',methods=['POST','GET'])
-def upload_csv_page():
-    return render_template("upload_csv.html")
+# @views.route('/upload_csv_page',methods=['POST','GET'])
+# def upload_csv_page():
+#     return render_template("upload_csv.html")
 
-@views.route('/upload_csv',methods=['POST','GET'])
-def upload_csv():
-    if request.method == 'POST':
-        if 'csvFile' not in request.files:
-            return "No file part"
+# @views.route('/upload_csv',methods=['POST','GET'])
+# def upload_csv():
+#     if request.method == 'POST':
+#         if 'csvFile' not in request.files:
+#             return "No file part"
             
-        file = request.files['csvFile']
-        if file.filename == '':
-            return "No selected file"
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            print(filename)
-            file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
-            file.save(file_path)
-            process_csv_file(file_path)
-                # # Create a new database record with file name and current datetime
-                # now = datetime.now()
-                # current_time = now.strftime("%Y-%m-%d %H:%M:%S")
-                # data = NewShift(
-                #     name_date_day=f"File Uploaded on {current_time}",
-                #     filename=filename  # Add the filename to the database
-                # )
-                # db.session.add(data)
-                # db.session.commit()
+#         file = request.files['csvFile']
+#         if file.filename == '':
+#             return "No selected file"
+#         if file and allowed_file(file.filename):
+#             filename = secure_filename(file.filename)
+#             print(filename)
+#             file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
+#             file.save(file_path)
+#             process_csv_file(file_path)
+#                 # # Create a new database record with file name and current datetime
+#                 # now = datetime.now()
+#                 # current_time = now.strftime("%Y-%m-%d %H:%M:%S")
+#                 # data = NewShift(
+#                 #     name_date_day=f"File Uploaded on {current_time}",
+#                 #     filename=filename  # Add the filename to the database
+#                 # )
+#                 # db.session.add(data)
+#                 # db.session.commit()
             
-            return redirect(url_for('views.process_csv'))
-        else:
-            return "File not allowed"
-    # I the request method is GET, render the upload form
-    return render_template('upload_csv.html')
+#             return redirect(url_for('views.process_csv'))
+#         else:
+#             return "File not allowed"
+#     # I the request method is GET, render the upload form
+#     return render_template('upload_csv.html')
 
 
-@views.route('/process_csv', methods=['POST','GET'])
-def process_csv():
-    # Query the database to get the latest uploaded record
-    latest_data = NewShift.query.order_by(desc(NewShift.id)).first()
+# @views.route('/process_csv', methods=['POST','GET'])
+# def process_csv():
+#     # Query the database to get the latest uploaded record
+#     latest_data = NewShift.query.order_by(desc(NewShift.id)).first()
     
-    if not latest_data:
-        return "No files have been uploaded yet."
+#     if not latest_data:
+#         return "No files have been uploaded yet."
     
-    latest_filename = latest_data.filename
-    csv_filepath = os.path.join(app.config['EXCEL_FOLDER'], latest_filename)
+#     latest_filename = latest_data.filename
+#     csv_filepath = os.path.join(app.config['EXCEL_FOLDER'], latest_filename)
 
-    with open(csv_filepath, 'r') as csv_file:
-        csv_reader = csv.reader(csv_file)
+#     with open(csv_filepath, 'r') as csv_file:
+#         csv_reader = csv.reader(csv_file)
 
-        # Skip the first row containing headers
-        next(csv_reader)  # Skip the first row
+#         # Skip the first row containing headers
+#         next(csv_reader)  # Skip the first row
 
-        # Read the second row which contains the days of the week (Monday to Friday)
-        days_of_week = next(csv_reader)[2:]  # Assuming the first two columns are E.ID and Employee Name
+#         # Read the second row which contains the days of the week (Monday to Friday)
+#         days_of_week = next(csv_reader)[2:]  # Assuming the first two columns are E.ID and Employee Name
 
-        for row in csv_reader:  # Reading the employee's data rows
-            employee_id = row[0]
-            employee_name = row[1]
-            shifts = row[2:]
+#         for row in csv_reader:  # Reading the employee's data rows
+#             employee_id = row[0]
+#             employee_name = row[1]
+#             shifts = row[2:]
 
-            # Combine the days of the week with the shifts
-            combined_shifts = days_of_week + shifts
+#             # Combine the days of the week with the shifts
+#             combined_shifts = days_of_week + shifts
 
-            # Here you can process the employee data and store it in the database
-            data_entry = NewShift(
-                name_date_day=employee_name,
-            )
+#             # Here you can process the employee data and store it in the database
+#             data_entry = NewShift(
+#                 name_date_day=employee_name,
+#             )
 
-            # Map the combined shifts to corresponding day columns dynamically
-            for day_num, shift in enumerate(combined_shifts, start=1):
-                setattr(data_entry, f"day_{day_num}", shift)
+#             # Map the combined shifts to corresponding day columns dynamically
+#             for day_num, shift in enumerate(combined_shifts, start=1):
+#                 setattr(data_entry, f"day_{day_num}", shift)
 
-            db.session.add(data_entry)
+#             db.session.add(data_entry)
 
-        db.session.commit()
+#         db.session.commit()
 
-    return f"CSV data from {latest_filename} processed and stored in the database."
+#     return f"CSV data from {latest_filename} processed and stored in the database."
 
-@views.route('/del_csv')
-def del_csv():
-    db.session.query(NewShift).delete()
-    db.session.commit()
-    return redirect(url_for('upload_csv'))
+# @views.route('/del_csv')
+# def del_csv():
+#     db.session.query(NewShift).delete()
+#     db.session.commit()
+#     return redirect(url_for('upload_csv'))
 
 
 @views.route('/dashboard',methods=['POST','GET'])
@@ -579,12 +580,14 @@ def leave_req_table():
 @views.route("/today_attendance")
 @login_required
 def today_attendance():
+    if current_user.role == 'employee':
+        return redirect(url_for('auth.logout'))
     return redirect(url_for('views.admin'))
 
-@views.route("/yesterday_attendance")
-@login_required
-def yesterday_attendance():
-    return render_template("admin.html")
+# @views.route("/yesterday_attendance")
+# @login_required
+# def yesterday_attendance():
+#     return render_template("admin.html")
 
 # @views.route("/month_attendance")
 # @login_required
@@ -696,6 +699,8 @@ def yesterday_attendance():
 @views.route('/emp_details')
 @login_required
 def emp_details():
+    if current_user.role == 'employee':
+        return redirect(url_for('auth.logout'))
     emp_login=Emp_login.query.order_by(Emp_login.emp_id).all()
     
     # Separate the records with freezed_account=1 and freezed_account=0
@@ -991,6 +996,8 @@ def getshift():
 
 @views.route('/uploadselect', methods=['POST'])
 def upload_select():
+    if current_user.role == 'employee':
+        return redirect(url_for('auth.logout'))
     print('dei enda')
     if(request.method=='POST'):
 
@@ -1072,6 +1079,8 @@ def upload_select():
 
 @views.route('/del_single_emp',methods=['POST'])
 def del_single_emp():
+    if current_user.role == 'employee':
+        return redirect(url_for('auth.logout'))
     emp_id=request.form.get('empid')
     emp=Emp_login.query.filter_by(emp_id=emp_id).first()
     if emp: 
@@ -1084,6 +1093,8 @@ def del_single_emp():
 
 @views.route('/del_multiple_emp',methods=['POST'])
 def del_multiple_emp():
+    if current_user.role == 'employee':
+        return redirect(url_for('auth.logout'))
     selected_employee_ids = request.form.getlist('select')
     print(selected_employee_ids)
     for i in selected_employee_ids:
@@ -1098,6 +1109,8 @@ def del_multiple_emp():
 
 @views.route('/edit_employee',methods=['POST'])
 def edit_employee():
+    if current_user.role == 'employee':
+        return redirect(url_for('auth.logout'))
     emp_id=request.form.get('empid')
     emp_type=request.form.get('editType')
     value=request.form.get('new_value')
@@ -1238,6 +1251,8 @@ def decline_edit():
     #     return jsonify({"error": "Employee not found"})
 @views.route('/fetch_emp_details',methods=['POST'])
 def fetch_emp_details():
+    if current_user.role == 'employee':
+        return redirect(url_for('auth.logout'))
     form_data = request.form
     emp_id=form_data['empid']
     editType=form_data['editType']
@@ -1315,6 +1330,8 @@ def get_last_month_dates():
 
 @views.route('/month_attendance',methods=['POST','GET'])
 def month_attendance():
+    if current_user.role == 'employee':
+        return redirect(url_for('auth.logout'))
     start_date, end_date = get_last_month_dates()
 
     # Query the database for last month's attendance up to the current date
@@ -1347,23 +1364,35 @@ def send_message():
     # Assuming Emp_login is a SQLAlchemy model
     emp = Emp_login.query.filter_by(emp_id=id).first()
     current_date = datetime.now().strftime('%Y-%m-%d')
+    message="message"
 
     attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date,Attendance.emp_id==id).first()
     
+    if attendance.attendance=='Leave':
+        message = f"""
+        Dear {emp.name}:
+        It is a gentle reminder to you,
+        You have Taken Leave today  (Date: {current_date}). 
+        """
+        
     if attendance.attendance=='O.T':
+        message = f"""
+        Dear {emp.name}:
+        It is a gentle reminder to you,
+        Your O.T has been canceled today (Date: {current_date})
+        """
         attendance.attendance='Present'
     db.session.commit()
-    
     
     if emp:
         Phonenum = emp.phoneNumber
         email = emp.email
         sub='Miss punch'
-        message = f"""
-        Dear {emp.name}:
-        It is a gentle reminder to you,
-        You have missed to keep the punch in the biometric machine
-        """
+        # message = f"""
+        # Dear {emp.name}:
+        # It is a gentle reminder to you,
+        # You have missed to keep the punch in the biometric machine
+        # """
         print("Phone number:", Phonenum)
         #send_mail(email=email, body=message,subject=sub)
         send_sms(Phonenum ,message)
