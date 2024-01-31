@@ -442,7 +442,7 @@ def attend_excel_data(file_path):
                 empid = row['emp_id']
                 print("Processing: ", empid)
 
-                update_freeze_status_and_remove_absences(empid)
+                
                 
                 emp = db.session.query(Emp_login).filter_by(emp_id=empid).first()
                 print(emp)
@@ -463,8 +463,10 @@ def attend_excel_data(file_path):
                 shitfTime = Shift_time.query.filter_by(shiftType=emp.shift).first()
                 print("shitfTime:",shitfTime)
                 # Check if today's date is a holiday
-                today_date = datetime.now().strftime("%d-%m-%Y")
-                is_holiday = Festival.query.filter(func.DATE(Festival.date) == today_date).all()
+                today_date = datetime.now().strftime("%d.%m.%Y")
+                print("today_date",today_date)
+                is_holiday = Festival.query.filter(Festival.date == today_date).all()
+                print(is_holiday,"is_holiday")
                 
                 week_off=Week_off.query.all()
                 # festival_alias = aliased(Festival)
@@ -529,7 +531,7 @@ def attend_excel_data(file_path):
                     '''
                     
             
-            
+                print("attendance_status",attendance_status)
                 attendance = Attendance(
                     emp_id=empid,
                     name=emp.name,
@@ -541,6 +543,7 @@ def attend_excel_data(file_path):
                     shift_Outtime=shitfTime.shift_Outtime,
                 )
                 db.session.add(attendance)
+                update_freeze_status_and_remove_absences(empid)
         db.session.commit()
     else:
         print("File not found")
@@ -550,23 +553,27 @@ def update_freeze_status_and_remove_absences(emp_id):
         # Get the employee
         emp = Emp_login.query.filter_by(emp_id=emp_id).first()
 
-        # Get the last 30 days absence records for the employee
+        # Get the last 30 days absence records for the employee, including the current date
         thirty_days_ago = datetime.now() - timedelta(days=30)
-        absent_records = Attendance.query.filter_by(emp_id=emp_id, attendance='Absent').filter(Attendance.date >= thirty_days_ago).all()
-        for i in absent_records:
-            print(i.date)
+        absent_records = Attendance.query.filter_by(emp_id=emp_id, attendance='Leave').filter(Attendance.date >= thirty_days_ago).all()
+
+        print(f"Employee ID: {emp_id}")
+        print(f"Absent Records: {len(absent_records)}")
+
         # If the employee has been continuously absent for 30 days, update freeze status and delete attendance records
-        if len(absent_records) >= 2:
+        if len(absent_records) >= 1:
             emp.freezed_account = True
-            for record in absent_records:
-                db.session.delete(record)
+            print("Updating freeze status...")
+        else:
+            emp.freezed_account = False
+            print("the employee freeze has been removed")
 
         db.session.commit()
-
         return f"Success: Freeze status updated and attendance records deleted for employee {emp_id}."
 
     except Exception as e:
         db.session.rollback()
+        print(f"Error: {str(e)}")
         return f"Error: {str(e)}"
 
 def delete_all_employees():
