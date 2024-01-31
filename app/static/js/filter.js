@@ -59,18 +59,31 @@ function sendAlert(id, action) {
 
 function filter(currentShift) {
     all_rows.forEach((row) => {
+      // console.log(currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase());
+      
+      
       if (
-        currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase()
+        (currentShift.toUpperCase() == row.querySelector('.shift').textContent.trim().toUpperCase()) == true
       ) {
         row.style.display = "";
-      } else {
+        // console.log(row);
+        if (row.querySelector(".status").textContent.toLowerCase().trim() == "wrong shift") {
+          row.style.display = "";
+        }
+      } 
+      
+      if (
+        (currentShift.toUpperCase() == row.querySelector('.shift').textContent.trim().toUpperCase()) == false
+
+      ) {
         row.style.display = "none";
+        if (row.querySelector(".status").textContent.toLowerCase().trim() == "wrong shift") {
+          row.style.display = "";
+        }
       }
-    
-  
-      if (row.querySelector(".status").textContent.toLowerCase().trim() == "wrong shift") {
-        row.style.display = "";
-      }
+      all_shiftDisplay.forEach((display)=>{
+        display.children[0].innerHTML=`<span class='tag'>${currentShift.toUpperCase()}</span>`;
+      })
     });
 }
 

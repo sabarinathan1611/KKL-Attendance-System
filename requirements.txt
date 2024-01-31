@@ -25,3 +25,5 @@ tzdata==2023.4
 Werkzeug==3.0.1
 wsproto==1.2.0
 openpyxl
+twilio
+celery==5.3.6

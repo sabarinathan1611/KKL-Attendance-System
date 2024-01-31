@@ -38,6 +38,7 @@ block content %}
             <th>EmpId</th>
             <th>Name</th>
             <th>Date</th>
+            <th>Shift</th>
             <th>Shift Intime</th>
             <th>Shift Outtime</th>
             <th>Intime</th>
@@ -56,6 +57,7 @@ block content %}
             <td class="id">{{attendance.emp_id }}</td>
             <td class="name">{{attendance.name}}</td>
             <td>{{attendance.date.date()}}</td>
+            <td class="shift">{{attendance.shiftType}}</td>
             <td>{{attendance.shiftIntime}}</td>
             <td>{{attendance.shift_Outtime}}</td>
             <td class="intime">{{attendance.inTime}}</td>
