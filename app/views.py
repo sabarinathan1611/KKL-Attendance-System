@@ -1,6 +1,6 @@
 from flask_login import login_required, current_user,login_user
 from . import db
-from .models import Attendance,Shift_time,Backup, late, leave,notifications ,NewShift,Emp_login,user_edit
+from .models import Attendance,Shift_time,Backup, late, leave,notifications ,NewShift,Emp_login,user_edit,Week_off
 from flask import Blueprint, render_template, request, flash, redirect, url_for,jsonify,session
 import json
 import datetime
@@ -49,9 +49,10 @@ def admin():
     
         current_date = datetime.now().strftime('%Y-%m-%d')
         employee_attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date).all()
-        print("Current Date: ",current_date)
-        print("Data :",employee_attendance)
+        # print("Current Date: ",current_date)
+        # print("Data :",employee_attendance)
 
+        # employee_attendance = Attendance.query.all()
         
 
         
@@ -515,14 +516,10 @@ def user_dashboard():
         return redirect(url_for('auth.logout'))
     else:
         emp_id = session.get('emp_id')
-        email = session.get('email')
-        name = session.get('name')
         user = Emp_login.query.filter_by(emp_id=emp_id).first()
-        ph_number=user.phoneNumber
-        leave_balance = user.leave_balance
-        shift=user.shift
-        late_balance = user.late_balance
-    return render_template("emp_req_choice.html",shift=shift,ph_number=ph_number,emp_id=emp_id,email=email,name=name,late_balance=late_balance,leave_balance=leave_balance)
+        # date=datetime.strptime(str(user.date), "%Y-%m-%d %H:%M:%S")
+        date = (user.date).strftime("%Y-%m-%d")
+    return render_template("emp_req_choice.html",user=user,date=date)
 
 # @views.route("/attendance_upload_page",methods=['POST','GET'])
 # @login_required
@@ -567,35 +564,37 @@ def attendance_table():
 @login_required
 def late_req_table():
     notification=notifications.query.order_by(notifications.timestamp).all()
+    emp_login=Emp_login.query.order_by(Emp_login.emp_id).all()
     permission_details=late.query.order_by(late.date).all()
-    return render_template("req_table.html",notification=notification,permission=permission_details,permission_type='Late')
+    return render_template("req_table.html",emp_login=emp_login,notification=notification,permission=permission_details,permission_type='Late')
 
 @views.route("/leave_req_table")
 @login_required
 def leave_req_table():
     notification=notifications.query.order_by(notifications.timestamp).all()
+    emp_login=Emp_login.query.order_by(Emp_login.emp_id).all()
     permission_details=leave.query.order_by(leave.date).all()
-    return render_template("req_table.html",notification=notification,permission=permission_details,permission_type='Leave')
+    return render_template("req_table.html",emp_login=emp_login,notification=notification,permission=permission_details,permission_type='Leave')
 
 @views.route("/today_attendance")
 @login_required
 def today_attendance():
-    return render_template("admin.html")
+    return redirect(url_for('views.admin'))
 
 @views.route("/yesterday_attendance")
 @login_required
 def yesterday_attendance():
     return render_template("admin.html")
 
-@views.route("/month_attendance")
-@login_required
-def month_attendance():
-    return render_template("month_attendance.html")
+# @views.route("/month_attendance")
+# @login_required
+# def month_attendance():
+#     return render_template("month_attendance.html")
 
-@views.route("/last_month_attendance")
-@login_required
-def last_month_attendance():
-    return render_template("month_attendance.html")
+# @views.route("/last_month_attendance")
+# @login_required
+# def last_month_attendance():
+#     return render_template("month_attendance.html")
 
 # @views.route('/late_req_profile/<int:emp_id>/<string:emp_name>/<string:from_time>/<string:to_time>/<string:reason>/<int:req_id>')
 # @login_required
@@ -693,6 +692,21 @@ def last_month_attendance():
 #     }
 #     session['leave_details']=req_details
 #     return render_template("req_profile.html",req_details=req_details)#,late_permission_dict=late_permission_dict
+
+@views.route('/emp_details')
+@login_required
+def emp_details():
+    emp_login=Emp_login.query.order_by(Emp_login.emp_id).all()
+    
+    # Separate the records with freezed_account=1 and freezed_account=0
+    emp_login_freezed = [emp for emp in emp_login if emp.freezed_account == 1]
+    emp_login_active = [emp for emp in emp_login if emp.freezed_account == 0]
+    
+    # Combine the lists, placing the freezed_account=1 records at the end
+    emp_login_sorted = emp_login_active + emp_login_freezed
+    print(emp_login_sorted)
+
+    return render_template('emp_details.html',emp_login=emp_login_sorted)
 
 @views.route('/late_req_profile')
 @login_required
@@ -837,45 +851,42 @@ def late_approve():
     user_data = json.loads(request.data)
     userID = user_data['userId']
     user = late.query.filter_by(id=userID).first()
-    current_user = 'hr'
-    admin_name=session.get('admin_name')
+    # current_user = 'hr'
+    print(current_user.name)
+    admin_name=current_user.name
     print("current admin: ", admin_name)
-    if current_user == 'hr':
-        user.status='Approved'
-        user.hr_approval = 'Approved'
-        user.approved_by=admin_name
-        db.session.commit()
-
-        # Create a JSON response
-        response_data = {
-            'approved_by':user.approved_by,
-            'userId': userID,
-            'hr_approval': user.hr_approval
-        }
-
-        return jsonify(response_data)
+    # if current_user == 'hr':
+    user.status='Approved'
+    user.hr_approval = 'Approved'
+    user.approved_by=admin_name
+    db.session.commit()
+    # Create a JSON response
+    response_data = {
+        'approved_by':user.approved_by,
+        'userId': userID,
+        'hr_approval': user.hr_approval
+    }
+    return jsonify(response_data)
 
 @views.route('/late_decline', methods=['POST', 'GET'])
 def late_decline():
     user_data = json.loads(request.data)
     userID = user_data['userId']
     user = late.query.filter_by(id=userID).first()
-    admin_name=session.get('admin_name')
-    current_user = 'hr'
-    if current_user == 'hr':
-        user.status='Declined'
-        user.hr_approval = 'Declined'
-        user.approved_by=admin_name
-        db.session.commit()
-        
-        # Create a JSON response
-        response_data = {
-            'approved_by':user.approved_by,
-            'userId': userID,
-            'hr_approval': user.hr_approval
-        }
-
-        return jsonify(response_data)
+    # admin_name=session.get('admin_name')
+    admin_name=current_user.name
+    user.status='Declined'
+    user.hr_approval = 'Declined'
+    user.approved_by=admin_name
+    db.session.commit()
+    
+    # Create a JSON response
+    response_data = {
+        'approved_by':user.approved_by,
+        'userId': userID,
+        'hr_approval': user.hr_approval
+    }
+    return jsonify(response_data)
 
 
 @views.route('/leave_approve',methods=['POST','GET'])
@@ -884,20 +895,18 @@ def leave_approve():
     userID = user_data['userId']
     user = leave.query.filter_by(id=userID).first()
     print(" USER : ",user)
-    current_user='hr'
-    admin_name=session.get('admin_name')
-    if current_user=='hr':
-        user.status='Approved'
-        user.hr_approval='Approved'
-        user.approved_by=admin_name
-        db.session.commit()
-        response_data = {
-            'approved_by':user.approved_by,
-            'userId': userID,
-            'hr_approval': user.hr_approval
-        }
-
-        return jsonify(response_data)
+    admin_name=current_user.name
+    
+    user.status='Approved'
+    user.hr_approval='Approved'
+    user.approved_by=admin_name
+    db.session.commit()
+    response_data = {
+        'approved_by':user.approved_by,
+        'userId': userID,
+        'hr_approval': user.hr_approval
+    }
+    return jsonify(response_data)
 
 @views.route('/leave_decline',methods=['POST','GET'])
 def leave_decline():
@@ -905,20 +914,19 @@ def leave_decline():
     userID = user['userId']
     user = leave.query.filter_by(id=userID).first()
     print(" USER : ",user)
-    current_user='hr'
-    admin_name=session.get('admin_name')
-    if current_user=='hr':
-        user.hr_approval='Declined'
-        user.status='Declined'
-        user.approved_by=admin_name
-        db.session.commit()
-        response_data = {
-            'approved_by':user.approved_by,
-            'userId': userID,
-            'hr_approval': user.hr_approval
-        }
-
-        return jsonify(response_data)
+    # current_user='hr'
+    admin_name=current_user.name
+    # admin_name=session.get('admin_name')
+    user.hr_approval='Declined'
+    user.status='Declined'
+    user.approved_by=admin_name
+    db.session.commit()
+    response_data = {
+        'approved_by':user.approved_by,
+        'userId': userID,
+        'hr_approval': user.hr_approval
+    }
+    return jsonify(response_data)
 
 # @views.route("/req_notify")
 # def req_notify():
@@ -974,7 +982,7 @@ def getshift():
         shift_times = Shift_time.query.order_by(Shift_time.id).all()
 
         # Convert Shift_time objects to dictionaries
-        shift_list = [{"id": shift.id, "start_time": shift.shiftIntime, "end_time": shift.shift_Outtime,"shift":shift.shiftType} for shift in shift_times]
+        shift_list = [{"id": shift.id, "shiftIntime": shift.shiftIntime, "shiftOuttime": shift.shift_Outtime,"shiftName":shift.shiftType} for shift in shift_times]
 
         return jsonify({"res": shift_list})
 
@@ -983,6 +991,7 @@ def getshift():
 
 @views.route('/uploadselect', methods=['POST'])
 def upload_select():
+    print('dei enda')
     if(request.method=='POST'):
 
         file_type = request.form.get('filetype')
@@ -990,15 +999,17 @@ def upload_select():
         # Handle file upload
         if 'emp' in request.files:
             file = request.files['emp']
+            print(file_type,"file_type")
             # Customize response based on file_type
             if file_type == 'attendance':
-                print("j=ubjxk")
+                # print("j=ubjxk")
                 filename = secure_filename(file.filename)
                 print(filename)
                 file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
                 file.save(file_path)
+                # print('hello')
                 attend_excel_data(file_path)
-                print("babdckzub")
+                # print("babdckzub")
                 return redirect(url_for('views.calculate'))
             
             elif file_type == 'addEmployee':
@@ -1008,19 +1019,53 @@ def upload_select():
                 file.save(file_path)
                 add_employee(file_path)
                 return redirect(url_for('views.admin'))
+            
             elif file_type == 'shift':
                 filename = secure_filename(file.filename)
                 print(filename)
                 try:
-                  
-                        file_path = os.path.join(app.config['EXCEL_FOLDER'], str(filename))  # Use correct case 'EXCEL_FOLDER'
-                        process_excel_data(file_path)  # Call the data processing function
+                    file_path = os.path.join(app.config['EXCEL_FOLDER'], str(filename))  # Use correct case 'EXCEL_FOLDER
+                    # print('nuubyv')
+                    file.save(file_path)
+                    process_excel_data(file_path)  # Call the data processing function
 
 
                 except Exception as e:
-                    print("Error occurred:", e)
-                    db.session.rollback()  
+                    print("Error type:", type(e).__name__)
+                    print("Error message:", str(e))
+                    db.session.rollback() 
+
+            elif file_type=='festival':
+                filename = secure_filename(file.filename)
+                print(filename)
+                try:
+                    file_path = os.path.join(app.config['EXCEL_FOLDER'], str(filename))  # Use correct case 'EXCEL_FOLDER
+                    # print('nuubyv')
+                    file.save(file_path)
+                    up_festival(file_path)  # Call the data processing function
+
+
+                except Exception as e:
+                    print("Error type:", type(e).__name__)
+                    print("Error message:", str(e))
+                    db.session.rollback()
+
+            elif file_type== 'weekoff' :
+                filename = secure_filename(file.filename)
+                print(filename)
+                try:
+                    file_path = os.path.join(app.config['EXCEL_FOLDER'], str(filename))  # Use correct case 'EXCEL_FOLDER
+                    # print('nuubyv')
+                    file.save(file_path)
+                    read_weekoff(file_path)  # Call the data processing function
+
+
+                except Exception as e:
+                    print("Error type:", type(e).__name__)
+                    print("Error message:", str(e))
+                   
         else :
+            print('bjsdbcihbs')
             return 'No file uploaded'
 
     return redirect(url_for('views.admin'))
@@ -1060,8 +1105,10 @@ def edit_employee():
     attenName=Attendance.query.filter_by(emp_id=emp_id).all()
     if emp and attenName:
         if emp_type != value:
-            setattr(emp, emp_type, value)
-            setattr(attenName,emp_type,value)
+            setattr(emp,emp_type,value)
+            if emp_type=='name':
+                for attenName in attenName:
+                    setattr(attenName,emp_type,value)
             db.session.commit()
             print(f"Employee with emp_id {emp_id} updated successfully.")
         else:
@@ -1085,6 +1132,13 @@ def handle_user_editform_callback():
         newdata = data.get('newName')
         olddata = data.get('oldName')
         new_req=user_edit(emp_id=emp_id, name=name, old_data=olddata, new_data=newdata, data_type='name')
+
+    elif data.get('newDate'):
+        print('new Date')
+        newdata = data.get('newDate')
+        olddata = data.get('oldDate')
+        new_req=user_edit(emp_id=emp_id, name=name, old_data=olddata, new_data=newdata, data_type='date')
+
 
     elif data.get('newEmail'):
         print('new email')
@@ -1156,6 +1210,135 @@ def decline_edit():
     db.session.commit()
     return jsonify("Request Declined")
 
+# @views.route('/send_message', methods=['POST'])
+# def send_message():
+    # data = request.json
+    # id = data.get('id')
+    
+    # # Assuming Emp_login is a SQLAlchemy model
+    # emp = Emp_login.query.filter_by(emp_id=id).first()
+    
+    # if emp:
+    #     Phonenum = emp.phoneNumber
+    #     email = emp.email
+    #     sub='Miss punch'
+    #     message = f"""
+    #     Dear {emp.name}:
+    #     It is a gentle reminder to you,
+    #     You have missed to keep the punch in the biometric machine
+    #     """
+    #     print("Phone number:", Phonenum)
+    #     #send_mail(email=email, body=message,subject=sub)
+    #     send_sms(Phonenum ,message)
+        
+    #     # Send a JSON response
+    #     return jsonify({"data": "Message sent"})
+    # else:
+    #     # Send a JSON response indicating the employee was not found
+    #     return jsonify({"error": "Employee not found"})
+@views.route('/fetch_emp_details',methods=['POST'])
+def fetch_emp_details():
+    form_data = request.form
+    emp_id=form_data['empid']
+    editType=form_data['editType']
+    value=Emp_login.query.filter_by(emp_id=emp_id).first()
+
+    print(form_data)
+
+    response_data = {'value': getattr(value,editType)}
+
+    return jsonify(response_data)
+
+@views.route('/send_message_data',methods=['GET'])
+def send_message_data():
+    try:
+        print('hi')
+        currentShift=request.args.get('currentShift')
+        lastShift=request.args.get('lastShift')
+        lastShift_db =Shift_time.query.filter_by(shiftType=lastShift).first()
+        session['lastShift']=lastShift_db.shift_Outtime
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        
+        # Assuming 'shift' is an attribute of the Attendance model
+        last_shift_db = db.session.query(Attendance).filter(
+            func.DATE(Attendance.date) == current_date,
+            Attendance.shiftType == lastShift
+        ).all()
+        
+        if last_shift_db:
+            for record in last_shift_db:
+                if record.outTime == '-':
+                    check_send_sms(record.emp_id)
+                    
+    except Exception as e:
+        print(e)
+    return jsonify('received')
+
+
+# @views.route('/send_continue_message',methods=['POST'])
+# def send_continue_message():
+
+#     data = request.json
+#     id = data.get('id')
+#     print("Continue", id)
+#     current_date = datetime.now().strftime('%Y-%m-%d')
+#     attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date,Attendance.emp_id==id).first()
+#     print("befor :",attendance.attendance)
+#     attendance.attendance='O.T'
+#     db.session.commit()
+#     print("after :",attendance.attendance)
+
+#     today = datetime.now()
+
+#     # Calculate the date for the next day
+#     next_day = today + timedelta(days=1)
+
+#     # week_off=Week_off.query.all()
+#     existing_week_off=Week_off.query.filter_by(emp_id=id,date=next_day).first()
+#     if not (existing_week_off):
+#         new_req=Week_off(emp_id=id,date=next_day)
+#         db.session.add(new_req)
+#         db.session.commit()
+#     else:
+#         print("week_off for ,",id," on ",next_day," is exist")
+        
+#         # Send a JSON response
+#     return jsonify({"data": "Message sent"})
+
+
+def get_last_month_dates():
+    today = datetime.today()
+    first_day_of_current_month = today.replace(day=1)
+    last_day_of_last_month = first_day_of_current_month - timedelta(days=1)
+    first_day_of_last_month = last_day_of_last_month.replace(day=1)
+    return first_day_of_last_month, today
+
+@views.route('/month_attendance',methods=['POST','GET'])
+def month_attendance():
+    start_date, end_date = get_last_month_dates()
+
+    # Query the database for last month's attendance up to the current date
+    last_month_attendance = db.session.query(Attendance).filter(
+        Attendance.date.between(start_date, end_date)
+    ).all()
+
+    # Create a dictionary to store attendance records for each emp_id
+    employee_data = {}
+    
+    for record in last_month_attendance:
+        emp_id = record.emp_id
+        
+        # If emp_id is not in the dictionary, create a new list for that emp_id
+        if emp_id not in employee_data:
+            employee_data[emp_id] = []
+        
+        # Append the record to the list for that emp_id
+        employee_data[emp_id].append(record)
+
+        print( employee_data)
+    return render_template('month_attendance.html', employee_data=employee_data)
+
+
 @views.route('/send_message', methods=['POST'])
 def send_message():
     data = request.json
@@ -1163,6 +1346,14 @@ def send_message():
     
     # Assuming Emp_login is a SQLAlchemy model
     emp = Emp_login.query.filter_by(emp_id=id).first()
+    current_date = datetime.now().strftime('%Y-%m-%d')
+
+    attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date,Attendance.emp_id==id).first()
+    
+    if attendance.attendance=='O.T':
+        attendance.attendance='Present'
+    db.session.commit()
+    
     
     if emp:
         Phonenum = emp.phoneNumber
@@ -1182,36 +1373,40 @@ def send_message():
     else:
         # Send a JSON response indicating the employee was not found
         return jsonify({"error": "Employee not found"})
-@views.route('/fetch_emp_details',methods=['POST'])
-def fetch_emp_details():
-    form_data = request.form
-    emp_id=form_data['empid']
-    editType=form_data['editType']
-    value=Emp_login.query.filter_by(emp_id=emp_id).first()
 
-    print(form_data)
 
-    response_data = {'value': getattr(value,editType)}
 
-    return jsonify(response_data)
 
-@views.route('/send_message_data',methods=['GET'])
-def send_message_data():
-    currentShift=request.args.get('current_shift')
-    lastShift=request.args.get('last_shift')
-    lastShift_db =Shift_time.query.filter_by(shiftType=lastShift).first()
-    session['lastShift']=lastShift_db.shift_Outtime
+@views.route('/send_continue_message',methods=['POST'])
+def send_continue_message():
+    data = request.json
+    id = data.get('id')
+    print("Continue", id)
     current_date = datetime.now().strftime('%Y-%m-%d')
-    
-    
-    # Assuming 'shift' is an attribute of the Attendance model
-    last_shift_db = db.session.query(Attendance).filter(
-        func.DATE(Attendance.date) == current_date,
-        Attendance.shiftType == lastShift
-    ).first()
-    print("lastShift : ",lastShift_db.shift_Outtime)
+    attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date,Attendance.emp_id==id).first()
+    print("befor :",attendance.attendance)
+    if attendance.attendance=='Present':
+        attendance.attendance='O.T'
+    elif attendance.attendance=='Leave':
+        attendance.attendance='Present'
+    elif attendance.attendance=='Wrong Shift':
+        attendance.attendance='Present'
+    db.session.commit()
+    print("after :",attendance.attendance)
 
+    today = datetime.now()
 
-   
-    
-    return jsonify('received')
+    # Calculate the date for the next day
+    next_day = today + timedelta(days=1)
+
+    # week_off=Week_off.query.all()
+    existing_week_off=Week_off.query.filter_by(emp_id=id,date=next_day).first()
+    if not (existing_week_off):
+        new_req=Week_off(emp_id=id,date=next_day)
+        db.session.add(new_req)
+        db.session.commit()
+    else:
+        print("week_off for ,",id," on ",next_day," is exist")
+        
+        # Send a JSON response
+    return jsonify({"data": "Message sent"})

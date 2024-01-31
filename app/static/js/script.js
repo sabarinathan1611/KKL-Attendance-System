@@ -4,7 +4,7 @@ let currentDate = date.getDate();
 let currentMonth = date.getMonth();
 let currentYear = date.getFullYear();
 
-let displayDate = currentDate + "/" + currentMonth + "/" + currentYear;
+let displayDate = currentDate + "/" + (currentMonth+1) + "/" + currentYear;
 
 document.querySelector(".date").innerHTML = `Date : ${displayDate}`;
 
@@ -64,13 +64,13 @@ bell_btn.addEventListener("click", () => {
   notifications_div.classList.toggle("active");
 });
 
-document.addEventListener('click', function (event) {
-    const isNotificationButton = event.target.closest('.notification-btn');
-    const isNotificationContainer = event.target.closest('.notifications');
+document.addEventListener("click", function (event) {
+  const isNotificationButton = event.target.closest(".notification-btn");
+  const isNotificationContainer = event.target.closest(".notifications");
 
-    if (!(isNotificationButton || isNotificationContainer)) {
-        notifications_div.classList.remove("active");
-    }
+  if (!(isNotificationButton || isNotificationContainer)) {
+    notifications_div.classList.remove("active");
+  }
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -78,6 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   all_downloads.forEach((download) => {
     download.addEventListener("click", () => {
+      loadPage();
       let parent = download.parentElement.parentElement.parentElement;
       let table = parent.querySelector("table");
 
@@ -99,6 +100,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // Trigger download using FileSaver.js
       let fileName = parent.querySelector(".frame-details").textContent.trim();
       saveAs(blob, `${fileName}.xlsx`);
+      document.querySelector(".reload").classList.remove("active");
     });
   });
 });
@@ -203,33 +205,40 @@ upload_button.addEventListener("click", () => {
   upload_model.style.display = "flex";
 });
 
-const delete_model= document.querySelector('.delete-model');
+const emp_disp_button = document.querySelector(".emp-disp-option");
+const emp_disp_model = document.querySelector(".employee-container");
+emp_disp_button.addEventListener("click", () => {
+  emp_disp_model.style.display = "flex";
+});
+
+const delete_model = document.querySelector(".delete-model");
 const delete_option = document.querySelector(".delete-option");
 
 delete_option.addEventListener("click", () => {
   document.querySelector(".delete-model").style.display = "flex";
 });
 
-const edit_model = document.querySelector('.edit-model');
+const edit_model = document.querySelector(".edit-model");
 const edit_option = document.querySelector(".edit-option");
 
 edit_option.addEventListener("click", () => {
   document.querySelector(".edit-model").style.display = "flex";
 });
 
-
 //to close section if clicked out of it
-document.addEventListener('click', function (event) {
-  const is_Side_Section = event.target.closest('.side-sections');
-  const main_section =  event.target.closest('.main-section');
+document.addEventListener("click", function (event) {
+  const is_Side_Section = event.target.closest(".side-sections");
+  const main_section = event.target.closest(".main-section");
 
   if (is_Side_Section && !main_section) {
-      const openSections = document.querySelectorAll('.side-sections[style="display: flex;"]');
-      
-      openSections.forEach(section => {
-          section.style.display = 'none';
-          console.log('closed open section');
-      });
+    const openSections = document.querySelectorAll(
+      '.side-sections[style="display: flex;"]'
+    );
+
+    openSections.forEach((section) => {
+      section.style.display = "none";
+      console.log("closed open section");
+    });
   }
 });
 
@@ -238,7 +247,7 @@ let empArray = [];
 function showSingleEmp() {
   document.querySelector(".single-form").style.display = "flex";
   document.querySelector(".table-container").style.display = "none";
-  parseData.type = "single employee";
+  // parseData.type = "single employee";
 
   all_checkbox.forEach((checkbox) => {
     checkbox.checked = false;
@@ -251,7 +260,7 @@ function showMultiEmp() {
   document.getElementById("empid").value = "";
   document.querySelector(".single-form").style.display = "none";
   document.querySelector(".table-container").style.display = "block";
-  parseData.type = "multiple employee";
+  // parseData.type = "multiple employee";
 }
 
 function handleInfoHeader() {
@@ -319,18 +328,18 @@ selectDelete.addEventListener("click", () => {
 });
 
 function bringUserEdit() {
-  fetch('/user_edit_data', {
-      method: 'POST',
-      body: 'hello',
+  fetch("/user_edit_data", {
+    method: "POST",
+    body: "hello",
   })
-  .then(response => response.json()) // Adjust if the response is JSON
-    .then(data => {
-      console.log(data.data)
+    .then((response) => response.json()) // Adjust if the response is JSON
+    .then((data) => {
+      console.log(data.data);
       // const dataArray = Array.isArray(data) ? data : [data];
-      var edit_requests = document.querySelector('.edit-requests-body');
-      edit_requests.innerHTML = ''
-        data.data.forEach(user => {
-          edit_requests.innerHTML += `<tr>
+      var edit_requests = document.querySelector(".edit-requests-body");
+      edit_requests.innerHTML = "";
+      data.data.forEach((user) => {
+        edit_requests.innerHTML += `<tr>
           <td>${user.id}</td>
           <td>${user.emp_id}</td>
           <td>${user.name}</td>
@@ -354,16 +363,16 @@ function bringUserEdit() {
             </div>
           </td>
         </tr>`;
-        });
+      });
     })
-  .catch(error => console.error('Error:', error));
+    .catch((error) => console.error("Error:", error));
 }
 
 edit_option.addEventListener("click", bringUserEdit);
 
-document.body.addEventListener('click', function(event) {
+document.body.addEventListener("click", function (event) {
   const target = event.target;
-  if (target.classList.contains('request-btns')) {
+  if (target.classList.contains("request-btns")) {
     const action = target.dataset.action;
     const id = target.dataset.id;
     const emp_id = target.dataset.empId; // Note: Use camelCase for consistency
@@ -372,14 +381,14 @@ document.body.addEventListener('click', function(event) {
     const old_data = target.dataset.oldData;
     const new_data = target.dataset.newData;
 
-    if (action === 'accept') {
+    if (action === "accept") {
       AcceptEdit(id, emp_id, name, data_type, old_data, new_data);
-    } else if (action === 'decline') {
+    } else if (action === "decline") {
       DeclineEdit(id, emp_id, name, data_type, old_data, new_data);
     }
   }
 });
- 
+
 function AcceptEdit(id, emp_id, name, data_type, old_data, new_data) {
   const data = {
     id: id,
@@ -389,15 +398,15 @@ function AcceptEdit(id, emp_id, name, data_type, old_data, new_data) {
     old_data: old_data,
     new_data: new_data,
   };
-  fetch('/accept_edit', {
-    method: 'POST',
+  fetch("/accept_edit", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
   })
-    .then(response => response.json()) // Adjust if the response is JSON
-    .then(data => {
+    .then((response) => response.json()) // Adjust if the response is JSON
+    .then((data) => {
       bringUserEdit();
     });
 }
@@ -411,37 +420,67 @@ function DeclineEdit(id, emp_id, name, data_type, old_data, new_data) {
     old_data: old_data,
     new_data: new_data,
   };
-  fetch('/decline_edit', {
-    method: 'POST',
+  fetch("/decline_edit", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
   })
-    .then(response => response.json()) // Adjust if the response is JSON
-    .then(data => {
+    .then((response) => response.json()) // Adjust if the response is JSON
+    .then((data) => {
       bringUserEdit();
     });
 }
 const fetchBtn = document.querySelector(".fetch");
 document.addEventListener("DOMContentLoaded", function () {
-  document.querySelector('.fetch').addEventListener('click', function (e) {
-      let form = document.getElementById("fetch-form");
-      fetch('/fetch_emp_details', {
-          method: 'POST',
-          body: new FormData(form),
+  document.querySelector(".fetch").addEventListener("click", function (e) {
+    let form = document.getElementById("fetch-form");
+    fetch("/fetch_emp_details", {
+      method: "POST",
+      body: new FormData(form),
+    })
+      .then((response) => response.json()) // Adjust if the response is JSON
+      .then((data) => {
+        console.log(data);
+        // Make sure 'editInput' exists in your HTML
+        let editInput = document.getElementById("editInput");
+        if (editInput) {
+          editInput.value = data.value;
+        } else {
+          console.error("Element with ID 'editInput' not found.");
+        }
       })
-      .then(response => response.json()) // Adjust if the response is JSON
-        .then(data => {
-          console.log(data);
-          // Make sure 'editInput' exists in your HTML
-          let editInput = document.getElementById("editInput");
-          if (editInput) {
-              editInput.value = data.value;
-          } else {
-              console.error("Element with ID 'editInput' not found.");
-          }
-      })
-      .catch(error => console.error('Error:', error));
-    });
+      .catch((error) => console.error("Error:", error));
+  });
 });
+
+//reload part
+const load_btn = document.querySelector(".reload-option");
+
+function loadPage() {
+  let loadDiv = document.querySelector(".reload");
+  loadDiv.classList.add("active");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadPage();
+});
+
+load_btn.addEventListener("click", () => {
+  loadPage();
+  setTimeout(() => {
+    document.querySelector(".reload").classList.remove("active");
+  }, 2000);
+});
+
+window.addEventListener("load", () => {
+  let loadDiv = document.querySelector(".reload");
+  loadDiv.classList.remove("active");
+});
+
+window.addEventListener("beforeunload", () => {
+  let loadDiv = document.querySelector(".reload");
+  loadDiv.classList.remove("active");
+});
+// reload part end

@@ -7,19 +7,33 @@ let shiftSelect = document.getElementById("shift");
 shiftSelect.addEventListener("change", () => {
   let shift = shiftSelect.value;
   if (shift == "" || shift.lenght <= 0) {
-    let currentShift = getCurrentShift();
-    filter(currentShift);
+    filter(currentShift.shiftName);
   } else {
     filter(shift.toLowerCase());
   }
 });
-function sendAlert(id) {
+function sendAlert(id, action) {
   console.log("ID: ", id);
 
   // Create an object with the ID
   const data = { id: id };
+  let route = "";
+  let confirm_msg = false;
+  if (action === "cancel") {
+    confirm_msg = confirm("Are You Sure ? \nDo You Want to Cancel ?");
+    if (confirm_msg) {
+      route = "/send_message";
+      document.querySelector(".reload").classList.add("active");
+    }
+  } else if (action === "continue") {
+    confirm_msg = confirm("Are You Sure ? \nDo You Want to Continue ?");
+    if (confirm_msg) {
+      route = "/send_continue_message";
+      document.querySelector(".reload").classList.add("active");
+    }
+  }
 
-  fetch("/send_message", {
+  fetch(route, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -28,25 +42,36 @@ function sendAlert(id) {
   })
     .then((response) => response.json())
     .then((data) => {
-      console.log(data                                                                                                           );
-      let cancel=document.querySelector(`.cancel-${id}`);
-      cancel.disabled='true';
-      cancel.style.cursor='not-allowed';
+      document.querySelector(".reload").classList.remove("active");
+      console.log(data);
+      let cancel = document.querySelector(`.cancel-${id}`);
+      let continueBtn = document.querySelector(`.continue-${id}`);
+
+      cancel.disabled = "true";
+      cancel.style.cursor = "not-allowed";
+      if (continueBtn) {
+        continueBtn.disabled = "true";
+        continueBtn.style.cursor = "not-allowed";
+      }
+      window.location.href = "";
     });
 }
 
 function filter(currentShift) {
-  all_rows.forEach((row) => {
-    if (currentShift == row.getAttribute("data-shift").toLowerCase()) {
-      row.style.display = "";
-    } else {
-      row.style.display = "none";
-    }
-  });
-
-  all_shiftDisplay.forEach((display) => {
-    display.children[0].innerHTML = currentShift.toUpperCase();
-  });
+    all_rows.forEach((row) => {
+      if (
+        currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase()
+      ) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    
+  
+      if (row.querySelector(".status").textContent.toLowerCase().trim() == "wrong shift") {
+        row.style.display = "";
+      }
+    });
 }
 
 function getCurrentShift() {
@@ -54,13 +79,13 @@ function getCurrentShift() {
   const currentHour = currentTime.getHours();
 
   if (currentHour >= 6 && currentHour < 14) {
-    return "8a";
+    return "8A";
   } else if (currentHour >= 14 && currentHour < 22) {
-    return "8b";
+    return "8B";
   } else if (currentHour >= 22 && currentHour < 6) {
-    return "8c";
+    return "8C";
   } else {
-    return "8a";
+    return "8A";
   }
 }
 
@@ -71,6 +96,7 @@ all_rows.forEach((row) => {
   let id = row.querySelector(".id").innerHTML;
   let intime = row.querySelector(".intime");
   let outtime = row.querySelector(".outtime");
+  let status = row.querySelector(".status");
   if (
     (intime && (intime.innerHTML == "-" || intime.innerHTML == "")) ||
     (outtime && (outtime.innerHTML == "-" || outtime.innerHTML == ""))
@@ -78,20 +104,78 @@ all_rows.forEach((row) => {
     row.classList.add("mis-pinch");
     if (intime.innerHTML == "-") {
       intime.innerHTML = `<div class="table-tag">Punch in</div>`;
-    } else {
+    }
+    if (outtime.innerHTML == "-") {
       outtime.innerHTML = `<div class="table-tag">Punch out</div>`;
     }
 
     row.querySelector(".action").innerHTML = `
         <form class="btns-container">
             <input type="hidden" name="empid" value="${id}">
-            <button type="button" onclick="sendAlert(${id})"  class="table-btn cancel cancel-${id}">Cancel</button>
-            <button type="button" class="table-btn continue">Continue</button>
+            <button type="button" onclick="sendAlert(${id},'cancel')"  class="table-btn cancel cancel-${id}">Cancel</button>
+            <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
         </form>
       `;
   } else {
     row.classList.remove("mis-pinch");
   }
+
+  if (status.textContent.toLowerCase().trim() == "wrong shift") {
+    status.innerHTML = `<p class="table-tag">Wrong Shift</p>`;
+    row.classList.add("wrongShift");
+    row.querySelector(".action").innerHTML = `
+        <div class="btns-container">
+            <input type="hidden" name="type" id="type" value="${id}">
+            <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
+            <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
+        </div>
+      `;
+  } else {
+    row.classList.remove("wrongShift");
+    row.classList.remove("overTime");
+  }
+  if (status.textContent.toLowerCase().trim() == "communicated") {
+    status.innerHTML = `<p class="table-tag">Communicated</p>`;
+    row.classList.add("communicated");
+    row.querySelector(".action").innerHTML = `
+        <div class="btns-container">
+            <input type="hidden" name="type" id="type" value="${id}">
+            <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
+            <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
+        </div>
+      `;
+  }
+  // console.log(status.textContent.toLowerCase().trim());
+  if (status.textContent.toLowerCase().trim() == "absent") {
+    status.innerHTML = `<p class="table-tag">Absent</p>`;
+    row.classList.add("absent");
+    row.querySelector(".action").innerHTML = `
+        <div class="btns-container">
+            <input type="hidden" name="type" id="type" value="${id}">
+            <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
+            <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
+        </div>
+      `;
+  } else {
+    row.classList.remove("wrongShift");
+    row.classList.remove("overTime");
+  }
+  if (status.textContent.toLowerCase().trim() == "ot") {
+    status.innerHTML = `<p class="table-tag">OT</p>`;
+    row.classList.add("overTime");
+    row.querySelector(".action").innerHTML = `
+        <div class="btns-container">
+            <input type="hidden" name="type" id="type" value="${id}">
+            <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
+            <!-- <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>-->
+        </div>
+      `;
+  } else {
+    row.classList.remove("wrongShift");
+    row.classList.remove("overTime");
+  }
+
+  console.log(status.textContent.trim());
 });
 
 let shiftDetails = [

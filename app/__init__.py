@@ -17,19 +17,19 @@ socketio = SocketIO()
 # Factory function to create the Flask app
 def create_app():
     app = Flask(__name__, static_folder='static')
-
+    
     # Configure the app
     app.config['SECRET_KEY'] = '#$&^&^WYYDUHS&YWE'
     db_path = os.path.abspath(os.path.dirname(__file__))
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(db_path, DB_NAME)}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-
     # Define paths for file uploads
     UPLOAD_FOLDER = os.path.join(app.root_path, 'static/img/profile')
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-    EXCEL_FOLDER = os.path.join(app.root_path, 'static/excel')
+    EXCEL_FOLDER = os.path.join(app.root_path, 'static\excel')
     app.config['EXCEL_FOLDER'] = EXCEL_FOLDER
+    # print(EXCEL_FOLDER)
 
     # Initialize SQLAlchemy with the app
     db.init_app(app)

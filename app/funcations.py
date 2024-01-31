@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from flask import current_app as app
 from flask import  flash,redirect,session
-from .models import Attendance, Shift_time, Emp_login,Festival,late,leave
+from .models import Attendance, Shift_time, Emp_login,Festival,late,leave,Week_off
 from . import db
 from os import path
 import datetime
@@ -18,6 +18,7 @@ from email.mime.text import MIMEText
 from twilio.base.exceptions import TwilioRestException
 from sqlalchemy import func
 import pandas as pd
+from sqlalchemy.orm import aliased
 from .task import *
 scheduler = sched.scheduler(time.time, time.sleep)
 
@@ -86,25 +87,58 @@ def validate_and_format_phone_number(phone_number):
     
 def update_or_add_shift(shift_type, in_time, out_time):
     existing_shift = Shift_time.query.filter_by(shiftType=shift_type).first()
-
+    print("update_or_add_shift")
+    
+  
     if existing_shift:
         # Update existing shift
         existing_shift.shiftIntime = in_time
         existing_shift.shift_Outtime = out_time
-       
-        db.session.commit()
         print("Shift updated")
+        return db.session.commit()
+       
     else:
         # Add new shift
         new_shift = Shift_time(
             shiftIntime=in_time,
             shift_Outtime=out_time,
             shiftType=shift_type,
-        
         )
         db.session.add(new_shift)
-        db.session.commit()
+        
+
         print("New shift added")
+        return db.session.commit()
+    
+def read_weekoff(file_path):
+    print("Prestn",file_path)
+    if os.path.exists(file_path):
+        print(True)
+        sheet_names = pd.ExcelFile(file_path).sheet_names
+
+        for sheet_name in sheet_names:
+            df = None
+            if file_path.lower().endswith('.xlsx'):
+                df = pd.read_excel(file_path, sheet_name, engine='openpyxl')
+              
+            elif file_path.lower().endswith('.xls'):
+                df = pd.read_excel(file_path, sheet_name, engine='xlrd')
+              
+            else:
+                print("Unsupported file format")
+                return  # Handle unsupported format
+
+            for index, row in df.iterrows():
+                print("str(row['empid']):",row['empid'], "str(row['weekoff']):", str(row['weekoff']))
+                emp_id = str(row['empid'])
+                week_off = str(row['weekoff'])
+                new_week_off = Week_off(
+                    emp_id=emp_id,
+                date=week_off
+                        )
+                db.session.add(new_week_off)
+            db.session.commit()
+
 
 def process_excel_data(file_path):
     if os.path.exists(file_path):
@@ -121,10 +155,13 @@ def process_excel_data(file_path):
                 return  # Handle unsupported format
 
             for index, row in df.iterrows():
-                shift_type = row['Shift']
+                shift_type = str(row['Shift'])
                 in_time = str(row['S. InTime'])
                 out_time = str(row['S. OutTime'])
+            
                 print("Processing: ", shift_type)
+
+                
 
                 update_or_add_shift(shift_type, in_time, out_time)
 
@@ -139,6 +176,7 @@ def calculate_Attendance(chunk_size=100):
             attendance_records = Attendance.query.filter_by(emp_id=employee.id).all()
 
             for attendance in attendance_records:
+                print(attendance.employee.shift)
                 # Extract attendance information
                 shift = Shift_time.query.filter_by(shiftType=attendance.employee.shift).first()
                 inTime = attendance.inTime
@@ -181,8 +219,8 @@ def calculate_Attendance(chunk_size=100):
             db.session.commit()
 
 def calculate_time_difference(time1_str, time2_str):
-    print("DEBUG - time1_str:", time1_str)
-    print("DEBUG - time2_str:", time2_str)
+    #print("DEBUG - time1_str:", time1_str)
+    #print("DEBUG - time2_str:", time2_str)
 
     # Convert time strings to datetime objects (without seconds)
     time_format = '%H:%M'
@@ -194,7 +232,7 @@ def calculate_time_difference(time1_str, time2_str):
         time1 = datetime.strptime(time1_str, time_format)
         time2 = datetime.strptime(time2_str, time_format)
     except ValueError as e:
-        print("ValueError:", e)
+        #print("ValueError:", e)
         return "00:00"
 
     # Calculate time difference in seconds
@@ -386,6 +424,7 @@ def process_csv_file(file_path):
 
 
 def attend_excel_data(file_path):
+    print('hello world')
     if os.path.exists(file_path):
         sheet_names = pd.ExcelFile(file_path).sheet_names
 
@@ -402,20 +441,50 @@ def attend_excel_data(file_path):
             for index, row in df.iterrows():
                 empid = row['emp_id']
                 print("Processing: ", empid)
+
+                update_freeze_status_and_remove_absences(empid)
                 
-                emp = db.session.query(Emp_login).filter_by(id=empid).first()
-                
+                emp = db.session.query(Emp_login).filter_by(emp_id=empid).first()
+                print(emp)
+                shift_times = Shift_time.query.all()
+                current_time = datetime.now().time()
+                current_date = datetime.now().date()
+                current_shift = None
+                for shift in shift_times:
+                        shift_start_time = datetime.strptime(shift.shiftIntime, '%H:%M').time()
+                        shift_end_time = datetime.strptime(shift.shift_Outtime, '%H:%M').time()
+                        if shift_start_time <= current_time <= shift_end_time:
+                            current_shift = shift.shiftType
+                            break
+                print(current_shift,":current_shift")
                 
                 shift_type = emp.shift
+                print("shift_type:",shift_type)
                 shitfTime = Shift_time.query.filter_by(shiftType=emp.shift).first()
-
+                print("shitfTime:",shitfTime)
                 # Check if today's date is a holiday
-                today_date = datetime.now().strftime("%Y-%m-%d")
+                today_date = datetime.now().strftime("%d-%m-%Y")
                 is_holiday = Festival.query.filter(func.DATE(Festival.date) == today_date).all()
+                
+                week_off=Week_off.query.all()
+                # festival_alias = aliased(Festival)
 
+                # is_holiday = (
+                #     db.session.query(Festival)
+                #     .join(festival_alias, func.DATE(Attendance.date) == today_date)
+                #     .all()
+                # )
                 if is_holiday:
                     attendance_status = 'Holiday'
                 else:
+                    # for week_off in week_off:
+                    #     emp_id=week_off.emp_id
+                    #     if(row['emp_id']==emp_id):
+                    #         current_date = datetime.now().strftime('%Y-%m-%d')
+                    #         print("current_date:",current_date)
+                    #         attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date,Attendance.emp_id==emp_id).first()
+                    #         print("befor :",attendance.attendance)
+                    #         attendance.attendance='Wrong Shift'
                     
                     if str(row['intime']) == "-":
                         leave_check = db.session.query(leave).filter_by(emp_id=empid, status='Approved').first()
@@ -429,33 +498,38 @@ def attend_excel_data(file_path):
                         else:
                             attendance_status = 'Leave'
                     else:
-                        attendance_status = 'Present'
-
-                    if str(row['outtime']) == '-':
-                                            
-                        shiftOuttime = session['lastShift']
-                        #    print("shift out Time",type(shiftOuttime))
-                        shiftOuttime = datetime.strptime(shiftOuttime, "%H:%M")
-                        shiftOuttime = shiftOuttime.time()
-                        #    print("shift out Time",shiftOuttime)
-                        #print(shiftOuttime)
-                        current_time = datetime.now().time()
-                        print("Current Time",current_time)
-                        #    current_time_str = datetime.now().strftime("%H:%M")
-                        #    if shiftOuttime > current_time + timedelta(minutes=10):
-                        print("shift out Time",shiftOuttime)
-                        print("current time ",(datetime.combine(datetime.today(), current_time)))
-                        time_with_10_minutes_added = (datetime.combine(datetime.today(), shiftOuttime) + timedelta(minutes=10)).time()
-                        print("time_with_10_minutes_added time ",time_with_10_minutes_added)
-                        if current_time > time_with_10_minutes_added:
-                            print("hello")
-                            print(send_alter.apply_async(countdown=1))
+                        if current_shift != emp.shift:
+                            attendance_status='Wrong Shift'
                         else:
-                            print("\n\n\n\nits lower in time\n\n\n")
-                    else:
-                            print("out time gave")
-                    
+                            attendance_status = 'Present'
 
+                    '''
+                    if str(row['outtime']) == '-':
+                        
+                       shiftOuttime = session['lastShift']
+                       shiftOuttime = datetime.strptime(shiftOuttime, "%H:%M")
+                       shiftOuttime = shiftOuttime.time()
+                    #    print("shift out Time",shiftOuttime)
+                       #print(shiftOuttime)
+                       current_time = datetime.now().time()
+                       print("Current Time",current_time)
+                    #    current_time_str = datetime.now().strftime("%H:%M")
+                    #    if shiftOuttime > current_time + timedelta(minutes=10):
+                       print("shift out Time",shiftOuttime)
+                       print("current time ",(datetime.combine(datetime.today(), current_time)))
+                       time_with_10_minutes_added = (datetime.combine(datetime.today(), shiftOuttime) + timedelta(minutes=5)).time()
+                       print("time_with_10_minutes_added time ",time_with_10_minutes_added)
+                       if current_time > time_with_10_minutes_added:
+                           print("hello")
+                        #    print(send_alter.apply_async(countdown=1))
+                       else:
+                           print("\n\n\n\nits lower in time\n\n\n")
+                    else:
+                        print("out time gave")
+                    '''
+                    
+            
+            
                 attendance = Attendance(
                     emp_id=empid,
                     name=emp.name,
@@ -470,6 +544,30 @@ def attend_excel_data(file_path):
         db.session.commit()
     else:
         print("File not found")
+
+def update_freeze_status_and_remove_absences(emp_id):
+    try:
+        # Get the employee
+        emp = Emp_login.query.filter_by(emp_id=emp_id).first()
+
+        # Get the last 30 days absence records for the employee
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        absent_records = Attendance.query.filter_by(emp_id=emp_id, attendance='Absent').filter(Attendance.date >= thirty_days_ago).all()
+        for i in absent_records:
+            print(i.date)
+        # If the employee has been continuously absent for 30 days, update freeze status and delete attendance records
+        if len(absent_records) >= 2:
+            emp.freezed_account = True
+            for record in absent_records:
+                db.session.delete(record)
+
+        db.session.commit()
+
+        return f"Success: Freeze status updated and attendance records deleted for employee {emp_id}."
+
+    except Exception as e:
+        db.session.rollback()
+        return f"Error: {str(e)}"
 
 def delete_all_employees():
     try:
@@ -515,7 +613,7 @@ def add_employee(file_path):
                 for index, row in df.iterrows():
                     emp_id = row['emp_id']
                     print("Processing: ", emp_id)
-                    dob = pd.to_datetime(row['dob']) if pd.notna(row['dob']) else None
+                    
 
                     existing_emp = db.session.query(Emp_login).filter_by(id=emp_id).first()
                     if not existing_emp:
@@ -572,28 +670,54 @@ def up_festival(file_path):
         with db.session.begin():
             # Delete existing records in the Festival table
             db.session.query(Festival).delete()
-
+        print('done')
+    
         # Iterate through each sheet in the Excel file
         for sheet_name in sheet_names:
+            print('done 1')
             df = None
             # Read data from the Excel file based on the file extension
             if file_path.lower().endswith('.xlsx'):
                 df = pd.read_excel(file_path, sheet_name, engine='openpyxl')
             elif file_path.lower().endswith('.xls'):
-                df = pd.read_excel(file_path, sheet_name, engine='xlrd')
+                df = pd.read_excel(file_path, sheet_name, engine='xlrd', skiprows=1)
             else:
                 raise ValueError("Unsupported file format. Only .xlsx and .xls files are supported.")
-
+            print('done 2')
+            print(df)
             # Iterate through rows in the DataFrame and add records to the Festival table
             for index, row in df.iterrows():
-                add_festival = Festival(
-                    holiday=row['holiday'],
-                    date=row['date'],
-                )
-                db.session.add(add_festival)
+                try:
+                    print(row['Public Holidays'])
+                    add_festival = Festival(
+                        holiday=row['Public Holidays'],
+                        date=row['Date'],
+                    )
+                    db.session.add(add_festival)
+                except Exception as e:
+                    # Handle specific errors or print more information for debugging
+                    print(f"Error adding festival at index {index}: {str(e)}")
+            print('done 3')
 
-        # Commit the changes to the database
+                # Commit the changes to the database
         db.session.commit()
         flash("Festivals added successfully", category="success")
     except Exception as e:
+        print("festival upload error",e)
         flash(f"Error adding festivals: {str(e)}", category="error")
+
+def check_send_sms(emp_id):
+    emp = Emp_login.query.filter_by(emp_id=emp_id).first()
+    
+    if emp:
+        Phonenum = emp.phoneNumber
+        email = emp.email
+        sub='Miss punch'
+        message = f"""
+        Dear {emp.name}:
+        It is a gentle reminder to you,
+        You have missed to keep the punch in the biometric machine
+        """
+        print("Phone number:", Phonenum)
+        send_mail(email=email, body=message,subject=sub)
+        send_sms(Phonenum ,message)

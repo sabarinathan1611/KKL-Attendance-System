@@ -24,8 +24,9 @@ class Emp_login(db.Model, UserMixin):
     leave_balance = db.Column(db.Integer, default=20)
     address = db.Column(db.String(150))
     gender = db.Column(db.String(150))
-    shift=db.Column(db.String(150),default="8G")
+    shift=db.Column(db.String(150))
     attendances = db.relationship('Attendance', back_populates='employee', cascade='all, delete-orphan')
+    freezed_account =db.Column(db.Boolean(150),default=False)
 
 
 # class Employee(db.Model, UserMixin):
@@ -82,8 +83,7 @@ class Shift_time(db.Model):
     shiftIntime = db.Column(db.String(150))
     shift_Outtime = db.Column(db.String(150))
     shiftType = db.Column(db.String(150))
-    week_off=db.Column(db.DateTime(timezone=True))
-    emp_id=db.Column(db.Integer)
+
     
     
 class Backup(db.Model):
@@ -175,7 +175,8 @@ class user_edit(db.Model, UserMixin):
     new_data=db.Column(db.String(150), nullable=False)
     data_type=db.Column(db.String(150), nullable=False)
 
-class Send_message(db.Model):
+class Week_off(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.DateTime(timezone=True), default=func.now())
-    
+    emp_id = db.Column(db.Integer)
+    # date = db.Column(db.DateTime(timezone=True), default=func.now())
+    date= db.Column(db.String(150), nullable=False)

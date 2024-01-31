@@ -7,16 +7,7 @@
 <link rel="stylesheet" href="static/css/style.css" />
 <link rel="stylesheet" href="static/css/attendance.css" />
 
-    <main class="main active">
-      <header class="details-bar">
-        <div class="user-details">
-          <h1 class="user-role">User ~ <span class="role tag">HR</span></h1>
-        </div>
-        <div class="date-time-details">
-          <p class="date"></p>
-          <p class="time"></p>
-        </div>
-      </header>
+
 
       <link rel="stylesheet" href="static/css/late.css" />
 
@@ -27,14 +18,14 @@
               <p class="shift name"><span class="tag">A</span> ~ shift</p>
               <p class="frame-name">{{permission_type}} Table</p>
             </div>
-            <div class="frame-options">
+            <!-- <div class="frame-options">
               <select name="shift" id="shift" class="tag-btn">
                 <option value="">select Shift</option>
                 <option value="A">A</option>
                 <option value="B">B</option>
                 <option value="C">C</option>
               </select>
-            </div>
+            </div> -->
           </div>
         </header>
         <div class="table">
@@ -53,7 +44,7 @@
             </thead>
             <tbody class="{{permission_type.lower()}}-table" id="{{permission_type.lower()}}-table">
               {% for permission in permission %}
-              <tr>
+              <tr class="{{permission.status}}">
                 <td>#{{permission.emp_id}}</td>
                 <td>{{permission.emp_name}}</td>
                 <td>{{permission.date.strftime('%d-%m-%Y') }}</td>
@@ -61,7 +52,7 @@
                 <td>{{permission.from_time}}</td>
                 <td>{{permission.to_time}}</td>
                 <td>{{permission.reason}}</td>
-                <td>{{permission.status}}</td>
+                <td class="status">{{permission.status}}</td>
                 <td>{{permission.approved_by}}</td>
                 <td>
                   <a
@@ -79,7 +70,7 @@
               </tr>
               {% endfor %}
               <script>
-                const socket = io();
+                var socket = io();
 
                 function generateUrl(empId, empName, fromTime, toTime, reason, reqId, status, approved_by) {
                     back_page='${permission_type.lower()}_table'
@@ -116,7 +107,7 @@
                                 console.log("Received permission:", permission.emp_id);
                                   });
               </script>
-              <script>
+              <!-- <script>
                 const bell_button = document.querySelector(".notification-btn");
 const notifications = document.querySelector(".notifications");
 const all_notifications = notifications.querySelectorAll("li");
@@ -206,13 +197,12 @@ function LeavegenerateSocketUrl(empId, empName, fromTime, toTime, reason, reqId,
                 });
 
                 
-              </script>
+              </script> -->
             </tbody>
           </table>
         </div>
       </section>
 
-    </main>
     {% endblock %}
 
     {% block scripts %}
