@@ -1338,22 +1338,30 @@ def month_attendance():
     last_month_attendance = db.session.query(Attendance).filter(
         Attendance.date.between(start_date, end_date)
     ).all()
+    # print(start_date,end_date)
 
     # Create a dictionary to store attendance records for each emp_id
     employee_data = {}
+    date = set()
     
     for record in last_month_attendance:
         emp_id = record.emp_id
+        record_date=record.date
+        # print(str(record_date)[:10])
+        date.add(str(record_date)[8:10])
         
-        # If emp_id is not in the dictionary, create a new list for that emp_id
+        # If emp_id is not in t8e dictionary, create a new list for that emp_id
         if emp_id not in employee_data:
             employee_data[emp_id] = []
         
         # Append the record to the list for that emp_id
         employee_data[emp_id].append(record)
 
-        print( employee_data)
-    return render_template('month_attendance.html', employee_data=employee_data)
+        # print(employee_data[emp_id])
+        # print(date)
+    date = list(date)
+    print(date)
+    return render_template('month_attendance.html', employee_data=employee_data,date=date)
 
 
 @views.route('/send_message', methods=['POST'])
