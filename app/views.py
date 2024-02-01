@@ -61,9 +61,12 @@ def admin():
         late_permission=late.query.order_by(late.date).all()
         leave_permission=leave.query.order_by(leave.date).all()
         notification=notifications.query.order_by(notifications.timestamp).all()
-        print("notification : ",notification)
+        # print("notification : ",notification)
+        month_attend=month_attendance()
+        employee_data=month_attend[0]
+        date=month_attend[1]
         # sihft=Shift_time.query.order_by(Shift_time.id) 
-    return render_template('admin.html',emp_login=emp_login, notification=notification, attendance=employee_attendance, late_permission=late_permission, leave_permission=leave_permission)
+    return render_template('admin.html',employee_data=employee_data,date=date,emp_login=emp_login, notification=notification, attendance=employee_attendance, late_permission=late_permission, leave_permission=leave_permission)
 
 @views.route('/edit', methods=['POST', 'GET'])
 @login_required
@@ -965,17 +968,17 @@ def upload_emp():
 
 
 
-@views.route('/festival-upload',methods=['POST',"GET"])
-def upload_festival():
-    if request.method == 'POST':
-        file=request.files['excel']
-        filename = secure_filename(file.filename)
-        print(filename)
-        file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
-        file.save(file_path)
-        up_festival(file_path)
-        #return redirect(url_for('views.admin'))
-    return render_template("uploadfesti.html")
+# @views.route('/festival-upload',methods=['POST',"GET"])
+# def upload_festival():
+#     if request.method == 'POST':
+#         file=request.files['excel']
+#         filename = secure_filename(file.filename)
+#         print(filename)
+#         file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
+#         file.save(file_path)
+#         up_festival(file_path)
+#         #return redirect(url_for('views.admin'))
+#     return render_template("uploadfesti.html")
 
 @views.route('/getshift',methods = ['POST'])
 def getshift():
@@ -1319,49 +1322,6 @@ def send_message_data():
         
 #         # Send a JSON response
 #     return jsonify({"data": "Message sent"})
-
-
-def get_last_month_dates():
-    today = datetime.today()
-    first_day_of_current_month = today.replace(day=1)
-    last_day_of_last_month = first_day_of_current_month - timedelta(days=1)
-    first_day_of_last_month = last_day_of_last_month.replace(day=1)
-    return first_day_of_last_month, today
-
-@views.route('/month_attendance',methods=['POST','GET'])
-def month_attendance():
-    if current_user.role == 'employee':
-        return redirect(url_for('auth.logout'))
-    start_date, end_date = get_last_month_dates()
-
-    # Query the database for last month's attendance up to the current date
-    last_month_attendance = db.session.query(Attendance).filter(
-        Attendance.date.between(start_date, end_date)
-    ).all()
-    # print(start_date,end_date)
-
-    # Create a dictionary to store attendance records for each emp_id
-    employee_data = {}
-    date = set()
-    
-    for record in last_month_attendance:
-        emp_id = record.emp_id
-        record_date=record.date.date().day
-        # print(str(record_date)[:10])
-        date.add(record_date)
-        
-        # If emp_id is not in t8e dictionary, create a new list for that emp_id
-        if emp_id not in employee_data:
-            employee_data[emp_id] = []
-        
-        # Append the record to the list for that emp_id
-        employee_data[emp_id].append(record)
-
-        # print(employee_data[emp_id])
-        # print(date)
-    date = list(date)
-    print(date)
-    return render_template('month_attendance.html', employee_data=employee_data,date=date)
 
 
 @views.route('/send_message', methods=['POST'])

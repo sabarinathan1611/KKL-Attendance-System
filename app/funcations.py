@@ -665,32 +665,38 @@ def add_employee(file_path):
 
 def up_festival(file_path):
     try:
+        print('done')
         # Check if the file exists and is valid
         if not os.path.exists(file_path):
             flash("File does not exist", "error")
             return
-
-        # Get sheet names from the Excel file
+        # with db.session.begin():
+        #     if db.session.query(Festival):
+        #         db.session.query(Festival).delete()
+        db.session.commit()
+        with db.session.begin():
+            # Delete all records from the Festival table
+            db.session.query(Festival).delete()
+        
+        
+        print('done 1')
         sheet_names = pd.ExcelFile(file_path).sheet_names
 
         # Use a context manager for database operations
-        with db.session.begin():
-            # Delete existing records in the Festival table
-            db.session.query(Festival).delete()
-        print('done')
-    
+        
+
+        print('done 2')
+
         # Iterate through each sheet in the Excel file
         for sheet_name in sheet_names:
-            print('done 1')
             df = None
             # Read data from the Excel file based on the file extension
             if file_path.lower().endswith('.xlsx'):
                 df = pd.read_excel(file_path, sheet_name, engine='openpyxl')
             elif file_path.lower().endswith('.xls'):
-                df = pd.read_excel(file_path, sheet_name, engine='xlrd', skiprows=1)
+                df = pd.read_excel(file_path, sheet_name, engine='xlrd')
             else:
                 raise ValueError("Unsupported file format. Only .xlsx and .xls files are supported.")
-            print('done 2')
             print(df)
             # Iterate through rows in the DataFrame and add records to the Festival table
             for index, row in df.iterrows():
@@ -728,3 +734,42 @@ def check_send_sms(emp_id):
         print("Phone number:", Phonenum)
         send_mail(email=email, body=message,subject=sub)
         send_sms(Phonenum ,message)
+
+def month_attendance():
+    start_date, end_date = get_last_month_dates()
+
+    # Query the database for last month's attendance up to the current date
+    last_month_attendance = db.session.query(Attendance).filter(
+        Attendance.date.between(start_date, end_date)
+    ).all()
+    # print(start_date,end_date)
+
+    # Create a dictionary to store attendance records for each emp_id
+    employee_data = {}
+    date = set()
+    
+    for record in last_month_attendance:
+        emp_id = record.emp_id
+        record_date=record.date.date().day
+        # print(str(record_date)[:10])
+        date.add(record_date)
+        
+        # If emp_id is not in t8e dictionary, create a new list for that emp_id
+        if emp_id not in employee_data:
+            employee_data[emp_id] = []
+        
+        # Append the record to the list for that emp_id
+        employee_data[emp_id].append(record)
+
+        # print(employee_data[emp_id])
+        # print(date)
+    date = list(date)
+    return [employee_data,date]
+    #return render_template('month_attendance.html', employee_data=employee_data,date=date)
+
+def get_last_month_dates():
+    today = datetime.today()
+    first_day_of_current_month = today.replace(day=1)
+    last_day_of_last_month = first_day_of_current_month - timedelta(days=1)
+    first_day_of_last_month = last_day_of_last_month.replace(day=1)
+    return first_day_of_last_month, today

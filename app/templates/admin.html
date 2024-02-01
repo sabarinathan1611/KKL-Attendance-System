@@ -5,12 +5,10 @@ block content %}
 
 <menu class="table-menu" style="display: flex">
   <ul class="btn-container">
-    <a href="/today_attendance" class="tag-btn click active"
-      >Today Attendance</a
-    >
-    <a href="/month_attendance" class="tag-btn click">This Month Attendance</a>
-    <select name="shift" id="shift" class="tag-btn">
-      <option value="">Select Shift Name</option>
+    <li class="tag-btn click active today-attend-btn" index="0">Today Attendance</li>
+    <li class="tag-btn click month-attend-btn"  index="1">This Month Attendance</li>
+    <select name="shift" id="shift" class="tag-btn click shift_change" index="0">
+      <option value="" disabled>Select Shift Name</option>
       <option value="8A">A ~ Shift</option>
       <option value="8B">B ~ Shift</option>
       <option value="8C">C ~ Shift</option>
@@ -18,7 +16,7 @@ block content %}
   </ul>
 </menu>
 
-<section class="frame today-attendance" style="display: flex">
+<section class="frame today-attendance" style="display: flex" index="0">
   <div class="inner-frame">
     <div class="frame-header">
       <div class="frame-details currentShift">
@@ -90,8 +88,86 @@ block content %}
   </div>
 </section>
 
+<section class="frame month-attendance" style="display: none" index="1">
+  <div class="inner-frame">
+    <div class="frame-header">
+      <div class="frame-details">
+        <p class="frame-name">Month Attendance</p>
+        <!-- <p class="shift name"><span class="tag">A</span> ~ shift</p> -->
+      </div>
+      <!-- <div class="frame-search">
+        <input
+          type="text"
+          name="idsearch"
+          id="idsearch"
+          placeholder="Search By ID"
+        />
+        <input
+          type="text"
+          name="namesearch"
+          id="namesearch"
+          placeholder="Search By Name"
+        />
+      </div> -->
+      <div class="frame-options">
+        <button type="button" class="download">
+          <i class="fas fa-file-excel"></i>
+        </button>
+      </div>
+    </div>
+    <div class="frame-body">
+      {% if employee_data %}
+      <table class="attendance-table">
+        <thead>
+          <tr class="thead">
+            <th>EmpId</th>
+            {% for date in date %}
+            <th>{{ date }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody class="tableBody filter">
+          {% for emp_id, records in employee_data.items() %}
+          <tr>
+            <td>{{ emp_id }}</td>
+            {% for record in records %} {% if record.attendance =='Present' %}
+            <td>
+              <p style="display: none">Present</p>
+              <i class="fas fa-check-circle"></i>
+            </td>
+            {% elif record.attendance =='O.T' %}
+            <td>
+              <p style="display: none">Over Time</p>
+              <i class="fas fa-clock" style="color: blue"></i>
+            </td>
+            {% elif record.attendance =='Week Off' %}
+            <td>
+              <p style="display: none">Week Off</p>
+              W
+            </td>
+            {% else %}
+            <td>
+              <p style="display: none">Absent</p>
+              <i class="fas fa-times-circle"></i>
+            </td>
+            {% endif %} {% endfor %}
+          </tr>
+
+          {% endfor %} {% else %}
+
+          <p class="mt-3">No attendance records found for last month.</p>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+
 {% endblock %} {% block scripts %}
 <script src="static/js/script.js"></script>
 <script src="/static/js/filter.js"></script>
+<script src="/static/js/action.js"></script>
+
 
 {% endblock %}

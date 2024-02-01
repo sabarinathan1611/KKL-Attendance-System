@@ -155,8 +155,11 @@ tr:nth-child(even) {
   background: #2e4f4f;
   color: #fff;
   cursor: pointer;
-  transition: all 0.5s;
   outline: none;
+}
+
+li.tag-btn {
+  transition: all 0.5s;
 }
 
 .tag-btn:hover {
@@ -206,8 +209,8 @@ tr:nth-child(even) {
   /* position: absolute;
       top: 2px;
       left: 0px; */
-      display: flex;
-      white-space: nowrap;
+  display: flex;
+  white-space: nowrap;
   background: green;
   color: #fff;
   border-radius: 3px;

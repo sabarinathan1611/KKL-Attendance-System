@@ -21,6 +21,20 @@ all_btns.forEach((btn) => {
   });
 });
 
+let shift_change = document.querySelector('.shift_change');
+let today_attend_btn = document.querySelector('.today-attend-btn');
+if (today_attend_btn) {
+  today_attend_btn.addEventListener('click', () => {
+    shift_change.style.visibility = 'visible';
+  })
+}
+let month_attend_btn = document.querySelector('.month-attend-btn');
+if (month_attend_btn) {
+month_attend_btn.addEventListener('click', () => {
+  shift_change.style.visibility = 'hidden';
+})
+}
+
 const tag_btns = document.querySelectorAll(".click");
 const all_frame = document.querySelectorAll(".frame");
 

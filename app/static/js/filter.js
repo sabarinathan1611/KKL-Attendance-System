@@ -58,33 +58,41 @@ function sendAlert(id, action) {
 }
 
 function filter(currentShift) {
-    all_rows.forEach((row) => {
-      // console.log(currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase());
-      
-      
+  all_rows.forEach((row) => {
+    // console.log(currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase());
+
+    if (
+      (currentShift.toUpperCase() ==
+        row.querySelector(".shift").textContent.trim().toUpperCase()) ==
+      true
+    ) {
+      row.style.display = "";
+      // console.log(row);
       if (
-        (currentShift.toUpperCase() == row.querySelector('.shift').textContent.trim().toUpperCase()) == true
+        row.querySelector(".status").textContent.toLowerCase().trim() ==
+        "wrong shift"
       ) {
         row.style.display = "";
-        // console.log(row);
-        if (row.querySelector(".status").textContent.toLowerCase().trim() == "wrong shift") {
-          row.style.display = "";
-        }
-      } 
-      
-      if (
-        (currentShift.toUpperCase() == row.querySelector('.shift').textContent.trim().toUpperCase()) == false
-
-      ) {
-        row.style.display = "none";
-        if (row.querySelector(".status").textContent.toLowerCase().trim() == "wrong shift") {
-          row.style.display = "";
-        }
       }
-      all_shiftDisplay.forEach((display)=>{
-        display.children[0].innerHTML=`<span class='tag'>${currentShift.toUpperCase()}</span>`;
-      })
+    }
+
+    if (
+      (currentShift.toUpperCase() ==
+        row.querySelector(".shift").textContent.trim().toUpperCase()) ==
+      false
+    ) {
+      row.style.display = "none";
+      if (
+        row.querySelector(".status").textContent.toLowerCase().trim() ==
+        "wrong shift"
+      ) {
+        row.style.display = "";
+      }
+    }
+    all_shiftDisplay.forEach((display) => {
+      display.children[0].innerHTML = `<span class='tag'>${currentShift.toUpperCase()}</span>`;
     });
+  });
 }
 
 function getCurrentShift() {
@@ -162,6 +170,16 @@ all_rows.forEach((row) => {
   if (status.textContent.toLowerCase().trim() == "absent") {
     status.innerHTML = `<p class="table-tag">Absent</p>`;
     row.classList.add("absent");
+    row.querySelector(".action").innerHTML = `
+        <div class="btns-container">
+            <input type="hidden" name="type" id="type" value="${id}">
+            <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
+            <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
+        </div>
+      `;
+  } else if (status.textContent.toLowerCase().trim() == "present") {
+    // status.innerHTML = `<p class="table-tag">Present</p>`;
+    row.classList.add("present");
     row.querySelector(".action").innerHTML = `
         <div class="btns-container">
             <input type="hidden" name="type" id="type" value="${id}">
