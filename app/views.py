@@ -1346,9 +1346,9 @@ def month_attendance():
     
     for record in last_month_attendance:
         emp_id = record.emp_id
-        record_date=record.date
+        record_date=record.date.date().day
         # print(str(record_date)[:10])
-        date.add(str(record_date)[8:10])
+        date.add(record_date)
         
         # If emp_id is not in t8e dictionary, create a new list for that emp_id
         if emp_id not in employee_data:
