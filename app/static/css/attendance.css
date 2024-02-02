@@ -228,14 +228,14 @@ li.tag-btn {
 }
 
 .freezed {
-  background: #ffc0c0;
+  background: #ffc0c0 !important;
 }
 
 .inner-tag {
   padding: 5px;
   border-radius: 5px;
   border: none;
-  background: rgb(120, 10, 10);
+  background: rgb(120, 10, 10) !important;
   color: #fff;
   text-transform: capitalize;
   font-family: sans-serif;

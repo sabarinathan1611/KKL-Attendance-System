@@ -47,7 +47,7 @@ def send_mail(email, subject, body):
 
 def send_sms(numbers_to_message, message_body):
     account_sid = 'ACb1f8718e01bcc3eacf727272ff3a7b2b'
-    auth_token = '04d0a84313b37be6b5b03a469a847282'
+    auth_token = '85b55f99ddcbb7a7721fd612022de3a8'
     client = Client(account_sid, auth_token)
 
     from_phone_number = '+12069666359'
@@ -82,6 +82,7 @@ def validate_and_format_phone_number(phone_number):
     phone_number=str(phone_number)
     if not phone_number.startswith('+'):
         phone_number = '+91' + phone_number
+        print("phone_number:",phone_number)
 
     return phone_number
     

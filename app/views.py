@@ -363,7 +363,9 @@ def handle_disconnect():
 @login_required
 def handle_lateform_callback(lateDet):
     emp_id=session.get('emp_id')
-    emp_name=session.get('name')
+    # emp_name=session.get('name')
+    emp=Emp_login.query.filter_by(emp_id=emp_id).first()
+    emp_name=emp.name
     reason=lateDet['reason']
     from_time=lateDet['from_time']
     to_time=lateDet['to_time']
@@ -428,7 +430,9 @@ def handle_lateform_callback(lateDet):
 @socketio.on('leave')
 def handle_leaveform_callback(leaveDet):
     emp_id=session.get('emp_id')
-    emp_name=session.get('name')
+    # emp_name=session.get('name')
+    emp=Emp_login.query.filter_by(emp_id=emp_id).first()
+    emp_name=emp.name
     reason=leaveDet['reason']
     from_time=leaveDet['from_time']
     to_time=leaveDet['to_time']
@@ -437,34 +441,7 @@ def handle_leaveform_callback(leaveDet):
     hr_approval='Pending'
 
 
-    user=Emp_login.query.filter_by(emp_id=emp_id).first()
-    if user:
-        user.leave_balance -= 1
-        email=user.email
-        leave_balance=user.leave_balance
-        db.session.commit()
-    else:
-        print(f"Employee with emp_id {emp_id} not found.")
-    user=Emp_login.query.filter_by(emp_id=emp_id).first()
-    if user:
-        email=user.email
-        try:
-            sub=" You Have Taken Leave "
-            body=" You Have Taken Leave \n And You Have {} Leave balance \n Have a Great Day".format(leave_balance)
-            send_mail(email, sub, body)
-        except:
-            print("Mail Not Sent")
-
-        try:
-            user=Employee.query.filter_by(emp_id=emp_id).first()
-            phone=user.phoneNumber
-            phone="+91"+phone
-            print(type(phone))
-            body=" You Have Taken leave permission \n And You Have {} leave balance \n Have a Great Day".format(leave_balance)
-            send_sms([phone],body)
-        except:
-            print("Sms Not Sent")
-
+    
     try:
         new_request=leave(emp_id=emp_id,emp_name=emp_name,reason=reason,from_time=from_time,to_time=to_time,approved_by=approved_by,status=status,hr_approval=hr_approval)
         db.session.add(new_request)
@@ -857,8 +834,8 @@ def leave_req_profile():
 @views.route('/late_approve', methods=['POST', 'GET'])
 def late_approve():
     user_data = json.loads(request.data)
-    userID = user_data['userId']
-    user = late.query.filter_by(id=userID).first()
+    emp_id = user_data['userId']
+    user = late.query.filter_by(id=emp_id).first()
     # current_user = 'hr'
     print(current_user.name)
     admin_name=current_user.name
@@ -871,16 +848,43 @@ def late_approve():
     # Create a JSON response
     response_data = {
         'approved_by':user.approved_by,
-        'userId': userID,
+        'userId': emp_id,
         'hr_approval': user.hr_approval
     }
+    user=Emp_login.query.filter_by(emp_id=emp_id).first()
+    if user:
+        user.late_balance -= 1
+        email=user.email
+        late_balance=user.late_balance
+        db.session.commit()
+    else:
+        print(f"Employee with emp_id {emp_id} not found.")
+    user=Emp_login.query.filter_by(emp_id=emp_id).first()
+    if user:
+        email=user.email
+        try:
+            sub=" You Have Taken Late "
+            body=" You Have Taken Late \n And You Have {} Late balance \n Have a Great Day".format(late_balance)
+            send_mail(email, sub, body)
+        except:
+            print("Mail Not Sent")
+
+        try:
+            user=Emp_login.query.filter_by(emp_id=emp_id).first()
+            phone=user.phoneNumber
+            phone="+91 "+str(phone)
+            print(type(phone))
+            body=" You Have Taken Late permission \n And You Have {} Late balance \n Have a Great Day".format(late_balance)
+            send_sms([phone],body)
+        except Exception as e:
+            print("Sms Not Sent",e)
     return jsonify(response_data)
 
 @views.route('/late_decline', methods=['POST', 'GET'])
 def late_decline():
     user_data = json.loads(request.data)
-    userID = user_data['userId']
-    user = late.query.filter_by(id=userID).first()
+    emp_id = user_data['userId']
+    user = late.query.filter_by(id=emp_id).first()
     # admin_name=session.get('admin_name')
     admin_name=current_user.name
     user.status='Declined'
@@ -891,17 +895,44 @@ def late_decline():
     # Create a JSON response
     response_data = {
         'approved_by':user.approved_by,
-        'userId': userID,
+        'userId': emp_id,
         'hr_approval': user.hr_approval
     }
+    user=Emp_login.query.filter_by(emp_id=emp_id).first()
+    if user:
+        email=user.email
+        late_balance=user.late_balance
+        db.session.commit()
+    else:
+        print(f"Employee with emp_id {emp_id} not found.")
+    user=Emp_login.query.filter_by(emp_id=emp_id).first()
+    if user:
+        email=user.email
+        try:
+            sub=" Your late Denied"
+            body=" Your late Request Denied . Date {}".format(late_balance)
+            send_mail(email, sub, body)
+        except:
+            print("Mail Not Sent")
+
+        try:
+            user=Emp_login.query.filter_by(emp_id=emp_id).first()
+            phone=user.phoneNumber
+            phone="+91 "+ str(phone)
+            print(type(phone))
+            body=" Your late Request Denied . Date {}".format(late_balance)
+            send_sms([phone],body)
+        except Exception as e:
+            print("Sms Not Sent",e)
+
     return jsonify(response_data)
 
 
 @views.route('/leave_approve',methods=['POST','GET'])
 def leave_approve():
     user_data = json.loads(request.data)
-    userID = user_data['userId']
-    user = leave.query.filter_by(id=userID).first()
+    emp_id = user_data['userId']
+    user = leave.query.filter_by(id=emp_id).first()
     print(" USER : ",user)
     admin_name=current_user.name
     
@@ -911,16 +942,44 @@ def leave_approve():
     db.session.commit()
     response_data = {
         'approved_by':user.approved_by,
-        'userId': userID,
+        'userId': emp_id,
         'hr_approval': user.hr_approval
     }
+    user=Emp_login.query.filter_by(emp_id=emp_id).first()
+    if user:
+        user.leave_balance -= 1
+        email=user.email
+        leave_balance=user.leave_balance
+        db.session.commit()
+    else:
+        print(f"Employee with emp_id {emp_id} not found.")
+    user=Emp_login.query.filter_by(emp_id=emp_id).first()
+    if user:
+        email=user.email
+        try:
+            sub=" You Have Taken Leave "
+            body=" You Have Taken Leave \n And You Have {} Leave balance \n Have a Great Day".format(leave_balance)
+            send_mail(email, sub, body)
+        except:
+            print("Mail Not Sent")
+
+        try:
+            user=Emp_login.query.filter_by(emp_id=emp_id).first()
+            phone=user.phoneNumber
+            phone="+91"+phone
+            print(type(phone))
+            body=" You Have Taken leave permission \n And You Have {} leave balance \n Have a Great Day".format(leave_balance)
+            send_sms([phone],body)
+        except Exception as e:
+            print("Sms Not Sent",e)
+
     return jsonify(response_data)
 
 @views.route('/leave_decline',methods=['POST','GET'])
 def leave_decline():
     user = json.loads(request.data)
-    userID = user['userId']
-    user = leave.query.filter_by(id=userID).first()
+    emp_id = user['userId']
+    user = leave.query.filter_by(id=emp_id).first()
     print(" USER : ",user)
     # current_user='hr'
     admin_name=current_user.name
@@ -931,9 +990,35 @@ def leave_decline():
     db.session.commit()
     response_data = {
         'approved_by':user.approved_by,
-        'userId': userID,
+        'userId': emp_id,
         'hr_approval': user.hr_approval
     }
+    user=Emp_login.query.filter_by(emp_id=emp_id).first()
+    if user:
+        email=user.email
+        leave_balance=user.leave_balance
+        db.session.commit()
+    else:
+        print(f"Employee with emp_id {emp_id} not found.")
+    user=Emp_login.query.filter_by(emp_id=emp_id).first()
+    if user:
+        email=user.email
+        try:
+            sub=" Your leave Denied"
+            body=" Your leave Request Denied . Date {}".format(leave_balance)
+            send_mail(email, sub, body)
+        except:
+            print("Mail Not Sent")
+
+        try:
+            user=Emp_login.query.filter_by(emp_id=emp_id).first()
+            phone=user.phoneNumber
+            phone="+91"+phone
+            print(type(phone))
+            body=" Your leave Request Denied . Date {}".format(leave_balance)
+            send_sms([phone],body)
+        except Exception as e:
+            print("Sms Not Sent",e)
     return jsonify(response_data)
 
 # @views.route("/req_notify")
@@ -1075,7 +1160,6 @@ def upload_select():
                     print("Error message:", str(e))
                    
         else :
-            print('bjsdbcihbs')
             return 'No file uploaded'
 
     return redirect(url_for('views.admin'))
@@ -1210,6 +1294,22 @@ def accept_edit():
         setattr(emp,data_type,new_data)
     else:
         print("data not matched")
+
+    late_table=late.query.filter_by(emp_id=emp_id).first()
+    if late_table:
+        old_value=getattr(emp,data_type)    
+        if old_data==old_value:
+            setattr(emp,data_type,new_data)
+        else:
+            print("data not matched")
+    leave_table=leave.query.filter_by(emp_id=emp_id).first()
+    if leave_table:
+        old_value=getattr(emp,data_type)
+        if old_data==old_value:
+            setattr(emp,data_type,new_data)
+        else:
+            print("data not matched")
+    
     
     user=user_edit.query.filter_by(id=id).first()
     db.session.delete(user)
