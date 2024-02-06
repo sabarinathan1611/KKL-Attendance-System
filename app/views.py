@@ -65,7 +65,18 @@ def admin():
         month_attend=month_attendance()
         employee_data=month_attend[0]
         date=month_attend[1]
+        print(employee_attendance[0].id)
 
+        for attend in employee_attendance:
+            if attend.inTime!='-':
+                hours, minutes = map(int, attend.lateBy.split(':'))
+                print(hours * 60 + minutes >10)
+                if (hours * 60 + minutes >10):
+                    attend.late='late'
+                else:
+                    attend.late='no_late'
+            else:
+                attend.late='-'
         
     return render_template('admin.html',employee_data=employee_data,date=date,emp_login=emp_login, notification=notification, attendance=employee_attendance, late_permission=late_permission, leave_permission=leave_permission,emp_login_sorted=emp_login_sorted)
 

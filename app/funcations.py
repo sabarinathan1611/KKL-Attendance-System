@@ -184,6 +184,8 @@ def calculate_Attendance(chunk_size=100):
                 lateBy = calculate_time_difference(shiftIntime, inTime)
                 attendance.lateBy = lateBy
 
+                print(lateBy)
+
                 if attendance.outTime != "00:00":
                     outTime = attendance.outTime
 
@@ -478,10 +480,13 @@ def attend_excel_data(file_path):
                         elif week_off:
                             attendance_status='Week Off'
                         else:
-                            c_off=comp_off.query.filter_by(emp_id=empid,date=today_date)
+                            c_off=comp_off.query.filter_by(emp_id=empid).first()
                             if c_off:
                                 attendance_status='C Off'
+                                db.session.delete(c_off)
+                                db.session.commit()
                             else:
+                                # check_leave()
                                 attendance_status = 'Leave'
                     else:
                         if current_shift != emp.shift:
@@ -500,8 +505,8 @@ def attend_excel_data(file_path):
                 attendance = Attendance(
                     emp_id=empid,
                     name=emp.name,
-                    inTime=str(row['intime']),
-                    outTime=str(row['outtime']),
+                    inTime=str(row['intime'])[:5],
+                    outTime=str(row['outtime'])[:5],
                     branch=branch,
                     shiftType=shift_type,
                     attendance=attendance_status,

@@ -8,8 +8,12 @@ let shiftSelect = document.getElementById("shift");
 
 shiftSelect.addEventListener("change", () => {
   let shift = shiftSelect.value;
-  if (shift == "" || shift.lenght <= 0) {
+  if (shift == "current" || shift.length <= 0) {
     filter(currentShift.shiftName);
+  } else if (shift == 'all') {
+    all_rows.forEach((row) => {
+      row.style.display = "";
+    });
   } else {
     filter(shift.toLowerCase());
   }
@@ -126,117 +130,135 @@ all_rows.forEach((row) => {
   let action = row.querySelector(".action");
   let branch = row.querySelector('.branch');
 
-
-
-
-  // check intime for 10mins late 
-  let shiftInTimeStr = row.querySelector('.shiftInTime').textContent;// 20:00
-  let hisInTimeStr = row.querySelector('.intime').textContent; //14:00
-  let curr_date = row.querySelector('.attend_date').textContent;
-  console.log('attend_date'+curr_date); //2024-02-06
-  let shiftInTime = new Date(curr_date + "T" + shiftInTimeStr + ":00");
-  let hisInTime = new Date(curr_date + "T" + hisInTimeStr + ":00");
-  console.log('shiftInTime',shiftInTime);
-  console.log('hisInTimeStr',hisInTime);
-  let timeDifference = hisInTime - shiftInTime;
-
-  let minutesDifference = timeDifference / (1000 * 60);
-
-  if (minutesDifference > 10) {
-    intime.innerHTML = `<div class="table-tag punchOptionsDiv">
-                            <label for="punchOptions">${hisInTimeStr}</label>
-                            <select id="punchOptions" class='punchOptions'>
-                                <option value="half-day">Half Day</option>
-                                <option value="communicated">Communicated</option>
-                                <option value="grace-time">Grace Time</option>
-                            </select>
-                        </div>`;
-    action.innerHTML = `
-                        <form class="btns-container">
-                            <input type="hidden" name="empid" value="${id}">
-                            <button type="button" class="table-btn continue continue-${id}">Save</button>
-                        </form>
-                      `;
+  if (status.textContent.toLowerCase().trim() == 'absent') {
+    row.classList.add('mis-pinch')
   }
+
+  
+  // // check intime for 10mins late 
+  let shiftOutTimeStr = row.querySelector('.shiftOutTime').textContent; // "20:00"
+  let curr_date = row.querySelector('.attend_date').textContent; // "2024-02-06"
+  // console.log('attend_date', curr_date);
+  
+  let shiftOutTime = new Date(curr_date + "T" + shiftOutTimeStr + ":00");
+  // let shiftOutTime=new Date('Tue Feb 06 2024 13:14:00 GMT+0530 (India Standard Time)')
+  let date = new Date();
+  console.log('shiftOutTime', shiftOutTime);
+  // console.log('Current date', date);
+  
+  let timeDifference = date - shiftOutTime;
+  let minutesDifference = timeDifference / (1000 * 60);
+  
+  // Calculate 10 minutes after shiftOutTime
+  let tenMinutesAfterShiftOutTime = new Date(shiftOutTime.getTime() + 10 * 60000);
+  
+  if (date >= shiftOutTime && date <= tenMinutesAfterShiftOutTime) {
+    // Run your function here
+    if (outtime && (outtime.innerHTML == "-" || outtime.innerHTML == "")){
+      row.classList.add('mis-pinch');
+      console.log("Current time is between shiftOutTime and 10 minutes after shiftOutTime.");
+    }
+  } else {
+      row.classList.remove('mis-pinch');
+      console.log("Current time is not between shiftOutTime and 10 minutes after shiftOutTime.");
+  }
+  
+
+  // if (minutesDifference > 10) {
+  //   intime.innerHTML = `<div class="table-tag punchOptionsDiv">
+  //                           <label for="punchOptions">${hisInTimeStr}</label>
+  //                           <select id="punchOptions" class='punchOptions'>
+  //                               <option value="half-day">Half Day</option>
+  //                               <option value="communicated">Communicated</option>
+  //                               <option value="grace-time">Grace Time</option>
+  //                           </select>
+  //                       </div>`;
+  //   action.innerHTML = `
+  //                       <form class="btns-container">
+  //                           <input type="hidden" name="empid" value="${id}">
+  //                           <button type="button" class="table-btn continue continue-${id}">Save</button>
+  //                       </form>
+  //                     `;
+  // }
 
 
 
   //check no in time or out time
 
-  if (
-    (intime && (intime.innerHTML == "-" || intime.innerHTML == "")) ||
-    (outtime && (outtime.innerHTML == "-" || outtime.innerHTML == ""))
-  ) {
-    row.classList.add("mis-pinch");
-    if (intime.innerHTML == "-") {
-      intime.innerHTML = `<div class="table-tag punchOptionsDiv">
-                              <label for="punchOptions">Punch In:</label>
-                              <select id="punchOptions" class='punchOptions'>
-                                  <option value="absent">Absent</option>
-                                  <option value="communicated">Communicated</option>
-                                  <option value="graceTime">Grace Time</option>
-                                  </select>
-                          </div>`;
-    }
-    if (outtime.innerHTML == "-") {
-      // outtime.innerHTML = `<div class="table-tag">Punch out</div>`;
-      outtime.innerHTML = `<div class="table-tag punchOptionsDiv">
-                                <label for="punchOptions">Punch Out:</label>
-                                <select id="punchOptions" class='punchOptions'>
-                                    <option value="shiftContinue">Shift Continue</option>
-                                    <option value="overTime">Over Time</option>
-                                    <option value="graceTime">Grace Time</option>
-                                    <option value="missPunch">Miss Punch</option>
-                                </select>
-                             </div>`;
+  // if (
+  //   (intime && (intime.innerHTML == "-" || intime.innerHTML == "")) ||
+  //   (outtime && (outtime.innerHTML == "-" || outtime.innerHTML == ""))
+  // ) {
+  //   if (intime.innerHTML == "-") {
+  //     row.classList.add("mis-pinch");
+  //   }
+  //   if (outtime.innerHTML == "-") {
+  //     // let shiftInTimeStr = row.querySelector('.shiftOutTime').textContent;// 20:00
 
-      //     row.querySelector(".action").innerHTML = `
-      //     <form class="btns-container">
-      //     <input type="hidden" name="empid" value="${id}">
-      //     <button type="button")" class="table-btn">Save</button>
-      // </form >
-      //     `;
-    }
+      
+  //     // let shiftOutTimeStr = row.querySelector('.shiftOutTime').textContent;// 20:00
+  //     // let hisOutTimeStr = row.querySelector('.outtime').textContent; //14:00
+      
+  //     // const currentTime = new Date();
+  //     // const currentHours = currentTime.getHours();
+  //     // const currentMinutes = currentTime.getMinutes();
+  //     // const formattedCurrentTime = `${currentHours}:${currentMinutes}:00`;
 
-    action.innerHTML = `
-            <form class="btns-container">
-                <input type="hidden" name="empid" value="${id}">
-                <button type="button" class="table-btn continue continue-${id}">Save</button>
-            </form>
-          `;
-  }
+  //     // let shiftOutTime = new Date(currentTime + "T" + shiftOutTimeStr + ":00");
+
+  //     // let curr_date = row.querySelector('.attend_date').textContent;
+  //     // let time = new Date(curr_date + "T" + formattedCurrentTime + ":00");
+
+  //     // let timeDifference = shiftOutTime - time;
+
+
+  //     //     row.querySelector(".action").innerHTML = `
+  //     //     <form class="btns-container">
+  //     //     <input type="hidden" name="empid" value="${id}">
+  //     //     <button type="button")" class="table-btn">Save</button>
+  //     // </form >
+  //     //     `;
+  //   }
+
+  //   // action.innerHTML = `
+  //   //         <form class="btns-container">
+  //   //             <input type="hidden" name="empid" value="${id}">
+  //   //             <button type="button" class="table-btn continue continue-${id}">Save</button>
+  //   //         </form>
+  //   //       `;
+  // }
 
 
 
 
   //checking for wrong shift 
 
-  if (status.textContent.toLowerCase().trim() == "wrong shift") {
-    action.innerHTML = `
-            <form class="btns-container">
-                <input type="hidden" name="empid" value="${id}">
-                <button type="button" class="table-btn continue continue-${id}">Save</button>
-            </form>
-          `;
-    if (branch.textContent.toLowerCase().trim() == 'kkl') {
-      status.innerHTML = `<div class="table-tag punchOptionsDiv">
-                          <label for="punchOptions">Wrong Shift:</label>
-                          <select id="punchOptions" class='punchOptions'>
-                              <option value="call-duty">Call Duty (KKL)</option>
-                              <option value="wrong-shift">Wrong Shift</option>
-                          </select>
-                      </div>`; 
-    }
-    else {
-      status.innerHTML = `<div class="table-tag punchOptionsDiv">
-                          <label for="punchOptions">Wrong Shift:</label>
-                          <select id="punchOptions" class='punchOptions'>
-                          <option value="over-time">Over Time</option>
-                          <option value="wrong-shift">Wrong Shift</option>
-                              </select>
-                      </div>`; 
-    }
-  }
+  // if (status.textContent.toLowerCase().trim() == "wrong shift") {
+  //   action.innerHTML = `
+  //           <form class="btns-container">
+  //               <input type="hidden" name="empid" value="${id}">
+  //               <button type="button" class="table-btn continue continue-${id}">Save</button>
+  //           </form>
+  //         `;
+  //   if (branch.textContent.toLowerCase().trim() == 'kkl') {
+  //     status.innerHTML = `<div class="table-tag punchOptionsDiv">
+  //                         <label for="punchOptions">Wrong Shift:</label>
+  //                         <select id="punchOptions" class='punchOptions'>
+  //                             <option value="call-duty">Call Duty (KKL)</option>
+  //                             <option value="wrong-shift">Wrong Shift</option>
+  //                         </select>
+  //                     </div>`; 
+  //   }
+  //   else {
+  //     status.innerHTML = `<div class="table-tag punchOptionsDiv">
+  //                         <label for="punchOptions">Wrong Shift:</label>
+  //                         <select id="punchOptions" class='punchOptions'>
+  //                         <option value="over-time">Over Time</option>
+  //                         <option value="wrong-shift">Wrong Shift</option>
+  //                             </select>
+  //                     </div>`; 
+  //   }
+  // }
 
   // if (status.textContent.toLowerCase().trim() == "communicated") {
   //   status.innerHTML = `<p class="table-tag">Communicated</p>`;

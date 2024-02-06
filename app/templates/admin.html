@@ -15,10 +15,11 @@ content %}
         This Month Attendance
       </li>
       <select name="shift" id="shift" class="tag-btn click shift_change">
-        <option value="" disabled>Select Shift Name</option>
+        <option value="current">Select Shift Name</option>
         <option value="8A">A ~ Shift</option>
         <option value="8B">B ~ Shift</option>
         <option value="8C">C ~ Shift</option>
+        <option value="all">All Shift</option>
       </select>
     </ul>
   </menu>
@@ -70,13 +71,54 @@ content %}
               <td class="attend_date">{{attendance.date.date()}}</td>
               <td class="branch">{{attendance.branch}}</td>
               <td class="shift">{{attendance.shiftType}}</td>
-
-
               <td class="shiftInTime">{{attendance.shiftIntime}}</td>
-
               <td class="shiftOutTime">{{attendance.shift_Outtime}}</td>
-              <td class="intime">{{attendance.inTime}}</td>
+              {% if attendance.attendance != 'Wrong Shift' %}
+                  {% if attendance.late=='no_late' %}
+                  <td class="intime">{{attendance.inTime}}</td>
+                  {% elif attendance.late=='late' %}
+                  <td class="shiftInTime">
+                    <div class="table-tag punchOptionsDiv">
+                      <label for="punchOptions">{{attendance.inTime}}</label>
+                      <select id="punchOptions" class="punchOptions">
+                        <option value="half-day">Half Day</option>
+                        <option value="communicated">Communicated</option>
+                        <option value="grace-time">Grace Time</option>
+                      </select>
+                    </div>
+                  </td>
+                  {% elif attendance.late=='-' %}
+                  <td class="shiftInTime">
+                    <div class="table-tag punchOptionsDiv">
+                      <label for="punchOptions">Punch In:</label>
+                      <select id="punchOptions" class="punchOptions">
+                        <option value="absent">Absent</option>
+                        <option value="communicated">Communicated</option>
+                      </select>
+                    </div>
+                  </td>
+                  {% endif %}
+              {% else %}
+              <td class="shiftInTime">{{attendance.inTime}}
+              {% endif %}
+
+              {% if attendance.outTime =='-' and attendance.inTime!='-'%}
+              <td class="shiftOutTime">
+                <div class="table-tag punchOptionsDiv">
+                  <label for="punchOptions">Punch Out:</label>
+                  <select id="punchOptions" class="punchOptions">
+                    <option value="shift-continue">Shift Continue</option>
+                    <option value="grace-time">Grace Time</option>
+                    <option value="over-time">Over Time</option>
+                    <option value="mis-pinch">Miss Punch</option>
+                  </select>
+                </div>
+              </td>
+              {% else %}
               <td class="outtime">{{attendance.outTime}}</td>
+              {% endif %}
+
+
               <td>{{attendance.lateBy}}</td>
               <td>{{attendance.earlyGoingBy}}</td>
               <td>{{attendance.TotalDuration}}</td>
@@ -86,12 +128,44 @@ content %}
                 <i class="fas fa-check-circle"></i> Present {% elif
                 attendance.attendance == "O.T" %}
                 <i class="fas fa-check-circle"></i> O.T {% elif
-                attendance.attendance == "Wrong Shift" %}
-                <i class="fas fa-times-circle"></i> Wrong Shift {% else %}
+                attendance.attendance == "Communicated" %}
+                <i class="fas fa-phone"></i>Communicated {% elif
+                attendance.attendance == "Wrong Shift" %} {% if
+                attendance.branch=='KKL' %}
+                <div class="table-tag punchOptionsDiv">
+                  <label for="punchOptions">Wrong Shift:</label>
+                  <select id="punchOptions" class="punchOptions">
+                    <option value="call-duty">Call Duty (KKL)</option>
+                    <option value="wrong-shift">Wrong Shift</option>
+                  </select>
+                </div>
+                {% else %}
+                <div class="table-tag punchOptionsDiv">
+                  <label for="punchOptions">Wrong Shift:</label>
+                  <select id="punchOptions" class="punchOptions">
+                    <option value="over-time">Over Time</option>
+                    <option value="wrong-shift">Wrong Shift</option>
+                  </select>
+                </div>
+                {% endif %} {% else %}
                 <i class="fas fa-times-circle"></i> Absent {% endif %}
               </td>
               <td class="action">
+                {% if attendance.late!='no_late' or
+                attendance.attendance=='Wrong Shift' or attendance.inTime=='-'
+                or attendance.outTime=='-' %}
+                <form class="btns-container">
+                  <input type="hidden" name="empid" value="${id}" />
+                  <button
+                    type="button"
+                    class="table-btn continue continue-${id}"
+                  >
+                    Save
+                  </button>
+                </form>
+                {% else %}
                 <p class="table-tag tag">N/A</p>
+                {% endif %}
               </td>
             </tr>
             {% endfor %} {% endif %}
