@@ -2,6 +2,8 @@ console.log("filter.js");
 const all_rows = document.querySelectorAll(".today-attendance-table tbody tr");
 const all_shiftDisplay = document.querySelectorAll(".currentShift");
 
+let finaldetails;
+
 let shiftSelect = document.getElementById("shift");
 
 shiftSelect.addEventListener("change", () => {
@@ -12,59 +14,59 @@ shiftSelect.addEventListener("change", () => {
     filter(shift.toLowerCase());
   }
 });
-function sendAlert(id, action) {
-  console.log("ID: ", id);
+// function sendAlert(id, action) {
+//   console.log("ID: ", id);
 
-  // Create an object with the ID
-  const data = { id: id };
-  let route = "";
-  let confirm_msg = false;
-  if (action === "cancel") {
-    confirm_msg = confirm("Are You Sure ? \nDo You Want to Cancel ?");
-    if (confirm_msg) {
-      route = "/send_message";
-      document.querySelector(".reload").classList.add("active");
-    }
-  } else if (action === "continue") {
-    confirm_msg = confirm("Are You Sure ? \nDo You Want to Continue ?");
-    if (confirm_msg) {
-      route = "/send_continue_message";
-      document.querySelector(".reload").classList.add("active");
-    }
-  }
+//   // Create an object with the ID
+//   const data = { id: id };
+//   let route = "";
+//   let confirm_msg = false;
+//   if (action === "cancel") {
+//     confirm_msg = confirm("Are You Sure ? \nDo You Want to Cancel ?");
+//     if (confirm_msg) {
+//       route = "/send_message";
+//       document.querySelector(".reload").classList.add("active");
+//     }
+//   } else if (action === "continue") {
+//     confirm_msg = confirm("Are You Sure ? \nDo You Want to Continue ?");
+//     if (confirm_msg) {
+//       route = "/send_continue_message";
+//       document.querySelector(".reload").classList.add("active");
+//     }
+//   }
 
-  fetch(route, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      document.querySelector(".reload").classList.remove("active");
-      console.log(data);
-      let cancel = document.querySelector(`.cancel-${id}`);
-      let continueBtn = document.querySelector(`.continue-${id}`);
+//   fetch(route, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify(data),
+//   })
+//     .then((response) => response.json())
+//     .then((data) => {
+//       document.querySelector(".reload").classList.remove("active");
+//       console.log(data);
+//       let cancel = document.querySelector(`.cancel-${id}`);
+//       let continueBtn = document.querySelector(`.continue-${id}`);
 
-      cancel.disabled = "true";
-      cancel.style.cursor = "not-allowed";
-      if (continueBtn) {
-        continueBtn.disabled = "true";
-        continueBtn.style.cursor = "not-allowed";
-      }
-      window.location.href = "";
-    });
-}
+//       cancel.disabled = "true";
+//       cancel.style.cursor = "not-allowed";
+//       if (continueBtn) {
+//         continueBtn.disabled = "true";
+//         continueBtn.style.cursor = "not-allowed";
+//       }
+//       window.location.href = "";
+//     });
+// }
 
 function filter(currentShift) {
   all_rows.forEach((row) => {
-    // console.log(currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase());
+    console.log(
+      currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase()
+    );
 
     if (
-      (currentShift.toUpperCase() ==
-        row.querySelector(".shift").textContent.trim().toUpperCase()) ==
-      true
+      currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase()
     ) {
       row.style.display = "";
       // console.log(row);
@@ -78,7 +80,7 @@ function filter(currentShift) {
 
     if (
       (currentShift.toUpperCase() ==
-        row.querySelector(".shift").textContent.trim().toUpperCase()) ==
+        row.getAttribute("data-shift").toUpperCase()) ==
       false
     ) {
       row.style.display = "none";
@@ -90,6 +92,8 @@ function filter(currentShift) {
       }
     }
     all_shiftDisplay.forEach((display) => {
+      // console.log(currentShift.toUpperCase());
+      // console.log(display.children[0]);
       display.children[0].innerHTML = `<span class='tag'>${currentShift.toUpperCase()}</span>`;
     });
   });
@@ -106,6 +110,7 @@ function getCurrentShift() {
   } else if (currentHour >= 22 && currentHour < 6) {
     return "8C";
   } else {
+    // console.log(`else part returned`);
     return "8A";
   }
 }
@@ -114,99 +119,177 @@ const currentShift = getCurrentShift();
 filter(currentShift);
 
 all_rows.forEach((row) => {
-  let id = row.querySelector(".id").innerHTML;
+  let id = row.querySelector(".emp_id").innerHTML;
   let intime = row.querySelector(".intime");
   let outtime = row.querySelector(".outtime");
   let status = row.querySelector(".status");
+  let action = row.querySelector(".action");
+  let branch = row.querySelector('.branch');
+
+
+
+
+  // check intime for 10mins late 
+  let shiftInTimeStr = row.querySelector('.shiftInTime').textContent;// 20:00
+  let hisInTimeStr = row.querySelector('.intime').textContent; //14:00
+  let curr_date = row.querySelector('.attend_date').textContent;
+  console.log('attend_date'+curr_date); //2024-02-06
+  let shiftInTime = new Date(curr_date + "T" + shiftInTimeStr + ":00");
+  let hisInTime = new Date(curr_date + "T" + hisInTimeStr + ":00");
+  console.log('shiftInTime',shiftInTime);
+  console.log('hisInTimeStr',hisInTime);
+  let timeDifference = hisInTime - shiftInTime;
+
+  let minutesDifference = timeDifference / (1000 * 60);
+
+  if (minutesDifference > 10) {
+    intime.innerHTML = `<div class="table-tag punchOptionsDiv">
+                            <label for="punchOptions">${hisInTimeStr}</label>
+                            <select id="punchOptions" class='punchOptions'>
+                                <option value="half-day">Half Day</option>
+                                <option value="communicated">Communicated</option>
+                                <option value="grace-time">Grace Time</option>
+                            </select>
+                        </div>`;
+    action.innerHTML = `
+                        <form class="btns-container">
+                            <input type="hidden" name="empid" value="${id}">
+                            <button type="button" class="table-btn continue continue-${id}">Save</button>
+                        </form>
+                      `;
+  }
+
+
+
+  //check no in time or out time
+
   if (
     (intime && (intime.innerHTML == "-" || intime.innerHTML == "")) ||
     (outtime && (outtime.innerHTML == "-" || outtime.innerHTML == ""))
   ) {
     row.classList.add("mis-pinch");
     if (intime.innerHTML == "-") {
-      intime.innerHTML = `<div class="table-tag">Punch in</div>`;
+      intime.innerHTML = `<div class="table-tag punchOptionsDiv">
+                              <label for="punchOptions">Punch In:</label>
+                              <select id="punchOptions" class='punchOptions'>
+                                  <option value="absent">Absent</option>
+                                  <option value="communicated">Communicated</option>
+                                  <option value="graceTime">Grace Time</option>
+                                  </select>
+                          </div>`;
     }
     if (outtime.innerHTML == "-") {
-      outtime.innerHTML = `<div class="table-tag">Punch out</div>`;
+      // outtime.innerHTML = `<div class="table-tag">Punch out</div>`;
+      outtime.innerHTML = `<div class="table-tag punchOptionsDiv">
+                                <label for="punchOptions">Punch Out:</label>
+                                <select id="punchOptions" class='punchOptions'>
+                                    <option value="shiftContinue">Shift Continue</option>
+                                    <option value="overTime">Over Time</option>
+                                    <option value="graceTime">Grace Time</option>
+                                    <option value="missPunch">Miss Punch</option>
+                                </select>
+                             </div>`;
+
+      //     row.querySelector(".action").innerHTML = `
+      //     <form class="btns-container">
+      //     <input type="hidden" name="empid" value="${id}">
+      //     <button type="button")" class="table-btn">Save</button>
+      // </form >
+      //     `;
     }
 
-    row.querySelector(".action").innerHTML = `
-        <form class="btns-container">
-            <input type="hidden" name="empid" value="${id}">
-            <button type="button" onclick="sendAlert(${id},'cancel')"  class="table-btn cancel cancel-${id}">Cancel</button>
-            <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
-        </form>
-      `;
-  } else {
-    row.classList.remove("mis-pinch");
+    action.innerHTML = `
+            <form class="btns-container">
+                <input type="hidden" name="empid" value="${id}">
+                <button type="button" class="table-btn continue continue-${id}">Save</button>
+            </form>
+          `;
   }
+
+
+
+
+  //checking for wrong shift 
 
   if (status.textContent.toLowerCase().trim() == "wrong shift") {
-    status.innerHTML = `<p class="table-tag">Wrong Shift</p>`;
-    row.classList.add("wrongShift");
-    row.querySelector(".action").innerHTML = `
-        <div class="btns-container">
-            <input type="hidden" name="type" id="type" value="${id}">
-            <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
-            <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
-        </div>
-      `;
-  } else {
-    row.classList.remove("wrongShift");
-    row.classList.remove("overTime");
-  }
-  if (status.textContent.toLowerCase().trim() == "communicated") {
-    status.innerHTML = `<p class="table-tag">Communicated</p>`;
-    row.classList.add("communicated");
-    row.querySelector(".action").innerHTML = `
-        <div class="btns-container">
-            <input type="hidden" name="type" id="type" value="${id}">
-            <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
-            <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
-        </div>
-      `;
-  }
-  // console.log(status.textContent.toLowerCase().trim());
-  if (status.textContent.toLowerCase().trim() == "absent") {
-    status.innerHTML = `<p class="table-tag">Absent</p>`;
-    row.classList.add("absent");
-    row.querySelector(".action").innerHTML = `
-        <div class="btns-container">
-            <input type="hidden" name="type" id="type" value="${id}">
-            <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
-            <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
-        </div>
-      `;
-  } else if (status.textContent.toLowerCase().trim() == "present") {
-    // status.innerHTML = `<p class="table-tag">Present</p>`;
-    row.classList.add("present");
-    row.querySelector(".action").innerHTML = `
-        <div class="btns-container">
-            <input type="hidden" name="type" id="type" value="${id}">
-            <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
-            <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
-        </div>
-      `;
-  } else {
-    row.classList.remove("wrongShift");
-    row.classList.remove("overTime");
-  }
-  if (status.textContent.toLowerCase().trim() == "ot") {
-    status.innerHTML = `<p class="table-tag">OT</p>`;
-    row.classList.add("overTime");
-    row.querySelector(".action").innerHTML = `
-        <div class="btns-container">
-            <input type="hidden" name="type" id="type" value="${id}">
-            <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
-            <!-- <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>-->
-        </div>
-      `;
-  } else {
-    row.classList.remove("wrongShift");
-    row.classList.remove("overTime");
+    action.innerHTML = `
+            <form class="btns-container">
+                <input type="hidden" name="empid" value="${id}">
+                <button type="button" class="table-btn continue continue-${id}">Save</button>
+            </form>
+          `;
+    if (branch.textContent.toLowerCase().trim() == 'kkl') {
+      status.innerHTML = `<div class="table-tag punchOptionsDiv">
+                          <label for="punchOptions">Wrong Shift:</label>
+                          <select id="punchOptions" class='punchOptions'>
+                              <option value="call-duty">Call Duty (KKL)</option>
+                              <option value="wrong-shift">Wrong Shift</option>
+                          </select>
+                      </div>`; 
+    }
+    else {
+      status.innerHTML = `<div class="table-tag punchOptionsDiv">
+                          <label for="punchOptions">Wrong Shift:</label>
+                          <select id="punchOptions" class='punchOptions'>
+                          <option value="over-time">Over Time</option>
+                          <option value="wrong-shift">Wrong Shift</option>
+                              </select>
+                      </div>`; 
+    }
   }
 
-  console.log(status.textContent.trim());
+  // if (status.textContent.toLowerCase().trim() == "communicated") {
+  //   status.innerHTML = `<p class="table-tag">Communicated</p>`;
+  //   row.classList.add("communicated");
+  //   // row.querySelector(".action").innerHTML = `
+  //   //     <div class="btns-container">
+  //   //         <input type="hidden" name="type" id="type" value="${id}">
+  //   //         <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
+  //   //         <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
+  //   //     </div>
+  //   //   `;
+  // } else {
+  //   row.classList.remove("communicated");
+  // }
+  // if (status.textContent.toLowerCase().trim() == "absent") {
+  //   status.innerHTML = `<p class="table-tag">Absent</p>`;
+  //   row.classList.add("absent");
+  //   // row.querySelector(".action").innerHTML = `
+  //   //     <div class="btns-container">
+  //   //         <input type="hidden" name="type" id="type" value="${id}">
+  //   //         <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
+  //   //         <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
+  //   //     </div>
+  //   //   `;
+  // } else {
+  //   row.classList.remove("absent");
+  // }
+  // if (status.textContent.toLowerCase().trim() == "present") {
+  //   status.innerHTML = `<p class="table-tag">Present</p>`;
+  //   row.classList.add("present");
+  //   // row.querySelector(".action").innerHTML = `
+  //   //     <div class="btns-container">
+  //   //         <input type="hidden" name="type" id="type" value="${id}">
+  //   //         <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
+  //   //         <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>
+  //   //     </div>
+  //   //   `;
+  // } else {
+  //   row.classList.remove("present");
+  // }
+  // if (status.textContent.toLowerCase().trim() == "ot") {
+  //   status.innerHTML = `<p class="table-tag">OT</p>`;
+  //   row.classList.add("overTime");
+  //   // row.querySelector(".action").innerHTML = `
+  //   //     <div class="btns-container">
+  //   //         <input type="hidden" name="type" id="type" value="${id}">
+  //   //         <button type="button" onclick="sendAlert(${id},'cancel')" class="table-btn cancel cancel-${id}">Cancel</button>
+  //   //         <!-- <button type="button" onclick="sendAlert(${id},'continue')" class="table-btn continue continue-${id}">Continue</button>-->
+  //   //     </div>
+  //   //   `;
+  // } else {
+  //   row.classList.remove("overTime");
+  // }
 });
 
 let shiftDetails = [
@@ -226,6 +309,10 @@ let shiftDetails = [
     shiftOuttime: "06:00",
   },
 ];
+
+// let shiftDetail = getShift();
+// console.log(shiftDet[0]);
+// console.log(shiftDetails);
 
 let alertSent = false;
 let elapsedMinutes = 0; // Declare elapsedMinutes outside the functions
@@ -353,7 +440,7 @@ function logElapsedTime() {
     // console.log(current_last_shift);
     return current_last_shift;
   } else {
-    console.log("No shift found. Unable to calculate elapsed time.");
+    // console.log("No shift found. Unable to calculate elapsed time.");
   }
 }
 

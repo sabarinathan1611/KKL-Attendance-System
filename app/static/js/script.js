@@ -4,7 +4,7 @@ let currentDate = date.getDate();
 let currentMonth = date.getMonth();
 let currentYear = date.getFullYear();
 
-let displayDate = currentDate + "/" + (currentMonth+1) + "/" + currentYear;
+let displayDate = currentDate + "/" + (currentMonth + 1) + "/" + currentYear;
 
 document.querySelector(".date").innerHTML = `Date : ${displayDate}`;
 
@@ -375,7 +375,7 @@ document.body.addEventListener("click", function (event) {
   if (target.classList.contains("request-btns")) {
     const action = target.dataset.action;
     const id = target.dataset.id;
-    const emp_id = target.dataset.empId; // Note: Use camelCase for consistency
+    const emp_id = target.dataset.empId;
     const name = target.dataset.name;
     const data_type = target.dataset.dataType;
     const old_data = target.dataset.oldData;
@@ -474,13 +474,184 @@ load_btn.addEventListener("click", () => {
   }, 2000);
 });
 
+let loadDiv = document.querySelector(".reload");
+
 window.addEventListener("load", () => {
-  let loadDiv = document.querySelector(".reload");
   loadDiv.classList.remove("active");
 });
 
 window.addEventListener("beforeunload", () => {
-  let loadDiv = document.querySelector(".reload");
   loadDiv.classList.remove("active");
 });
 // reload part end
+
+function open_req_profile(id, permission_type) {
+  var popupContainer = document.querySelector(".myPopup"); 
+  var approve_btn = document.querySelector(".approve-btn"); 
+  var decline_btn = document.querySelector(".decline-btn");
+  popupContainer.style.display = "flex";
+
+  fetch("/bring_req_profile", {
+    method: "POST",
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ id: id, permission_type: permission_type }),
+})
+    .then((response) => response.json())
+    .then((det) => {
+      let info = det.data;
+      let status = info.status;
+      console.log('received');
+      document.querySelectorAll(".emp_id").forEach((data) => {
+        data.innerText = info.emp_id;
+      });
+      document.querySelectorAll(".emp_name").forEach((data) => {
+        data.innerText = info.emp_name;
+      });
+      document.querySelectorAll(".from_time").forEach((data) => {
+        data.innerText = info.from_time;
+      });
+      document.querySelectorAll(".to_time").forEach((data) => {
+        data.innerText = info.to_time;
+      });
+      document.querySelectorAll(".reason").forEach((data) => {
+        data.innerText = info.reason;
+      });
+      document.getElementsByName('request_id').value=info.emp_id
+      document.querySelector('.leave_bal').innerText=info.leave_balance;
+      document.querySelector('.ph_number').innerText=info.ph_number;
+      document.querySelector('.shift').innerText=info.shift;
+      document.querySelector('.address').innerText=info.address;
+      document.querySelector('.req_time').innerText=info.req_time;
+      document.querySelector('.req_date').innerText=info.req_date;
+      document.querySelector('.late_bal').innerText = info.late_balance;
+      console.log(status);
+      approve_btn.onclick = function() {
+        handleApproval(permission_type, 'approve', info.id);
+      };
+      decline_btn.onclick = function() {
+        handleApproval(permission_type, 'decline', info.id);
+      };
+      console.log('Status check ',status);
+      if (status == 'Approved') {
+        approve_btn.innerHTML = `<i class="fas fa-check-circle"></i>
+                                <span class="btn-text">Approved</span>`
+        // approve_btn.style.transform = 'scale(1.1)';
+        approve_btn.classList.add('approved');
+        // approve_btn.classList.remove('approve');
+        approve_btn.disabled = true;
+      } else{
+        approve_btn.innerHTML =`<i class="fas fa-check-circle"></i>
+                                    <span class="btn-text">Approve</span>`
+        // approve_btn.classList.add('approve');
+        approve_btn.classList.remove('approved')
+        approve_btn.disabled = false;
+      }
+      if (status == 'Declined') {
+        decline_btn.innerHTML = `<i class="fas fa-times-circle"></i>
+                                    <span class="btn-text">Declined</span>`;
+        decline_btn.classList.add('declined');
+        // decline_btn.style.transform = 'scale(1.1)';
+        // decline_btn.classList.remove('decline');
+        decline_btn.disabled = true;
+
+      } else{
+        decline_btn.innerHTML = `<i class="fas fa-times-circle"></i>
+                                      <span class="btn-text">Decline</span>`;
+        // decline_btn.classList.add('decline');
+        decline_btn.classList.remove('declined');
+        decline_btn.disabled = false;
+      }
+    });
+}
+
+  function handleApproval(permissionType, action, id) {
+    loadDiv.classList.add("active");
+
+      fetch(`/${permissionType.toLowerCase()}_${action.toLowerCase()}`, {
+          method: "POST",
+          body: JSON.stringify({ id }),
+      }).then(response => response.json())
+          .then(data => {
+              loadDiv.classList.remove("active");
+
+              console.log('Response from server:', data);
+              const status = data.hr_approval;
+              let approved_by = data.approved_by;
+              const elementId = `${action.toLowerCase()}`;
+              document.getElementById(elementId).disabled = true;
+              document.getElementById(elementId === 'approve' ? 'decline' : 'approve').disabled = false;
+              document.getElementById(elementId).innerHTML = `<i class="fas fa-${status === 'Approved' ? 'check-circle' : 'times-circle'}"></i><span class="btn-text">${status}</span>`;
+              document.getElementById(elementId === 'approve' ? 'decline' : 'approve').innerHTML = `<i class="fas fa-${status === 'Declined' ? 'check-circle' : 'times-circle'}"></i><span class="btn-text">${status === 'Approved' ? 'Decline' : 'Approve'}</span>`;
+              document.getElementById(elementId).style.backgroundColor = status === 'Approved' ? 'green' : 'red';
+              document.getElementById(elementId === 'approve' ? 'decline' : 'approve').style.backgroundColor = '#3f3f3f';
+            
+            var approve_btn = document.querySelector(".approve-btn"); 
+            var decline_btn = document.querySelector(".decline-btn");
+            // if (approve_btn.classList.contains('approved') || decline_btn.classList.contains('declined')) {
+            //   approve_btn.classList.toggle('approved');
+            //   decline_btn.classList.toggle('declined');
+            // }
+            if (elementId === 'approve') {
+                approve_btn.classList.add('approved');
+                decline_btn.classList.remove('declined');
+            } else if(elementId=='decline'){
+                approve_btn.classList.remove('approved');
+              decline_btn.classList.add('declined');
+            }
+            else {
+              console.log('error here');
+            }
+
+            let table = document.getElementById(permissionType + '-table');
+            table_tr = table.querySelector('.' + permissionType + '-' + id);
+            console.log('.' + permissionType + '-' + id);
+            row_status = table_tr.querySelector('.status');
+            row_approved_by = document.querySelector('.approved_by');
+
+            if (action == 'approve') {
+              row_approved_by.textContent = approved_by;
+              row_status.textContent = 'Approved';
+              table_tr.classList.add('Approved');
+              table_tr.classList.remove('Declined');
+            } else {
+              row_approved_by.textContent = approved_by;
+              row_status.textContent = 'Declined';
+              table_tr.classList.add('Declined');           
+              table_tr.classList.remove('Approved');              
+            }
+          })
+          .catch(error => {
+              console.error('Error:', error);
+          });
+  }
+
+  // socket.on('${permission_type}_hr_approval_update', function(data) {
+  //     console.log(`${permission_type} details socket`);
+  //     const userId = data.userId;
+  //     const hrApproval = data.hr_approval;
+  //     //document.getElementById(hrApproval.toLowerCase()).textContent = hrApproval;
+  //     if (hrApproval=='Approved'){
+  //         document.getElementById('approve').textContent = hrApproval;
+  //     }
+  //     else if (hrApproval=='Declined'){
+  //         document.getElementById('decline').textContent = hrApproval;
+  //     }
+  // });
+
+let model_close = document.querySelector(".model-close");
+model_close.addEventListener("click", () => {
+  var popupContainer = document.querySelector(".myPopup");
+  // console.log(popupContainer);
+  popupContainer.style.display = "none";
+});
+
+
+document.querySelector('.uploaded-file').addEventListener('keydown', function(event) {
+  // Check if the pressed key is Enter (keyCode 13)
+  if (event.keyCode === 13) {
+      // Trigger the button click event
+      document.getElementById('upload-btn').click();
+  }
+});

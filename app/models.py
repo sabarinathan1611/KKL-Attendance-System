@@ -18,6 +18,7 @@ class Emp_login(db.Model, UserMixin):
     name = db.Column(db.String(150), nullable=False)
     password = db.Column(db.String(150))
     emp_id = db.Column(db.Integer)
+    branch=db.Column(db.String(150),default='KKL')  # DR, FT, KKL 
     phoneNumber=db.Column(db.Integer)   #newly added
     role =db.Column(db.String(150), nullable=False)
     late_balance = db.Column(db.Integer, default=20)
@@ -55,6 +56,7 @@ class Attendance(db.Model,UserMixin):
     emp_id = db.Column(db.Integer, db.ForeignKey('emp_login.id'))
     name = db.Column(db.String(150), nullable=False)
     attendance =db.Column(db.String(150))
+    branch =db.Column(db.String(150),default='KKL')
     wages_per_Day=db.Column(db.String(150))
     inTime=db.Column(db.String(150))
     outTime=db.Column(db.String(150))
@@ -180,3 +182,11 @@ class Week_off(db.Model):
     emp_id = db.Column(db.Integer)
     # date = db.Column(db.DateTime(timezone=True), default=func.now())
     date= db.Column(db.String(150), nullable=False)
+
+class comp_off(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    emp_id = db.Column(db.Integer)
+    # comp_off= db.Column(db.Integer)
+    date= db.Column(db.String(150), nullable=False)
+    
+# added branch in emp_login and comp_off table

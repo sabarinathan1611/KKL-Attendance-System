@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %} {% endblock %}</title>
-    <link rel="stylesheet" href="static/css/style.css" />
     <script src="https://cdn.socket.io/4.7.2/socket.io.js"></script>
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
@@ -26,6 +25,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="static/css/late.css" />
+    <link rel="stylesheet" href="static/css/attendance.css" />
+    <link rel="stylesheet" href="static/css/style.css" />
+
   </head>
   <body>
     <!-- {% with messages = get_flashed_messages(with_categories=true) %} {% if
@@ -55,6 +57,10 @@
       <div class="toogle-sidebar">
         <i class="fas fa-bars"></i>
       </div>
+      <div class="logo">
+        <img src="static/img/logomain.png" alt="logo">
+        Kanchi Karpooram Limited
+      </div>
       <ul class="options">
         <li class="option">
           <div class="notification-btn">
@@ -70,24 +76,15 @@
             {% if notification %} {% for single_notification in notification %}
             <li class="notification-box">
               <div class="profile">
-                <img src="static/img/default-girl.jpeg" alt="default user" />
+                <img src="static/img/girl.jpeg" alt="default user" />
               </div>
               <div class="notification-details">
                 <div class="notification-user-name">
                   {{single_notification.emp_name}}
-                  <a
-                    href="{{ url_for('views.' + single_notification.permission_type.lower() + '_req_profile',
-                    emp_id=single_notification.emp_id,
-                    emp_name=single_notification.emp_name,
-                    from_time=single_notification.from_time,
-                    to_time=single_notification.to_time,
-                    reason=single_notification.reason,
-                    req_id=single_notification.req_id, 
-                    back_page='admin',)}}"
-                  >
-                    <i class="fas fa-eye eye-icon"></i
-                  ></a>
-                </div>
+                  <button class="view_profile" onclick="open_req_profile(
+                    '{{single_notification.req_id}}',
+                    '{{single_notification.permission_type.lower()}}')"><i class="fas fa-eye"></i></button>
+                </div> 
                 <div class="notification-message">
                   {{single_notification.permission_type}}-{{single_notification.reason}}
                 </div>
@@ -110,37 +107,37 @@
     </nav>
     <aside class="sidebar">
       <ul class="side-menu">
-        <li class="menu-option active">
-          <a href="/" class="side_bar_a">
+        <li class="menu-option active action-menu" index="0">
+          <!-- <a href="/" class="side_bar_a"> -->
             <span class="icon">
               <i class="far fa-calendar-check"></i>
             </span>
             <p class="menu-name">Attendance</p>
-          </a>
+          <!-- </a> -->
         </li>
-        <li class="menu-option action-menu emp-disp-option" index="3">
-          <a href="/emp_details" class="side_bar_a">
+        <li class="menu-option action-menu emp-disp-option" index="1">
+          <!-- <a href="/emp_details" class="side_bar_a"> -->
             <span class="icon">
               <i class="fas fa-users"></i>
             </span>
             <p class="menu-name">Employees</p>
-          </a>
+          <!-- </a> -->
         </li>
-        <li class="menu-option">
-          <a href="/late_req_table" class="side_bar_a">
+        <li class="menu-option action-menu" index="2">
+          <!-- <a href="/late_req_table" class="side_bar_a"> -->
             <span class="icon">
               <i class="far fa-clock"></i>
             </span>
             <p class="menu-name">Late table</p>
-          </a>
+          <!-- </a> -->
         </li>
-        <li class="menu-option">
-          <a href="/leave_req_table" class="side_bar_a">
+        <li class="menu-option action-menu" index="3">
+          <!-- <a href="/leave_req_table" class="side_bar_a"> -->
             <span class="icon">
               <i class="fas fa-calendar-plus"></i>
             </span>
             <p class="menu-name">Leave table</p>
-          </a>
+          <!-- </a> -->
         </li>
 
         <li class="menu-option upload-option" style="margin-top: 7px">
@@ -176,6 +173,101 @@
         <div class="circle"></div>
       </div>
     </div>
+      
+    <section class="notification-model myPopup" style="display: none;">
+      <div class="inner-model">
+              <div class="model-nav">
+                  <button class="model-close">
+                      <i class="fas fa-times-circle"></i>
+                  </button>
+              </div>
+              <div class="model-body">
+                  <div class="model-profile">
+                      <div class="profile-left">
+                          <div class="user-image">
+                              <img src="{{ url_for('static', filename='img/male.jpeg') }}" alt="">
+                          </div>
+                          <div class="user-details">
+                              <h1 class="user-name">
+                                  <span class="emp_name"></span>
+                              </h1>
+                              <h1 class="user-name">
+                                  #<span class="emp_id"></span>
+                              </h1>
+                          </div>
+                      </div>
+                      <div class="profile-right">
+                       <ul class="personal-details">
+                          <li class="detail-head">User Name's Details</li>
+                          <li class="detail"><strong><i class="fas fa-user"></i> Emp Name : </strong><span class="emp_name"></span></la></li>
+                          <li class="detail"><strong><i class="fas fa-id-card"></i> Emp Id :</strong> #<span class="emp_id"></span></li>
+                          <li class="detail"><strong><i class="fas fa-briefcase"></i> Shift :</strong> <span class="shift"></span></li>
+                          <li class="detail">
+                              <i class="fas fa-calendar-plus"></i>
+                              <strong>Leave Request Available :</strong> <span class="availLeave leave_bal"></span>
+                          </li>
+                          <li class="detail">
+                              <i class="fas fa-clock"></i> 
+                              <strong>Late Request Available :</strong> <span class="availLate late_bal"></span></li>
+                          <li class="detail">
+                              <i class="fas fa-phone-alt"></i> 
+                              <strong>Contact No :</strong> <span class="availLate ph_number"></span></li>
+                          <li class="detail">
+                              <i class="fas fa-location"></i> 
+                              <strong>Address :</strong>
+                              <span class="availLate address">
+                              </span>
+                          </li>
+                       </ul>
+                       <div class="model-message">
+                          <div class="message-header">
+                              <p class="message-subject"><i class="fas fa-calendar-plus"></i> <span class="permission_type"></span> Request</span>
+                              <div class="message-details">
+                                  <p class="message-time"><i class="fas fa-clock"></i><span class="req_time"></span></p>
+                                  ~
+                                  <p class="message-date"><i class="fas fa-calendar"></i><span class="req_date"></span></p>
+                              </div>
+                          </div>
+                          <div class="message-body">
+
+                              <p class="messsage">
+                                  From : <span class="from_time"></span>
+                              </p>
+                              <p class="messsage">
+                                  To : <span class="to_time"></span>
+                              </p>
+                              <p class="messsage">
+                                  <span class="reason"></span>
+                              </p>
+                          </div>
+                          </div>
+                      </div>
+                  </div>
+  
+              </div>
+              
+              <div class="model-footer">
+                <input type="hidden" name="request_id">
+                <a class="model-btn print-btn">
+                    <i class="fas fa-print"></i> 
+                    <span class="btn-text">Print</span>
+                </a>
+                <a class="model-btn download-btn">
+                    <i class="fas fa-download"></i>
+                    <span class="btn-text">Download</span>
+                </a>
+                    <button class="model-btn latetable approve-btn" name='approve' id="approve">
+                        
+                    </button>
+  
+                    <button class="model-btn latetable decline-btn" name='decline' id="decline">
+                        
+                    </button>
+            </div>
+
+</div>
+  </section>
+
     <main class="main active">
       <header class="details-bar">
         <div class="user-details">
@@ -187,7 +279,9 @@
         </div>
       </header>
 
-      {% block content %} {% endblock %}
+      {% block content %}
+      
+      {% endblock %}
     </main>
     <section class="side-sections upload-model" style="display: none">
       <div class="inner-upload main-section">
@@ -251,7 +345,7 @@
             <!-- <input type="file" name="file" id="file" hidden /> -->
             <input
               type="file"
-              class="form-control-file"
+              class="form-control-file uploaded-file"
               id="file"
               name="emp"
               accept=".xlsx,.xls"
@@ -425,6 +519,14 @@
         </div>
       </div>
     </section>
+
+    <script src="static/js/script.js"></script>
+    <script src="/static/js/filter.js"></script>
+    <script src="/static/js/action.js"></script>
+    {% block scripts %}
+     
+    {% endblock %}
+
     <script>
       var socket = io();
 
@@ -446,20 +548,8 @@
 
       countNotification();
 
-      function LategenerateSocketUrl(empId, empName, fromTime, toTime, reason, reqId, status, approved_by, socket_permission) {
-      var back_page = '${socket_permission}_table';
-      return `{{ url_for('views.late_req_profile') }}` +
-      `?emp_id=${empId}&emp_name=${empName}&from_time=${fromTime}&to_time=${toTime}&reason=${reason}&req_id=${reqId}&status=${status}&approved_by=${approved_by}&back_page=${back_page}`;
-      }
-      function LeavegenerateSocketUrl(empId, empName, fromTime, toTime, reason, reqId, status, approved_by, socket_permission) {
-      var back_page = '${socket_permission}_table';
-      return `{{ url_for('views.leave_req_profile') }}` +
-      `?emp_id=${empId}&emp_name=${empName}&from_time=${fromTime}&to_time=${toTime}&reason=${reason}&req_id=${reqId}&status=${status}&approved_by=${approved_by}&back_page=${back_page}`;
-      }
-
-
       socket.on("late", function (late_permission) {
-      console.log("Received late_permission:",late_permission.emp_id);
+      console.log("Received late_permission:",late_permission);
       const notifications = document.querySelector(".notifications");
       const notification_box = document.querySelector(".notification-box");
 
@@ -475,7 +565,9 @@
                   </div>
                   <div class="notification-details">
                       <div class="notification-user-name">
-                          ${late_permission.emp_name} <a href="${LategenerateSocketUrl(late_permission.emp_id, late_permission.emp_name, late_permission.from_time, late_permission.to_time, late_permission.reason, late_permission.id,late_permission.status,late_permission.approved_by,'{{permission_type}}')}"> <i class="fas fa-eye eye-icon"></i></a>
+                          ${late_permission.emp_name} <button class="view_profile" onclick="open_req_profile(
+                                '${late_permission.id}',
+                                'late')"><i class="fas fa-eye"></i></button>
                       </div>
                       <div class="notification-message">
                           Late - ${late_permission.reason}
@@ -484,11 +576,11 @@
               </li>
                                 `;
             countNotification();
-            window.location.href = "";
+            // window.location.href = "";
             });
 
       socket.on("leave", function (leave_permission) {
-          console.log("Received leave_permission:",leave_permission.emp_id);
+          console.log("Received leave_permission:",leave_permission);
           const notifications = document.querySelector(".notifications");
 
           if(document.querySelector(".notification-box")){
@@ -504,7 +596,9 @@
                   </div>
                   <div class="notification-details leave-notification">
                       <div class="notification-user-name">
-                          ${leave_permission.emp_name}-<a href="${LeavegenerateSocketUrl(leave_permission.emp_id, leave_permission.emp_name, leave_permission.from_time, leave_permission.to_time, leave_permission.reason, leave_permission.id,leave_permission.status,leave_permission.approved_by,'{{permission_type}}')}"> <i class="fas fa-eye eye-icon"></i></a>
+                          ${leave_permission.emp_name}-<button class="view_profile" onclick="open_req_profile(
+                                '${leave_permission.id}',
+                                'leave')"><i class="fas fa-eye"></i></button>
                       </div>
                       <div class="notification-message">
                           Leave - ${leave_permission.reason}
@@ -513,14 +607,11 @@
               </li>
                             `;
             countNotification();
-            window.location.href = "";
+            // window.location.href = "";
             });
 
       
     </script>
 
-    {% block scripts %}
-     
-    {% endblock %}
   </body>
 </html>

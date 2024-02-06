@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from flask import current_app as app
 from flask import  flash,redirect,session
-from .models import Attendance, Shift_time, Emp_login,Festival,late,leave,Week_off
+from .models import Attendance, Shift_time, Emp_login,Festival,late,leave,Week_off,comp_off
 from . import db
 from os import path
 import datetime
@@ -74,11 +74,7 @@ def send_sms(numbers_to_message, message_body):
             print(f"Twilio error: {e}")
 
 def validate_and_format_phone_number(phone_number):
-    # Assuming phone_number is a string
-    # Validate and format the phone number if necessary
-    # Add the country code if missing
-
-    # Example: Assuming Indian country code is +91
+    
     phone_number=str(phone_number)
     if not phone_number.startswith('+'):
         phone_number = '+91' + phone_number
@@ -392,40 +388,38 @@ def shiftypdate():
 #     else:
 #         print("File not found")
         
-def process_csv_file(file_path):
-    with open(file_path, mode='r') as file:
-        csv_reader = csv.reader(file)
-        next(csv_reader)  # Skip the header row
+# def process_csv_file(file_path):
+#     with open(file_path, mode='r') as file:
+#         csv_reader = csv.reader(file)
+#         next(csv_reader)  # Skip the header row
 
-        for row in csv_reader:
-            employee_id, employee_name, *shifts = row
+#         for row in csv_reader:
+#             employee_id, employee_name, *shifts = row
 
-            # Create a new NewShift instance and set its attributes
-            new_shift_entry = Shift_time(
-                name_date_day=employee_name,
-                filename=file_path,
-                monday=shifts[0],
-                tuesday=shifts[1],
-                wednesday=shifts[2],
-                thursday=shifts[3],
-                friday=shifts[4]
-            )
+#             # Create a new NewShift instance and set its attributes
+#             new_shift_entry = Shift_time(
+#                 name_date_day=employee_name,
+#                 filename=file_path,
+#                 monday=shifts[0],
+#                 tuesday=shifts[1],
+#                 wednesday=shifts[2],
+#                 thursday=shifts[3],
+#                 friday=shifts[4]
+#             )
 
-            # Set the day_* attributes dynamically
-            for day_num, shift in enumerate(shifts[5:], start=1):
-                setattr(new_shift_entry, f"day_{day_num}", shift)
+#             # Set the day_* attributes dynamically
+#             for day_num, shift in enumerate(shifts[5:], start=1):
+#                 setattr(new_shift_entry, f"day_{day_num}", shift)
 
-            # Add the new entry to the database session
-            db.session.add(new_shift_entry)
+#             # Add the new entry to the database session
+#             db.session.add(new_shift_entry)
 
-        # Commit the changes to the database
-        db.session.commit()
-
-
+#         # Commit the changes to the database
+#         db.session.commit()
 
 
 def attend_excel_data(file_path):
-    print('hello world')
+    print('Attending Excel Data')
     if os.path.exists(file_path):
         sheet_names = pd.ExcelFile(file_path).sheet_names
 
@@ -446,98 +440,69 @@ def attend_excel_data(file_path):
                 
                 
                 emp = db.session.query(Emp_login).filter_by(emp_id=empid).first()
-                print(emp)
+                #print(emp)
                 shift_times = Shift_time.query.all()
                 current_time = datetime.now().time()
                 current_date = datetime.now().date()
-                current_shift = None
+                # = None
                 for shift in shift_times:
                         shift_start_time = datetime.strptime(shift.shiftIntime, '%H:%M').time()
                         shift_end_time = datetime.strptime(shift.shift_Outtime, '%H:%M').time()
                         if shift_start_time <= current_time <= shift_end_time:
                             current_shift = shift.shiftType
                             break
-                print(current_shift,":current_shift")
+                #print(current_shift,":current_shift")
                 
                 shift_type = emp.shift
-                print("shift_type:",shift_type)
+                #print("shift_type:",shift_type)
                 shitfTime = Shift_time.query.filter_by(shiftType=emp.shift).first()
-                print("shitfTime:",shitfTime)
-                # Check if today's date is a holiday
-                today_date = datetime.now().strftime("%d.%m.%Y")
-                print("today_date",today_date)
-                is_holiday = Festival.query.filter(Festival.date == today_date).all()
-                print(is_holiday,"is_holiday")
+                #print("shitfTime:",shitfTime)
                 
-                week_off=Week_off.query.all()
-                # festival_alias = aliased(Festival)
-
-                # is_holiday = (
-                #     db.session.query(Festival)
-                #     .join(festival_alias, func.DATE(Attendance.date) == today_date)
-                #     .all()
-                # )
+                today_date = datetime.now().strftime("%d.%m.%Y")
+                #print("today_date",today_date)
+                is_holiday = Festival.query.filter(Festival.date == today_date).all()
+                #print(is_holiday,"is_holiday")
+                
+                week_off = Week_off.query.filter_by(emp_id=empid, date=today_date).order_by(Week_off.date.desc()).first()
+                print(week_off)
                 if is_holiday:
                     attendance_status = 'Holiday'
                 else:
-                    # for week_off in week_off:
-                    #     emp_id=week_off.emp_id
-                    #     if(row['emp_id']==emp_id):
-                    #         current_date = datetime.now().strftime('%Y-%m-%d')
-                    #         print("current_date:",current_date)
-                    #         attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date,Attendance.emp_id==emp_id).first()
-                    #         print("befor :",attendance.attendance)
-                    #         attendance.attendance='Wrong Shift'
-                    
                     if str(row['intime']) == "-":
-                        leave_check = db.session.query(leave).filter_by(emp_id=empid, status='Approved').first()
-                        late_check = db.session.query(late).filter_by(emp_id=empid, status='Approved').first()
-                        
-                        
+                        leave_check = db.session.query(leave).filter_by(emp_id=empid,date=today_date, status='Approved').first()
+                        late_check = db.session.query(late).filter_by(emp_id=empid,date=today_date, status='Approved').first()
 
-                        # Check if either leave or late is approved
+
                         if leave_check or late_check:
                             attendance_status = 'Communicated'
+                        elif week_off:
+                            attendance_status='Week Off'
                         else:
-                            attendance_status = 'Leave'
+                            c_off=comp_off.query.filter_by(emp_id=empid,date=today_date)
+                            if c_off:
+                                attendance_status='C Off'
+                            else:
+                                attendance_status = 'Leave'
                     else:
                         if current_shift != emp.shift:
                             attendance_status='Wrong Shift'
+                        elif week_off:
+                            attendance_status='Wop'
+                            new_req=comp_off(emp_id=empid,date=today_date)                        
+                            db.session.add(new_req)
+                            db.session.commit()
                         else:
-                            attendance_status = 'Present'
+                            attendance_status = 'Present'   
 
-                    '''
-                    if str(row['outtime']) == '-':
-                        
-                       shiftOuttime = session['lastShift']
-                       shiftOuttime = datetime.strptime(shiftOuttime, "%H:%M")
-                       shiftOuttime = shiftOuttime.time()
-                    #    print("shift out Time",shiftOuttime)
-                       #print(shiftOuttime)
-                       current_time = datetime.now().time()
-                       print("Current Time",current_time)
-                    #    current_time_str = datetime.now().strftime("%H:%M")
-                    #    if shiftOuttime > current_time + timedelta(minutes=10):
-                       print("shift out Time",shiftOuttime)
-                       print("current time ",(datetime.combine(datetime.today(), current_time)))
-                       time_with_10_minutes_added = (datetime.combine(datetime.today(), shiftOuttime) + timedelta(minutes=5)).time()
-                       print("time_with_10_minutes_added time ",time_with_10_minutes_added)
-                       if current_time > time_with_10_minutes_added:
-                           print("hello")
-                        #    print(send_alter.apply_async(countdown=1))
-                       else:
-                           print("\n\n\n\nits lower in time\n\n\n")
-                    else:
-                        print("out time gave")
-                    '''
-                    
+                branch=Emp_login.query.filter_by(emp_id=empid).first().branch
             
-                print("attendance_status",attendance_status)
+                # print("attendance_status",attendance_status)
                 attendance = Attendance(
                     emp_id=empid,
                     name=emp.name,
                     inTime=str(row['intime']),
                     outTime=str(row['outtime']),
+                    branch=branch,
                     shiftType=shift_type,
                     attendance=attendance_status,
                     shiftIntime=shitfTime.shiftIntime,
@@ -551,23 +516,23 @@ def attend_excel_data(file_path):
 
 def update_freeze_status_and_remove_absences(emp_id):
     try:
-        # Get the employee
+        
         emp = Emp_login.query.filter_by(emp_id=emp_id).first()
 
-        # Get the last 30 days absence records for the employee, including the current date
+
         thirty_days_ago = datetime.now() - timedelta(days=30)
         absent_records = Attendance.query.filter_by(emp_id=emp_id, attendance='Leave').filter(Attendance.date >= thirty_days_ago).all()
 
-        print(f"Employee ID: {emp_id}")
-        print(f"Absent Records: {len(absent_records)}")
+        # print(f"Employee ID: {emp_id}")
+        # print(f"Absent Records: {len(absent_records)}")
 
-        # If the employee has been continuously absent for 30 days, update freeze status and delete attendance records
+        
         if len(absent_records) >= 1:
             emp.freezed_account = True
-            print("Updating freeze status...")
+            # print("Updating freeze status...")
         else:
             emp.freezed_account = False
-            print("the employee freeze has been removed")
+            # print("the employee freeze has been removed")
 
         db.session.commit()
         return f"Success: Freeze status updated and attendance records deleted for employee {emp_id}."
@@ -632,6 +597,7 @@ def add_employee(file_path):
                             'email': row['email'],
                             'phoneNumber': row['phoneNumber'],
                             'shift': row['shift'],
+                            'branch': row['branch'],
                             'gender':row['gender'],
                             'password':generate_password_hash("lol")
                         })
@@ -774,3 +740,15 @@ def get_last_month_dates():
     last_day_of_last_month = first_day_of_current_month - timedelta(days=1)
     first_day_of_last_month = last_day_of_last_month.replace(day=1)
     return first_day_of_last_month, today
+
+def check_leave(date,emp_id):                # call this if a emp taken leave 
+    previous_date = date - timedelta(days=1)
+    previous_previous_date = previous_date-timedelta(date=1)
+    previous_date_attend=Attendance.query.filter_by(emp_id=emp_id,date=previous_date)
+    previous_previous_date_attend=Attendance.query.filter_by(emp_id=emp_id,date=previous_previous_date)
+
+    if previous_date_attend.attendance=='Holiday' or previous_date_attend.attendance=='Week Off':
+        if previous_previous_date_attend.attendance=='Leave':
+            previous_date_attend.attendance='Leave'
+            db.session.commit()            
+

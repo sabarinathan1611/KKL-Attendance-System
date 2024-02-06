@@ -21,7 +21,7 @@
   align-items: center;
   justify-content: center;
   background: #ffffff38;
-  z-index: 1000;
+  z-index: 10000;
   backdrop-filter: blur(2px);
 }
 
@@ -441,12 +441,16 @@ li {
   width: 100%;
   height: 100%;
 }
-
+.view_profile {
+  border: 0;
+  background-color: #00000000;
+}
 .notification-model {
   width: 100vw;
   height: 100vh;
-  position: absolute;
+  position: fixed;
   display: flex;
+  /* transition: .5s; */
   align-items: center;
   justify-content: center;
   top: 0;
@@ -454,10 +458,9 @@ li {
   bottom: 0;
   right: 0;
   background: #0000000e;
-  z-index: 1000;
   backdrop-filter: blur(3px);
+  z-index: 1000;
 }
-
 .inner-model {
   width: 90%;
   min-height: 90%;
@@ -926,7 +929,9 @@ option {
   overflow-y: scroll;
   position: relative;
 }
-
+tr.Pending {
+  background: lightgoldenrodyellow !important;
+}
 tr.Approved {
   background: lightgreen !important;
 }
@@ -934,13 +939,40 @@ tr.Approved {
 tr.Declined {
   background: lightcoral !important;
 }
-tr.Pending {
-  background: lightgoldenrodyellow !important;
-}
 
 .wrongShift {
   display: inline-table;
 }
-.side_bar_a{
+.side_bar_a {
   color: black;
+}
+.approved {
+  background-color: green !important;
+  transform: scale(1.1);
+}
+.declined {
+  background-color: red !important;
+  transform: scale(1.1);
+}
+.punchOptionsDiv {
+  display: flex;
+  flex-direction: column;
+}
+.punchOptions {
+  padding: 5px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 25px;
+  color: #008000;
+  font-family: sans-serif;
+  font-weight: 900;
+}
+
+.logo img {
+  max-height: 50px;
 }

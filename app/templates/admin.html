@@ -1,173 +1,497 @@
-{% extends "base_admin.html" %} {% block title %} Admin {% endblock %} {%
-block content %}
+{% extends "base_admin.html" %} {% block title %} Admin {% endblock %} {% block
+content %}
 
-<link rel="stylesheet" href="static/css/attendance.css" />
+<section
+  class="main-attendance page-action"
+  style="display: flex; flex-direction: column"
+  index="0"
+>
+  <menu class="table-menu" style="display: flex">
+    <ul class="btn-container">
+      <li class="tag-btn click active today-attend-btn" attend-index="0">
+        Today Attendance
+      </li>
+      <li class="tag-btn click month-attend-btn" attend-index="1">
+        This Month Attendance
+      </li>
+      <select name="shift" id="shift" class="tag-btn click shift_change">
+        <option value="" disabled>Select Shift Name</option>
+        <option value="8A">A ~ Shift</option>
+        <option value="8B">B ~ Shift</option>
+        <option value="8C">C ~ Shift</option>
+      </select>
+    </ul>
+  </menu>
 
-<menu class="table-menu" style="display: flex">
-  <ul class="btn-container">
-    <li class="tag-btn click active today-attend-btn" index="0">Today Attendance</li>
-    <li class="tag-btn click month-attend-btn"  index="1">This Month Attendance</li>
-    <select name="shift" id="shift" class="tag-btn click shift_change" index="0">
-      <option value="" disabled>Select Shift Name</option>
-      <option value="8A">A ~ Shift</option>
-      <option value="8B">B ~ Shift</option>
-      <option value="8C">C ~ Shift</option>
-    </select>
-  </ul>
-</menu>
-
-<section class="frame today-attendance" style="display: flex" index="0">
-  <div class="inner-frame">
-    <div class="frame-header">
-      <div class="frame-details currentShift">
-        <p class="shift name"><span class="tag">A</span> ~ shift</p>
-        <p class="frame-name">Attendance</p>
+  <section
+    class="frame today-attendance"
+    style="display: flex"
+    attend-index="0"
+  >
+    <div class="inner-frame">
+      <div class="frame-header">
+        <div class="frame-details currentShift">
+          <p class="shift name"><span class="tag">A</span> ~ shift</p>
+          <p class="frame-name">Attendance</p>
+        </div>
+        <div class="frame-options">
+          <button type="button" class="download">
+            <i class="fas fa-file-excel"></i>
+          </button>
+        </div>
       </div>
-      <div class="frame-options">
-        <button type="button" class="download">
-          <i class="fas fa-file-excel"></i>
-        </button>
+      <div class="frame-body">
+        <table class="today-attendance-table">
+          <thead>
+            <tr class="tablehead">
+              <th>EmpId</th>
+              <th>Name</th>
+              <th>Date</th>
+              <th>Branch</th>
+              <th>Shift</th>
+              <th>Shift Intime</th>
+              <th>Shift Outtime</th>
+              <th>Intime</th>
+              <th>Outtime</th>
+              <th>Late By</th>
+              <th>Early Go</th>
+              <th>Total Duration</th>
+              <th>Extra Time</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody class="tableBody">
+            {% if attendance %} {% for attendance in attendance %}
+
+            <tr data-shift="{{attendance.shiftType}}">
+              <td class="emp_id">{{attendance.emp_id }}</td>
+              <td class="name">{{attendance.name}}</td>
+              <td class="attend_date">{{attendance.date.date()}}</td>
+              <td class="branch">{{attendance.branch}}</td>
+              <td class="shift">{{attendance.shiftType}}</td>
+
+
+              <td class="shiftInTime">{{attendance.shiftIntime}}</td>
+
+              <td class="shiftOutTime">{{attendance.shift_Outtime}}</td>
+              <td class="intime">{{attendance.inTime}}</td>
+              <td class="outtime">{{attendance.outTime}}</td>
+              <td>{{attendance.lateBy}}</td>
+              <td>{{attendance.earlyGoingBy}}</td>
+              <td>{{attendance.TotalDuration}}</td>
+              <td class="extra">{{attendance.overtime}}</td>
+              <td class="status">
+                {% if attendance.attendance == "Present" %}
+                <i class="fas fa-check-circle"></i> Present {% elif
+                attendance.attendance == "O.T" %}
+                <i class="fas fa-check-circle"></i> O.T {% elif
+                attendance.attendance == "Wrong Shift" %}
+                <i class="fas fa-times-circle"></i> Wrong Shift {% else %}
+                <i class="fas fa-times-circle"></i> Absent {% endif %}
+              </td>
+              <td class="action">
+                <p class="table-tag tag">N/A</p>
+              </td>
+            </tr>
+            {% endfor %} {% endif %}
+          </tbody>
+        </table>
       </div>
     </div>
-    <div class="frame-body">
-      <table class="today-attendance-table">
-        <thead>
-          <tr class="tablehead">
-            <th>EmpId</th>
-            <th>Name</th>
-            <th>Date</th>
-            <th>Shift</th>
-            <th>Shift Intime</th>
-            <th>Shift Outtime</th>
-            <th>Intime</th>
-            <th>Outtime</th>
-            <th>Late By</th>
-            <th>Early Go</th>
-            <th>Total Duration</th>
-            <th>Extra Time</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody class="tableBody">
-          {% if attendance %} {% for attendance in attendance %}
-          <tr data-shift="{{attendance.shiftType}}">
-            <td class="id">{{attendance.emp_id }}</td>
-            <td class="name">{{attendance.name}}</td>
-            <td>{{attendance.date.date()}}</td>
-            <td class="shift">{{attendance.shiftType}}</td>
-            <td>{{attendance.shiftIntime}}</td>
-            <td>{{attendance.shift_Outtime}}</td>
-            <td class="intime">{{attendance.inTime}}</td>
-            <td class="outtime">{{attendance.outTime}}</td>
-            <td>{{attendance.lateBy}}</td>
-            <td>{{attendance.earlyGoingBy}}</td>
-            <td>{{attendance.TotalDuration}}</td>
-            <td class="extra">{{attendance.overtime}}</td>
-            <td class="status">
-              {% if attendance.attendance == "Present"%}<i
-                class="fas fa-check-circle"
-              ></i
-              >Present {% elif attendance.attendance == "O.T"%}<i
-                class="fas fa-check-circle"
-              ></i
-              >OT {% elif attendance.attendance == "Wrong Shift"%}<i
-                class="fas fa-times-circle"
-              ></i
-              >Wrong Shift {% else %}<i class="fas fa-times-circle"></i>
-              Absent{% endif %}
-            </td>
-            <td class="action">
-              <p class="tag">N/A</p>
-            </td>
-          </tr>
-          {% endfor %} {% endif %}
-        </tbody>
-      </table>
+  </section>
+
+  <section
+    class="frame month-attendance"
+    style="display: none"
+    attend-index="1"
+  >
+    <div class="inner-frame">
+      <div class="frame-header">
+        <div class="frame-details">
+          <p class="frame-name">Month Attendance</p>
+        </div>
+        <div class="frame-options">
+          <button type="button" class="download">
+            <i class="fas fa-file-excel"></i>
+          </button>
+        </div>
+      </div>
+      <div class="frame-body">
+        {% if employee_data %}
+        <table class="attendance-table">
+          <thead>
+            <tr class="thead">
+              <th>EmpId</th>
+              {% for date in date %}
+              <th>{{ date }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody class="tableBody filter">
+            {% for emp_id, records in employee_data.items() %}
+            <tr>
+              <td>{{ emp_id }}</td>
+              {% for record in records %} {% if record.attendance =='Present' %}
+              <td>
+                <p style="display: none">Present</p>
+                <i class="fas fa-check-circle"></i>
+              </td>
+              {% elif record.attendance =='O.T' %}
+              <td>
+                <p style="display: none">O.T</p>
+                <i class="fas fa-clock" style="color: blue"></i>
+              </td>
+              {% elif record.attendance =='Week Off' %}
+              <td>
+                <p style="display: none">WO</p>
+                WO
+              </td>
+              {% elif record.attendance =='Wop' %}
+              <td>
+                <p style="display: none">WOP</p>
+                WOP
+              </td>
+              {% else %}
+              <td>
+                <p style="display: none">Absent</p>
+                <i class="fas fa-times-circle"></i>
+              </td>
+              {% endif %} {% endfor %}
+            </tr>
+
+            {% endfor %} {% else %}
+
+            <p class="mt-3">No attendance records found for last month.</p>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
+  </section>
 </section>
 
-<section class="frame month-attendance" style="display: none" index="1">
-  <div class="inner-frame">
+<section
+  class="employee-container page-action"
+  style="display: none; flex-direction: column"
+  index="1"
+>
+  <section class="frame today-attendance">
+    <div class="inner-frame">
+      <div class="frame-header">
+        <div class="frame-details">
+          <p class="frame-name">
+            <i class="fas fa-users"></i> Employee Details
+          </p>
+        </div>
+        <div class="frame-options">
+          <button type="button" class="list btn-display active" emp-index="0">
+            <i class="fas fa-list-ul"></i>
+          </button>
+          <button type="button" class="grid btn-display" emp-index="1">
+            <i class="fas fa-grip"></i>
+          </button>
+          <button type="button" class="download">
+            <i class="fas fa-file-excel"></i>
+          </button>
+        </div>
+      </div>
+      <div class="frame-body">
+        <div
+          class="list-container empdisplay"
+          emp-index="0"
+          style="display: flex"
+        >
+          <table class="employee-table" style="margin-top: 10px">
+            <thead>
+              <tr class="tablehead">
+                <th>EmpId</th>
+                <th>Name</th>
+                <th>Branch</th>
+                <th>D-O-J</th>
+                <th>Current Shift</th>
+                <th>Leave Available</th>
+                <th>Late Available</th>
+                <th>Contact No</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody class="tableBody">
+              {% for emp in emp_login_sorted %}
+              <tr>
+                <td>{{emp.emp_id}}</td>
+                <td>{{emp.name}}</td>
+                <td>{{emp.branch}}</td>
+                <td>{{emp.date.date()}}</td>
+                <td>{{emp.shift}}</td>
+                <td>{{emp.leave_balance}}</td>
+                <td>{{emp.late_balance}}</td>
+                <td>{{emp.phoneNumber}}</td>
+                <td>{{emp.email}}</td>
+                <td>
+                  789 Maple Lane Apt 10B, Building C Suburbia City, District
+                  67890 Territory State Countryland 54321
+                </td>
+                {% if emp.freezed_account==1 %}
+                <td class="status">Freezed</td>
+                {% else %}
+                <td class="status">Active</td>
+                {% endif %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div
+          class="grid-container empdisplay"
+          style="margin-top: 10px"
+          emp-index="1"
+          style="display: none"
+        >
+          {% for emp in emp_login_sorted %}
+          <div class="card user">
+            {% if emp.freezed_account== 1 %}
+            <div class="status-tag freeze">Freezed</div>
+            {% else %}
+            <div class="status-tag active">Active</div>
+            {% endif %}
+            <div class="card-head">
+              <div class="default-profile">
+                {% if emp.gender == 'Female' %}
+                <img src="../static/img/Female.jpeg" alt="" />
+                {% else %}
+                <img src="../static/img/male.jpeg" alt="" />
+                {% endif %}
+              </div>
+              <div class="content">
+                <p class="content-display emp-name">
+                  <i class="fas-icon fas fa-user"></i> {{emp.name}}
+                </p>
+                <p class="content-display emp-id">
+                  <i class="fas-icon fas fa-hashtag"></i> {{emp.emp_id}}
+                </p>
+                <p class="content-display emp-gender">
+                  <i class="fas-icon fas fa-venus-mars"></i> {{emp.gender}}
+                </p>
+                <p class="content-display emp-type">
+                  <i class="fas-icon far fa-address-card"></i> {{emp.branch}}
+                </p>
+              </div>
+            </div>
+            <div class="card-body">
+              <ul class="basic-details">
+                <li class="li username">
+                  <i class="fas-icon fas fa-user"></i> {{emp.name}}
+                </li>
+                <li class="li empid">
+                  <i class="fas-icon fas fa-hashtag"></i> {{emp.emp_id}}
+                </li>
+                <li class="li doj">
+                  <i class="fas-icon fas fa-calendar-alt"></i> {{emp.date}}
+                </li>
+                <li class="li contact">
+                  <i class="fas-icon fas fa-phone"></i> {{emp.phoneNumber}}
+                </li>
+              </ul>
+              <ul class="basic-details">
+                <li class="li email">
+                  <i class="fas-icon fas fa-envelope"></i>
+                  {{emp.email}}
+                </li>
+                <li class="li address">
+                  <i class="fas-icon fas fa-map-marker-alt"></i> 789 Maple Lane
+                  Apt 10B, Building C Suburbia City, District 67890 Territory
+                  State Countryland 54321
+                </li>
+              </ul>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+  <script>
+    const employe_rows = document.querySelectorAll(".employee-table tbody tr");
+    employe_rows.forEach((row) => {
+      let status = row.querySelector(".status");
+      if (status.innerHTML.trim().toLowerCase() == "freezed") {
+        row.classList.add("freezed");
+        status.innerHTML = `<div class="inner-tag">Freezed</div>`;
+      } else {
+        row.classList.remove("freezed");
+        status.innerHTML = `<div class="tag">Active</div>`;
+      }
+    });
+  </script>
+</section>
+
+<section
+  class="late-table-section page-action"
+  style="display: none; flex-direction: column"
+  index="2"
+>
+  <header class="late-header">
     <div class="frame-header">
       <div class="frame-details">
-        <p class="frame-name">Month Attendance</p>
-        <!-- <p class="shift name"><span class="tag">A</span> ~ shift</p> -->
-      </div>
-      <!-- <div class="frame-search">
-        <input
-          type="text"
-          name="idsearch"
-          id="idsearch"
-          placeholder="Search By ID"
-        />
-        <input
-          type="text"
-          name="namesearch"
-          id="namesearch"
-          placeholder="Search By Name"
-        />
-      </div> -->
-      <div class="frame-options">
-        <button type="button" class="download">
-          <i class="fas fa-file-excel"></i>
-        </button>
+        <p class="frame-name">Late Table</p>
       </div>
     </div>
-    <div class="frame-body">
-      {% if employee_data %}
-      <table class="attendance-table">
-        <thead>
-          <tr class="thead">
-            <th>EmpId</th>
-            {% for date in date %}
-            <th>{{ date }}</th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody class="tableBody filter">
-          {% for emp_id, records in employee_data.items() %}
-          <tr>
-            <td>{{ emp_id }}</td>
-            {% for record in records %} {% if record.attendance =='Present' %}
-            <td>
-              <p style="display: none">Present</p>
-              <i class="fas fa-check-circle"></i>
-            </td>
-            {% elif record.attendance =='O.T' %}
-            <td>
-              <p style="display: none">Over Time</p>
-              <i class="fas fa-clock" style="color: blue"></i>
-            </td>
-            {% elif record.attendance =='Week Off' %}
-            <td>
-              <p style="display: none">Week Off</p>
-              W
-            </td>
-            {% else %}
-            <td>
-              <p style="display: none">Absent</p>
-              <i class="fas fa-times-circle"></i>
-            </td>
-            {% endif %} {% endfor %}
-          </tr>
+  </header>
+  <div class="table">
+    <table>
+      <thead>
+        <th>EmpId</th>
+        <th>Name</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Message</th>
+        <th>Status</th>
+        <th>By</th>
+        <th>Action</th>
+      </thead>
+      <tbody class="late-table" id="late-table">
+        {% for late_permission in late_permission %}
+        <tr class="{{late_permission.status}} late-{{late_permission.id}}">
+          <td>#{{late_permission.emp_id}}</td>
+          <td>{{late_permission.emp_name}}</td>
+          <td>{{late_permission.date.strftime('%d-%m-%Y') }}</td>
+          <td>{{late_permission.date.strftime('%H:%M') }}</td>
+          <td>{{late_permission.from_time}}</td>
+          <td>{{late_permission.to_time}}</td>
+          <td>{{late_permission.reason}}</td>
+          <td class="status">{{late_permission.status}}</td>
+          <td class="approved_by">{{late_permission.approved_by}}</td>
+          <td>
+            <button
+              class="view_profile"
+              onclick="open_req_profile(
+            '{{late_permission.id}}',
+            'late')"
+            >
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+        <script>
+          var socket = io();
 
-          {% endfor %} {% else %}
+          socket.on("late", function (late_permission) {
+            console.log("Received late_permission:", late_permission.emp_id);
 
-          <p class="mt-3">No attendance records found for last month.</p>
-          {% endif %}
-        </tbody>
-      </table>
-    </div>
+            var currentDate = new Date().toLocaleDateString();
+            var currentTime = new Date().toLocaleTimeString();
+            var tbody = document.getElementById("late-table");
+            tbody.innerHTML += `
+                              <tr>
+                              <td>#${late_permission.emp_id}</td>
+                              <td>${late_permission.emp_name}</td>
+                              <td>${currentDate}</td>
+                              <td>${currentTime}</td>
+                              <td>${late_permission.from_time}</td>
+                              <td>${late_permission.to_time}</td>
+                              <td>${late_permission.reason}</td>
+                              <td class="status">${late_permission.status}</td>
+                              <td class='approved_by'>${late_permission.approved_by}</td>
+                              <td><button class="view_profile" onclick="open_req_profile(
+                                '${late_permission.id}',
+                                'leave')"><i class="fas fa-eye"></i></button>
+                              </td>
+                              </tr>
+                          `;
+            console.log("Received late_permission:", late_permission.emp_id);
+          });
+        </script>
+      </tbody>
+    </table>
   </div>
 </section>
 
+<section
+  class="leave-table-section page-action"
+  style="display: none; flex-direction: column"
+  index="3"
+>
+  <header class="leave-header">
+    <div class="frame-header">
+      <div class="frame-details">
+        <p class="frame-name">Leave Table</p>
+      </div>
+    </div>
+  </header>
+  <div class="table">
+    <table>
+      <thead>
+        <th>EmpId</th>
+        <th>Name</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Message</th>
+        <th>Status</th>
+        <th>By</th>
+        <th>Action</th>
+      </thead>
+      <tbody class="leave-table" id="leave-table">
+        {% for leave_permission in leave_permission %}
+        <tr class="{{leave_permission.status}} leave-{{leave_permission.id}}">
+          <td>#{{leave_permission.emp_id}}</td>
+          <td>{{leave_permission.emp_name}}</td>
+          <td>{{leave_permission.date.strftime('%d-%m-%Y') }}</td>
+          <td>{{leave_permission.date.strftime('%H:%M') }}</td>
+          <td>{{leave_permission.from_time}}</td>
+          <td>{{leave_permission.to_time}}</td>
+          <td>{{leave_permission.reason}}</td>
+          <td class="status">{{leave_permission.status}}</td>
+          <td class="approved_by">{{leave_permission.approved_by}}</td>
+          <td>
+            <button
+              class="view_profile"
+              onclick="open_req_profile(
+            '{{leave_permission.id}}',
+            'leave')"
+            >
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+        <script>
+          // var socket = io();
 
-{% endblock %} {% block scripts %}
-<script src="static/js/script.js"></script>
-<script src="/static/js/filter.js"></script>
-<script src="/static/js/action.js"></script>
+          socket.on("leave", function (leave_permission) {
+            console.log("Received leave_permission:", leave_permission.emp_id);
 
+            var currentDate = new Date().toLocaleDateString();
+            var currentTime = new Date().toLocaleTimeString();
+            var tbody = document.getElementById("leave-table");
+            tbody.innerHTML += `
+                              <tr>
+                              <td>#${leave_permission.emp_id}</td>
+                              <td>${leave_permission.emp_name}</td>
+                              <td>${currentDate}</td>
+                              <td>${currentTime}</td>
+                              <td>${leave_permission.from_time}</td>
+                              <td>${leave_permission.to_time}</td>
+                              <td>${leave_permission.reason}</td>
+                              <td class='status'>${leave_permission.status}</td>
+                              <td class='approved_by'>${leave_permission.approved_by}</td>
+                              <td><button class="view_profile" onclick="open_req_profile(
+                                '${leave_permission.id}',
+                                'leave')"><i class="fas fa-eye"></i></button></td>
+                              </tr>
+                          `;
+          });
+        </script>
+      </tbody>
+    </table>
+  </div>
+</section>
 
-{% endblock %}
+{% endblock %} {% block scripts %} {% endblock %}
