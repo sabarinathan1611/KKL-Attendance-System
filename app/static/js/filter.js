@@ -4,13 +4,16 @@ const all_shiftDisplay = document.querySelectorAll(".currentShift");
 
 let finaldetails;
 
+const currentShift = getCurrentShift();
+filter(currentShift);
+
 let shiftSelect = document.getElementById("shift");
 
 shiftSelect.addEventListener("change", () => {
   let shift = shiftSelect.value;
   if (shift == "current" || shift.length <= 0) {
-    filter(currentShift.shiftName);
-  } else if (shift == 'all') {
+    filter(currentShift);
+  } else if (shift == "all") {
     all_rows.forEach((row) => {
       row.style.display = "";
     });
@@ -65,9 +68,9 @@ shiftSelect.addEventListener("change", () => {
 
 function filter(currentShift) {
   all_rows.forEach((row) => {
-    console.log(
-      currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase()
-    );
+    // console.log(
+    //   currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase()
+    // );
 
     if (
       currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase()
@@ -119,50 +122,40 @@ function getCurrentShift() {
   }
 }
 
-const currentShift = getCurrentShift();
-filter(currentShift);
-
 all_rows.forEach((row) => {
   let id = row.querySelector(".emp_id").innerHTML;
   let intime = row.querySelector(".intime");
   let outtime = row.querySelector(".outtime");
   let status = row.querySelector(".status");
   let action = row.querySelector(".action");
-  let branch = row.querySelector('.branch');
+  let branch = row.querySelector(".branch");
 
-  if (status.textContent.toLowerCase().trim() == 'absent') {
-    row.classList.add('mis-pinch')
-  }
-
-  
-  // // check intime for 10mins late 
-  let shiftOutTimeStr = row.querySelector('.shiftOutTime').textContent; // "20:00"
-  let curr_date = row.querySelector('.attend_date').textContent; // "2024-02-06"
+  // // check intime for 10mins late
+  let shiftOutTimeStr = row.querySelector(".shiftOutTime").textContent; // "20:00"
+  let curr_date = row.querySelector(".attend_date").textContent; // "2024-02-06"
   // console.log('attend_date', curr_date);
-  
+
   let shiftOutTime = new Date(curr_date + "T" + shiftOutTimeStr + ":00");
-  // let shiftOutTime=new Date('Tue Feb 06 2024 13:14:00 GMT+0530 (India Standard Time)')
+  // let shiftOutTime = new Date("Tue Feb 07 2024 08:49:00 GMT+0530 (India Standard Time)");
   let date = new Date();
-  console.log('shiftOutTime', shiftOutTime);
-  // console.log('Current date', date);
-  
-  let timeDifference = date - shiftOutTime;
-  let minutesDifference = timeDifference / (1000 * 60);
-  
+
   // Calculate 10 minutes after shiftOutTime
-  let tenMinutesAfterShiftOutTime = new Date(shiftOutTime.getTime() + 10 * 60000);
-  
-  if (date >= shiftOutTime && date <= tenMinutesAfterShiftOutTime) {
-    // Run your function here
-    if (outtime && (outtime.innerHTML == "-" || outtime.innerHTML == "")){
-      row.classList.add('mis-pinch');
-      console.log("Current time is between shiftOutTime and 10 minutes after shiftOutTime.");
+  let tenMinutesAfterShiftOutTime = new Date(
+    shiftOutTime.getTime() + 10 * 60000
+  );
+  if (outtime && outtime.querySelector(".punchOptionsDiv")) {
+    if (date >= shiftOutTime && date <= tenMinutesAfterShiftOutTime) {
+      // Run your function here
+      row.classList.add("mis-pinch");
+      console.log(
+        "Current time is between shiftOutTime and 10 minutes after shiftOutTime."
+      );
     }
-  } else {
-      row.classList.remove('mis-pinch');
-      console.log("Current time is not between shiftOutTime and 10 minutes after shiftOutTime.");
   }
-  
+
+  if (status.textContent.toLowerCase().trim() == "absent") {
+    row.classList.add("mis-pinch");
+  }
 
   // if (minutesDifference > 10) {
   //   intime.innerHTML = `<div class="table-tag punchOptionsDiv">
@@ -181,8 +174,6 @@ all_rows.forEach((row) => {
   //                     `;
   // }
 
-
-
   //check no in time or out time
 
   // if (
@@ -195,10 +186,9 @@ all_rows.forEach((row) => {
   //   if (outtime.innerHTML == "-") {
   //     // let shiftInTimeStr = row.querySelector('.shiftOutTime').textContent;// 20:00
 
-      
   //     // let shiftOutTimeStr = row.querySelector('.shiftOutTime').textContent;// 20:00
   //     // let hisOutTimeStr = row.querySelector('.outtime').textContent; //14:00
-      
+
   //     // const currentTime = new Date();
   //     // const currentHours = currentTime.getHours();
   //     // const currentMinutes = currentTime.getMinutes();
@@ -210,7 +200,6 @@ all_rows.forEach((row) => {
   //     // let time = new Date(curr_date + "T" + formattedCurrentTime + ":00");
 
   //     // let timeDifference = shiftOutTime - time;
-
 
   //     //     row.querySelector(".action").innerHTML = `
   //     //     <form class="btns-container">
@@ -228,10 +217,7 @@ all_rows.forEach((row) => {
   //   //       `;
   // }
 
-
-
-
-  //checking for wrong shift 
+  //checking for wrong shift
 
   // if (status.textContent.toLowerCase().trim() == "wrong shift") {
   //   action.innerHTML = `
@@ -247,7 +233,7 @@ all_rows.forEach((row) => {
   //                             <option value="call-duty">Call Duty (KKL)</option>
   //                             <option value="wrong-shift">Wrong Shift</option>
   //                         </select>
-  //                     </div>`; 
+  //                     </div>`;
   //   }
   //   else {
   //     status.innerHTML = `<div class="table-tag punchOptionsDiv">
@@ -256,7 +242,7 @@ all_rows.forEach((row) => {
   //                         <option value="over-time">Over Time</option>
   //                         <option value="wrong-shift">Wrong Shift</option>
   //                             </select>
-  //                     </div>`; 
+  //                     </div>`;
   //   }
   // }
 
@@ -481,3 +467,66 @@ function checkElapsedTime() {
 
 setInterval(checkElapsedTime, 1000); // Check every 1000 milliseconds (1 second)
 setInterval(logElapsedTime, 10000); // Log every 10 seconds
+
+function save_changes(emp_id, date) {
+  if (!window.confirm("Are you sure you want to save changes?")) {
+    return;
+  }
+
+  console.log(emp_id);
+  let formData = new FormData();
+  formData.append("emp_id", emp_id);
+  formData.append("date", date);
+
+  // if (document.querySelector(".late-punch-in-" + emp_id)) {
+  //   let latePunchIn = document.querySelector(".late-punch-in-" + emp_id).value;
+  //   console.log("latePunchIn " + latePunchIn);
+  //   formData.append("latePunchIn", latePunchIn);
+  // }
+  if (document.querySelector(".punch-in-" + emp_id)) {
+    let punchIn = document.querySelector(".punch-in-" + emp_id).value;
+    console.log("punchIn " + punchIn);
+    formData.append("punchIn", punchIn);
+  }
+  if (document.querySelector(".punch-out-" + emp_id)) {
+    let punchOut = document.querySelector(".punch-out-" + emp_id).value;
+    console.log("punchOut", punchOut);
+    formData.append("punchOut", punchOut);
+  }
+  if (document.querySelector(".wrongshift-" + emp_id)) {
+    let wrongShift = document.querySelector(".wrongshift-" + emp_id).value;
+    console.log("wrongShift", wrongShift);
+    formData.append("wrongShift", wrongShift);
+  }
+  formData.forEach((key,data) => {
+    console.log('key '+key+'data ',data);
+  });
+
+  fetch("/save_attendance", {
+    method: "POST",
+    body: formData,
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      // Handle response data if necessary
+      let action = document.querySelector(".action-" + emp_id);
+      if (action) {
+        action.innerHTML = `<p class="table-tag tag">N/A</p>`;
+        // status.innerHTML=``
+      } else {
+        console.log("error here");
+      }
+      console.log(data);
+    })
+    .catch((error) => {
+      // Handle fetch error
+      console.error("Fetch error:", error);
+    });
+}
+
+// change all innerHTMl according to response

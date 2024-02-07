@@ -58,8 +58,8 @@ class Attendance(db.Model,UserMixin):
     attendance =db.Column(db.String(150))
     branch =db.Column(db.String(150),default='KKL')
     wages_per_Day=db.Column(db.String(150))
-    inTime=db.Column(db.String(150))
-    outTime=db.Column(db.String(150))
+    inTime=db.Column(db.DateTime(timezone=True))
+    outTime=db.Column(db.DateTime(timezone=True))
     overtime=db.Column(db.String(150),default='00:00')
     employee = db.relationship('Emp_login', back_populates='attendances')
     shiftType=db.Column(db.String(150))
@@ -188,5 +188,10 @@ class comp_off(db.Model):
     emp_id = db.Column(db.Integer)
     # comp_off= db.Column(db.Integer)
     date= db.Column(db.String(150), nullable=False)
-    
-# added branch in emp_login and comp_off table
+
+class call_duty(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    emp_id = db.Column(db.Integer)
+    date= db.Column(db.String(150), nullable=False)
+    inTime= db.Column(db.String(150), nullable=False)
+    outTime= db.Column(db.String(150), nullable=False)

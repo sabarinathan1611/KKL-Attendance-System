@@ -32,19 +32,6 @@ def admin():
     if current_user.role == 'employee':
         return redirect(url_for('auth.logout'))
     else :
-
-    # not used ,,,, used in auth itself
-    # try:
-    #     inshift = Shift_time.query.filter_by(id=1).first()
-    #     if not inshift:
-    #         file_path = os.path.join(app.config['EXCEL_FOLDER'], '01-08-23.xls')  # Use correct case 'EXCEL_FOLDER'
-    #         process_excel_data(file_path)  # Call the data processing function
-    #     else:
-    #         print("Shift not found")
-
-    # except Exception as e:
-    #     print("Error occurred:", e)
-    #     db.session.rollback()  # Rollback in case of error
         current_time = datetime.now().strftime('%H:%M:%S')
 
         current_date = datetime.now().strftime('%Y-%m-%d')
@@ -65,37 +52,13 @@ def admin():
         month_attend=month_attendance()
         employee_data=month_attend[0]
         date=month_attend[1]
-        print(employee_attendance[0].id)
+        # print(employee_attendance[0].id)
 
         for attend in employee_attendance:
-            if attend.inTime!='-':
-                hours, minutes = map(int, attend.lateBy.split(':'))
-                print(hours * 60 + minutes >10)
-                if (hours * 60 + minutes >10):
-                    attend.late='late'
-                else:
-                    attend.late='no_late'
-            else:
-                attend.late='-'
+            attend.inTime=attend.inTime.strftime('%H:%M')
+            attend.outTime=attend.outTime.strftime('%H:%M')
         
     return render_template('admin.html',employee_data=employee_data,date=date,emp_login=emp_login, notification=notification, attendance=employee_attendance, late_permission=late_permission, leave_permission=leave_permission,emp_login_sorted=emp_login_sorted)
-
-# @views.route("/late_req_table")
-# @login_required
-# def late_req_table():
-#     notification=notifications.query.order_by(notifications.timestamp).all()
-#     emp_login=Emp_login.query.order_by(Emp_login.emp_id).all()
-#     permission_details=late.query.order_by(late.date).all()
-#     return render_template("req_table.html",emp_login=emp_login,notification=notification,permission=permission_details,permission_type='Late')
-
-# @views.route("/leave_req_table")
-# @login_required
-# def leave_req_table():
-#     notification=notifications.query.order_by(notifications.timestamp).all()
-#     emp_login=Emp_login.query.order_by(Emp_login.emp_id).all()
-#     permission_details=leave.query.order_by(leave.date).all()
-#     return render_template("req_table.html",emp_login=emp_login,notification=notification,permission=permission_details,permission_type='Leave')
-
 
 @views.route('/edit', methods=['POST', 'GET'])
 @login_required
@@ -1197,9 +1160,6 @@ def send_message():
         # Send a JSON response indicating the employee was not found
         return jsonify({"error": "Employee not found"})
 
-
-
-
 @views.route('/send_continue_message',methods=['POST'])
 def send_continue_message():
     data = request.json
@@ -1237,7 +1197,7 @@ def send_continue_message():
 @views.route('/bring_req_profile',methods=['POST'])
 @login_required
 def bring_req_profile():
-    print('hello')
+    # print('hello')
     data = request.json
     req_id = data.get('id')
     permission_type = data.get('permission_type')
@@ -1286,5 +1246,41 @@ def bring_req_profile():
         'emp_name':emp_name,
     }
 
-    print('hello')
+    # print('hello')
     return jsonify ({'data':req_details})
+
+@views.route('/save_attendance',methods=['POST'])
+def save_attendance():
+    form_data = request.form
+
+    for key, value in form_data.items():
+        print(f"Key: {key}, Value: {value}")
+
+    emp_id=form_data['emp_id']
+    date=form_data['date']
+    attendance=Attendance.query.filter_by(emp_id=emp_id,date=date).first()
+
+    if attendance.inTime=='-':
+        punchIn=form_data['punchIn']
+        attendance.attendance=punchIn
+        db.session.commit()
+    else:
+        hours, minutes = map(int, attendance.lateBy.split(':'))
+        # print(hours * 60 + minutes >10)
+        if (hours * 60 + minutes >10):
+            punchIn=form_data['punchIn']
+            attendance.attendance=punchIn
+            db.session.commit()
+
+    if attendance.outTime=='-':
+        punchOut=form_data['punchOut']
+        attendance.attendance=punchOut
+        db.session.commit()
+
+    if attendance.attendance=='Wrong Shift':
+        wrongshift=form_data['wrongShift']
+        attendance.attendance=wrongshift
+        db.session.commit()
+                    
+
+    return jsonify({'message': 'Attendance saved successfully'})
