@@ -1,5 +1,69 @@
-{% extends "base_admin.html" %} {% block title %} Admin {% endblock %} {% block
-content %}
+{% extends "base_admin.html" %} {% block title %} Admin {% endblock %}
+
+<!-- {% block flash %}
+<link
+  crossorigin="anonymous"
+  href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+  rel="stylesheet"
+/>
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%} {% for category, message in messages %} {% if category == 'error' %}
+<div
+  id="error-flash-message"
+  class="alert alert-primary d-flex align-items-center alert-content"
+  role="alert"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    fill="currentColor"
+    class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"
+    viewBox="0 0 16 16"
+    role="img"
+    aria-label="Warning:"
+  >
+    <path
+      d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"
+    />
+  </svg>
+  <div class="alert-message">
+    <p>{{ message }}</p>
+    <button
+      type="button"
+      class="btn-close"
+      onclick="removeFlashMessage('error-flash-message')"
+      aria-label="Close"
+    >
+      <i class="fas fa-xmark alert-error-close"></i>
+    </button>
+  </div>
+</div>
+{% else %}
+<div
+  class="alert alert-warning alert-dismissible fade show alert-success alert-content"
+  role="alert"
+>
+  <strong>{{ message }}</strong>
+  <button
+    type="button"
+    class="btn-close"
+    data-bs-dismiss="alert"
+    aria-label="Close"
+  >
+    <i class="fas fa-xmark"></i>
+  </button>
+</div>
+{% endif %} {% endfor %} {% endif %} {% endwith %}
+
+<script
+  crossorigin="anonymous"
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+></script>
+
+{% endblock %} -->
+
+{% block content %}
 
 <section
   class="main-attendance page-action"
@@ -14,6 +78,11 @@ content %}
       <li class="tag-btn click month-attend-btn" attend-index="1">
         This Month Attendance
       </li>
+
+      <li>
+            <a href="/createXL" class="tag-btn" download>Downlode Attendance</a>
+      </li>
+
       <select name="shift" id="shift" class="tag-btn click shift_change">
         <option value="current">Select Shift Name</option>
         <option value="8A">A ~ Shift</option>
@@ -76,8 +145,8 @@ content %}
               {% if attendance.attendance != 'Wrong Shift' and attendance.inTime=='-' %}
                   <td class="shiftInTime">
                     <div class="table-tag punchOptionsDiv">
-                      <label for="punchOptions">Punch In:</label>
-                      <select id="punchOptions" class="punchOptions punch-in">
+                      <label for="punchOptions">{{attendance.inTime}}</label>
+                      <select id="punchOptions" class="punchOptions punch-in-{{attendance.emp_id}}">
                         <option value="absent">Absent</option>
                         <option value="communicated">Communicated</option>
                       </select>
@@ -92,14 +161,14 @@ content %}
 
               <td class="outtime">
                 <div class="table-tag punchOptionsDiv">
-                  <label for="punchOptions">Punch Out:</label>
+                  <label for="punchOptions">{{attendance.outTime}}</label>
                   <select
                     id="punchOptions"
                     class="punchOptions punch-out-{{attendance.emp_id}}"
                   >
                     <option value="shift-continue">Shift Continue</option>
-                    <option value="grace-time">Grace Time</option>
-                    <option value="over-time">Over Time</option>
+                    <!-- <option value="grace-time">Grace Time</option>
+                    <option value="over-time">Over Time</option> -->
                     <option value="mis-pinch">Miss Punch</option>
                   </select>
                 </div>
@@ -117,8 +186,8 @@ content %}
                 <i class="fas fa-check-circle"></i> Present {% elif
                 attendance.attendance == "O.T" %}
                 <i class="fas fa-check-circle"></i> O.T {% elif
-                attendance.attendance == "Communicated" %}
-                <i class="fas fa-phone"></i>Communicated {% elif
+                attendance.attendance == "Leave" %}
+                <i class="fas fa-phone"></i>Leave {% elif
                 attendance.attendance == "Wrong Shift" %} {% if
                 attendance.branch=='KKL' %}
                 <div class="table-tag punchOptionsDiv">
@@ -142,20 +211,20 @@ content %}
                     <option value="wrong-shift">Wrong Shift</option>
                   </select>
                 </div>
-                {% endif %} {% elif attendance.attendance == 'Half-day' %}
+                {% endif %} {% elif attendance.attendance == 'Half day' %}
                 <div class="table-tag punchOptionsDiv">
                   <label for="punchOptions">{{attendance.attendance}}</label>
-                <select id="punchOptions" class="punchOptions punch-in-{{attendance.emp_id}}">
-                        <option value="Half-day">Half Day</option>
+                <select id="punchOptions" class="punchOptions wrongshift-{{attendance.emp_id}}">
+                        <option value="half-day">Half Day</option>
                         <option value="Present">Present</option>
-                        <option value="Communicated">Communicated</option>
+                        <!-- <option value="Communicated">Communicated</option> -->
                       </select>
                 
                 {% else %}
                 <i class="fas fa-times-circle"></i> Absent {% endif %}
               </td>
               <td class="action action-{{attendance.emp_id}}">
-                {% if attendance.attendance=='Wrong Shift' or attendance.attendance=='Half-day'
+                {% if attendance.attendance=='Wrong Shift' or attendance.attendance=='Half day'
                 or attendance.outTime=='-' %}
                 <form class="btns-container">
                   <input type="hidden" name="empid" value="${id}" />
@@ -249,11 +318,7 @@ content %}
   </section>
 </section>
 
-<section
-  class="employee-container page-action"
-  style="display: none; flex-direction: column"
-  index="1"
->
+<section class="employee-container page-action" style="display: none; flex-direction: column" index="1">
   <section class="frame today-attendance">
     <div class="inner-frame">
       <div class="frame-header">
@@ -391,6 +456,7 @@ content %}
       </div>
     </div>
   </section>
+
   <script>
     const employe_rows = document.querySelectorAll(".employee-table tbody tr");
     employe_rows.forEach((row) => {
@@ -404,6 +470,47 @@ content %}
       }
     });
   </script>
+
+</section>
+
+<section class="attendance-container page-action"
+        style="display: block"
+        index="4">
+        <section class="frame today-attendance" style="display: flex" index="0">
+          <div class="inner-frame">
+            <div class="frame-header">
+              <div class="frame-details">
+                <p class="frame-name">
+                  <i class="fas fa-users"></i>Employee count
+                </p>
+              </div>
+              <!-- <select name="" id="selectOption" class="tag-btn">
+                <option value="today employee">Today Employee</option>
+                <option value="today attendance">Today Attendance</option>
+                <option value="yesterday employee">Yesterday Employee</option>
+                <option value="yesterday attendance">Yesterday Attendance</option>
+            </select> -->
+        
+              <div class="frame-options">
+                <button type="button" class="downloadImage">
+                  <i class="fas fa-file-download"></i>
+                </button>
+              </div>
+            </div>
+            <div class="frame-body">
+             <div class="chart_container employee_count">
+                <div class="chart">
+                  <canvas id="myPieChart"></canvas>
+                </div>
+                <div class="chart_details">
+                  <ul class="details">
+                    
+                  </ul>
+                </div>
+             </div>
+            </div>
+          </div>
+        </section>
 </section>
 
 <section
@@ -466,7 +573,7 @@ content %}
             var currentTime = new Date().toLocaleTimeString();
             var tbody = document.getElementById("late-table");
             tbody.innerHTML += `
-                              <tr>
+                              <tr class="${late_permission.status} late-${late_permission.id}">
                               <td>#${late_permission.emp_id}</td>
                               <td>${late_permission.emp_name}</td>
                               <td>${currentDate}</td>
@@ -550,7 +657,7 @@ content %}
             var currentTime = new Date().toLocaleTimeString();
             var tbody = document.getElementById("leave-table");
             tbody.innerHTML += `
-                              <tr>
+                              <tr  class="${leave_permission.status} leave-${leave_permission.id}">
                               <td>#${leave_permission.emp_id}</td>
                               <td>${leave_permission.emp_name}</td>
                               <td>${currentDate}</td>

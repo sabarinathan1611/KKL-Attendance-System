@@ -2,7 +2,7 @@
   "liveServer.settings.port": 5501,
   "python.analysis.extraPaths": ["./app", "./app"],
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter"
+    "editor.defaultFormatter": "mikoz.black-py"
   },
   "python.formatting.provider": "none"
 }

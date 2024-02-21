@@ -1,7 +1,9 @@
 from . import db
 from flask_login import UserMixin
 from sqlalchemy.sql import func
+from datetime import datetime, timedelta
 
+current_time = datetime.now()
 
 class Login_admin(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -9,11 +11,12 @@ class Login_admin(db.Model, UserMixin):
     email=db.Column(db.String(150),unique=True)
     password = db.Column(db.String(150))
     designation = db.Column(db.String(150), nullable=True)
-    date = db.Column(db.DateTime(timezone=True), default=func.now())
+    date = db.Column(db.DateTime(timezone=True), default=current_time)
+    # date = db.Column(db.DateTime(timezone=True), default=func.now())
 
 class Emp_login(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.DateTime(timezone=True), default=func.now())
+    date = db.Column(db.DateTime(timezone=True), default=current_time)
     email = db.Column(db.String(150))
     name = db.Column(db.String(150), nullable=False)
     password = db.Column(db.String(150))
@@ -34,7 +37,7 @@ class Emp_login(db.Model, UserMixin):
 #     id = db.Column(db.Integer, primary_key=True)
 #     emp_id = db.Column(db.Integer)
 #     name = db.Column(db.String(150), nullable=False)
-#     date = db.Column(db.DateTime(timezone=True), default=func.now())
+#     date = db.Column(db.DateTime(timezone=True), default=current_time)
 #     dob = db.Column(db.DateTime(timezone=True))
 #     designation = db.Column(db.String(150), nullable=True)
 #     workType = db.Column(db.String(150))
@@ -52,14 +55,14 @@ class Emp_login(db.Model, UserMixin):
     
 class Attendance(db.Model,UserMixin):
     id=db.Column(db.Integer,primary_key=True)
-    date = db.Column(db.DateTime(timezone=True), default=func.now())
+    date = db.Column(db.DateTime(timezone=True), default=current_time)
     emp_id = db.Column(db.Integer, db.ForeignKey('emp_login.id'))
-    name = db.Column(db.String(150), nullable=False)
-    attendance =db.Column(db.String(150))
+    name = db.Column(db.String(150))
+    attendance =db.Column(db.String(150))  # Half day , Present , Week Off , Leave , C Off , Wrong Shift , Wop , Holiday , Absent
     branch =db.Column(db.String(150),default='KKL')
-    wages_per_Day=db.Column(db.String(150))
-    inTime=db.Column(db.DateTime(timezone=True))
-    outTime=db.Column(db.DateTime(timezone=True))
+    # wages_per_Day=db.Column(db.String(150))
+    inTime=db.Column(db.String(150))
+    outTime=db.Column(db.String(150))
     overtime=db.Column(db.String(150),default='00:00')
     employee = db.relationship('Emp_login', back_populates='attendances')
     shiftType=db.Column(db.String(150))
@@ -68,7 +71,7 @@ class Attendance(db.Model,UserMixin):
     TotalDuration=db.Column(db.String(150))
     lateBy=db.Column(db.String(150))
     earlyGoingBy=db.Column(db.String(150))
-    punchRecords=db.Column(db.String(150))	
+    # punchRecords=db.Column(db.String(150))	
     
 
 
@@ -77,7 +80,7 @@ class LoginEmp(db.Model, UserMixin):
     name = db.Column(db.String(150),nullable=False)
     email=db.Column(db.String(150),unique=True)
     password = db.Column(db.String(150))
-    date = db.Column(db.DateTime(timezone=True), default=func.now())
+    date = db.Column(db.DateTime(timezone=True), default=current_time)
     
     
 class Shift_time(db.Model):
@@ -90,7 +93,7 @@ class Shift_time(db.Model):
     
 class Backup(db.Model):
     id=db.Column(db.Integer,primary_key=True)
-    date = db.Column(db.DateTime(timezone=True), default=func.now())
+    date = db.Column(db.DateTime(timezone=True), default=current_time)
     emp_id = db.Column(db.Integer, db.ForeignKey('emp_login.id'))
     attendance =db.Column(db.String(150))
     wages_per_Day=db.Column(db.String(150))
@@ -126,7 +129,7 @@ class NewShift(db.Model):
 class notifications(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     reason = db.Column(db.String(255))
-    timestamp = db.Column(db.DateTime, default=db.func.now())
+    timestamp = db.Column(db.DateTime, default=current_time)
     emp_name = db.Column(db.String(255))
     permission_type = db.Column(db.String(255))
     emp_id = db.Column(db.Integer)
@@ -146,7 +149,7 @@ class late(db.Model, UserMixin):
     # hod_approval = db.Column(db.String(150), default='Pending')
     approved_by = db.Column(db.String(150), default='Pending')
     hr_approval = db.Column(db.String(150), default='Pending')
-    date = db.Column(db.DateTime(timezone=True), default=func.now())
+    date = db.Column(db.DateTime(timezone=True), default=current_time)
 # Leave Model (Example)
     
 class leave(db.Model, UserMixin):
@@ -160,7 +163,7 @@ class leave(db.Model, UserMixin):
     # hod_approval = db.Column(db.String(150), default='Pending')
     approved_by = db.Column(db.String(150), default='Pending')
     hr_approval = db.Column(db.String(150), default='Pending')
-    date = db.Column(db.DateTime(timezone=True), default=func.now())
+    date = db.Column(db.DateTime(timezone=True), default=current_time)
 
 
 
@@ -180,7 +183,7 @@ class user_edit(db.Model, UserMixin):
 class Week_off(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     emp_id = db.Column(db.Integer)
-    # date = db.Column(db.DateTime(timezone=True), default=func.now())
+    # date = db.Column(db.DateTime(timezone=True), default=current_time)
     date= db.Column(db.String(150), nullable=False)
 
 class comp_off(db.Model):
@@ -192,6 +195,6 @@ class comp_off(db.Model):
 class call_duty(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     emp_id = db.Column(db.Integer)
-    date= db.Column(db.String(150), nullable=False)
-    inTime= db.Column(db.String(150), nullable=False)
-    outTime= db.Column(db.String(150), nullable=False)
+    date= db.Column(db.DateTime(timezone=True))
+    inTime= db.Column(db.DateTime(timezone=True))
+    outTime= db.Column(db.DateTime(timezone=True))

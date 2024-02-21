@@ -1,6 +1,6 @@
 from flask_login import login_required, current_user,login_user
 from . import db
-from .models import Attendance,Shift_time,Backup, late, leave,notifications ,NewShift,Emp_login,user_edit,Week_off
+from .models import Attendance,Shift_time,Backup, late, leave,notifications ,NewShift,Emp_login,user_edit,Week_off,call_duty
 from flask import Blueprint, render_template, request, flash, redirect, url_for,jsonify,session
 import json
 import datetime
@@ -13,6 +13,9 @@ from .funcations import *
 from werkzeug.utils import secure_filename
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
+from apscheduler.schedulers.background import BackgroundScheduler
+from flask import send_from_directory,current_app
+
 
 
 
@@ -54,9 +57,10 @@ def admin():
         date=month_attend[1]
         # print(employee_attendance[0].id)
 
-        for attend in employee_attendance:
-            attend.inTime=attend.inTime.strftime('%H:%M')
-            attend.outTime=attend.outTime.strftime('%H:%M')
+        # for attend in employee_attendance:
+        #     attend.inTime=attend.inTime.strftime('%H:%M')
+        #     attend.outTime=attend.outTime.strftime('%H:%M')
+        flash('Logged In Successfully','success')
         
     return render_template('admin.html',employee_data=employee_data,date=date,emp_login=emp_login, notification=notification, attendance=employee_attendance, late_permission=late_permission, leave_permission=leave_permission,emp_login_sorted=emp_login_sorted)
 
@@ -188,7 +192,6 @@ def calculate():
 
 @views.route('/shift')
 def viewShift():
-    
     records=Shift_time.query.order_by(Shift_time.id)  
     return render_template('shift.html',records=records)
 
@@ -255,7 +258,7 @@ def handle_disconnect():
 @socketio.on('late')
 @login_required
 def handle_lateform_callback(lateDet):
-    emp_id=session.get('emp_id')
+    emp_id=current_user.emp_id
     # emp_name=session.get('name')
     emp=Emp_login.query.filter_by(emp_id=emp_id).first()
     emp_name=emp.name
@@ -277,9 +280,11 @@ def handle_lateform_callback(lateDet):
         new_request=notifications(emp_id=emp_id,reason=reason,emp_name=emp_name,permission_type='Late',from_time=from_time,to_time=to_time,req_id=recently_added_row.id)
         db.session.add(new_request)
         db.session.commit()
+        date=recently_added_row.date
 
-        all_latedata = {'id' : id,'emp_id':emp_id, 'emp_name':emp_name, 'reason':reason, 'from_time':from_time, 'to_time':to_time,'approved_by':approved_by, 'status':status, 'hr_approval':hr_approval}
+        all_latedata = {'id' : id,'date':str(date),'emp_id':emp_id, 'emp_name':emp_name, 'reason':reason, 'from_time':from_time, 'to_time':to_time,'approved_by':approved_by, 'status':status, 'hr_approval':hr_approval}
         print("EMP ID : ",all_latedata['emp_id'])
+        flash('New notification','success')
 
         emit('late', all_latedata, broadcast=True)
 
@@ -295,7 +300,7 @@ def handle_lateform_callback(lateDet):
 
 @socketio.on('leave')
 def handle_leaveform_callback(leaveDet):
-    emp_id=session.get('emp_id')
+    emp_id=current_user.emp_id
     # emp_name=session.get('name')
     emp=Emp_login.query.filter_by(emp_id=emp_id).first()
     emp_name=emp.name
@@ -318,9 +323,11 @@ def handle_leaveform_callback(leaveDet):
         new_request=notifications(emp_id=emp_id,reason=reason,emp_name=emp_name,permission_type='Leave',from_time=from_time,to_time=to_time,req_id=recently_added_row.id)
         db.session.add(new_request)
         db.session.commit()
+        date=recently_added_row.date
         
-        all_leaveData={'id':id,'emp_id':emp_id,'emp_name':emp_name,'reason':reason,'from_time':from_time,'to_time':to_time,'approved_by':approved_by,'status':status,'hr_approval':hr_approval}
+        all_leaveData={'id':id,'date':str(date),'emp_id':emp_id,'emp_name':emp_name,'reason':reason,'from_time':from_time,'to_time':to_time,'approved_by':approved_by,'status':status,'hr_approval':hr_approval}
         print(all_leaveData)
+        flash('New notification','success')
 
         emit('leave', all_leaveData, broadcast=True)
 
@@ -332,12 +339,68 @@ def handle_leaveform_callback(leaveDet):
 def user_dashboard():
     if current_user.role=="admin":
         return redirect(url_for('auth.logout'))
-    else:
-        emp_id = session.get('emp_id')
+    else:#emp_id=sess
+        emp_id = current_user.emp_id
         user = Emp_login.query.filter_by(emp_id=emp_id).first()
         # date=datetime.strptime(str(user.date), "%Y-%m-%d %H:%M:%S")
         date = (user.date).strftime("%Y-%m-%d")
-    return render_template("emp_req_choice.html",user=user,date=date)
+        attendance_details={
+            'absent':0,
+            'present':0,
+            'half_day':0,
+            'communicated':0,
+            'wrong_shift':0,
+            'week_off':0,
+            'c_off':0,
+            'wop':0
+        }
+
+        # attendance_details['present']=Attendance.query.filter(emp_id=emp_id,attendance='Present').count()
+        # attendance_details['absent']=Attendance.query.filter(emp_id=emp_id,attendance='Leave').count()
+        # attendance_details['half_day']=Attendance.query.filter(emp_id=emp_id,attendance='half-day').count()
+        # attendance_details['communicated']=Attendance.query.filter(emp_id=emp_id,attendance='communicated').count()
+        # attendance_details['wrong_shift']=Attendance.query.filter(emp_id=emp_id,attendance='wrong-shift').count()
+        # attendance_details['week_off']=Attendance.query.filter(emp_id=emp_id,attendance='week-off').count()
+        # attendance_details['c_off']=Attendance.query.filter(emp_id=emp_id,attendance='c-off').count()
+        # attendance_details['wop']=Attendance.query.filter(emp_id=emp_id,attendance='wop').count()
+
+        employees=Attendance.query.filter_by(emp_id=emp_id).all()
+
+
+        for emp in employees:
+            if emp.attendance=='Absent':
+                attendance_details['absent']+=1
+
+            elif emp.attendance=='half-day':
+                attendance_details['half_day']+=1
+
+            elif emp.attendance=='Wrong Shift':
+                attendance_details['wrong_shift']+=1
+            
+            elif emp.attendance=='Leave':
+                attendance_details['communicated']+=1
+            
+            elif emp.attendance=='Week Off':
+                attendance_details['week_off']+=1
+            
+            elif emp.attendance=='C Off':
+                attendance_details['c_off']+=1
+
+            elif emp.attendance=='Wop':
+                attendance_details['wop']+=1
+            
+            else:
+                attendance_details['present']+=1
+        print(attendance_details)
+
+        late_det=False
+        leave_det=False
+        
+        late_det=late.query.filter_by(emp_id=emp_id).all()
+        leave_det=leave.query.filter_by(emp_id=emp_id).all()
+        all_permission = late.query.filter(late.date).union(leave.query.filter(leave.date)).order_by('date').all()
+        flash('Logged In Successfully','success')        
+    return render_template("emp_dashboard.html",user=user,date=date,attendance_details=attendance_details,late=late_det,leave=leave_det,all_permission=all_permission)
 
 @views.route("/attendance_upload",methods=['POST','GET'])
 @login_required
@@ -349,172 +412,11 @@ def upload_attendance():
         file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
         file.save(file_path)
         attend_excel_data(file_path)
+        flash('Attendance Uploaded','success')
         return redirect(url_for('views.calculate'))
 
-    
     return redirect(url_for('views.admin'))
 
-@views.route("/today_attendance")
-@login_required
-def today_attendance():
-    if current_user.role == 'employee':
-        return redirect(url_for('auth.logout'))
-    return redirect(url_for('views.admin'))
-
-# @views.route('/emp_details')
-# @login_required
-# def emp_details():
-#     if current_user.role == 'employee':
-#         return redirect(url_for('auth.logout'))
-#     emp_login=Emp_login.query.order_by(Emp_login.emp_id).all()
-    
-#     # Separate the records with freezed_account=1 and freezed_account=0
-#     emp_login_freezed = [emp for emp in emp_login if emp.freezed_account == 1]
-#     emp_login_active = [emp for emp in emp_login if emp.freezed_account == 0]
-    
-#     # Combine the lists, placing the freezed_account=1 records at the end
-#     emp_login_sorted = emp_login_active + emp_login_freezed
-#     print(emp_login_sorted)
-
-#     return render_template('emp_details.html',emp_login=emp_login_sorted)
-
-# @views.route('/late_req_profile')
-# @login_required
-# def late_req_profile():
-
-#     emp_id = request.args.get('emp_id')
-#     emp_name = request.args.get('emp_name')
-#     from_time = request.args.get('from_time')
-#     to_time = request.args.get('to_time')
-#     reason = request.args.get('reason')
-#     req_id = request.args.get('req_id')
-#     back_page=request.args.get('back_page')
-
-#     notify = notifications.query.filter_by(permission_type='Late', emp_id=emp_id,from_time=from_time,to_time=to_time,reason=reason).first()
-#     print(notify)
-#     if notify:
-#         # If the notifications exists, delete it
-#         db.session.delete(notify)
-#         db.session.commit()
-
-#     user = Emp_login.query.filter_by(emp_id=emp_id).order_by(Emp_login.date.desc()).first()
-#     user_late=late.query.filter_by(id=req_id).first()
-#     req_date=user_late.date.strftime("%d-%m-%y")
-#     req_time=user_late.date.strftime("%H:%M")
-#     req_details={
-#         'late_balance':user.late_balance,
-#         'leave_balance':user.leave_balance,
-#         'approval':user_late.hr_approval,
-#         'req_date':req_date,
-#         'req_time':req_time,
-#         'from_time':from_time,
-#         'to_time':to_time,
-#         'approved_by':user_late.approved_by,
-#         'permission_type':'Late',
-#         'ph_number':user.phoneNumber,
-#         'id':user_late.id,
-#         'reason':reason,
-#         'emp_id':emp_id,
-#         'emp_name':emp_name,
-#         'back_page':back_page
-#     }
-#     session['details']=req_details
-#     return render_template("req_profile.html",req_details=req_details,permission_type='Late')#,late_permission_dict=late_permission_dict
-
-# @views.route('/leave_req_profile')
-# @login_required
-# def leave_req_profile():
-#     emp_id = request.args.get('emp_id')
-#     emp_name = request.args.get('emp_name')
-#     from_time = request.args.get('from_time')
-#     to_time = request.args.get('to_time')
-#     reason = request.args.get('reason')
-#     req_id = request.args.get('req_id')
-#     back_page=request.args.get('back_page')
-
-#     notify = notifications.query.filter_by(permission_type='Leave', emp_id=emp_id,from_time=from_time,to_time=to_time,reason=reason).first()
-#     print(notify)
-#     if notify:
-#         # If the notifications exists, delete it
-#         db.session.delete(notify)
-#         db.session.commit()
-
-#     # if(request.args.get("notify_id")):
-#     #     notify_id=request.args.get("notify_id")
-#     #     permission=request.args.get('permission')
-#     #     print("Notify id : ", notify_id)
-#     #     print("permission : ",permission)
-#     #     notify = notifications.query.filter_by(permission=permission, id=notify_id).first()
-#     #     print(notify)
-#     #     if notify:
-#     #         # If the notifications exists, delete it
-#     #         db.session.delete(notify)
-#     #         db.session.commit()
-    
-#     user = Emp_login.query.filter_by(emp_id=emp_id).order_by(Emp_login.date.desc()).first()
-#     user_leave=leave.query.filter_by(id=req_id).first()
-#     req_date=user_leave.date.strftime("%d-%m-%y")
-#     req_time=user_leave.date.strftime("%H:%M")
-#     req_details={
-#         'late_balance':user.late_balance,
-#         'leave_balance':user.leave_balance,
-#         'approval':user_leave.hr_approval,
-#         'req_date':req_date,
-#         'req_time':req_time,
-#         'from_time':from_time,
-#         'to_time':to_time,
-#         'approved_by':user_leave.approved_by,
-#         'ph_number':user.phoneNumber,
-#         'permission_type':'Leave',
-#         'id':user_leave.id,
-#         'reason':reason,
-#         'emp_id':emp_id,
-#         'emp_name':emp_name,
-#         'back_page':back_page
-#     }
-#     session['details']=req_details
-#     return render_template("req_profile.html",req_details=req_details,permission_type='Leave')#,late_permission_dict=late_permission_dict
-
-
-# @views.route('/late_req_approve',methods=['POST','GET'])
-# def late_req_approve():
-#     late_details=session.get('late_details')
-#     return render_template("late_req_profile.html",late_details=late_details)
-
-# @views.route('/late_req_decline',methods=['POST','GET'])
-# def late_req_decline():
-#     late_details=session.get('late_details')
-#     return render_template("late_req_profile.html",late_details=late_details)
-
-# @views.route('/leave_approve',methods=['POST','GET'])
-# def leave_approve():
-#     user = json.loads(request.data)
-#     userID = user['userId']
-#     user = leave.query.filter_by(emp_id=userID).first()
-#     print(" USER : ",user)
-#     current_user='hr'
-#     if current_user=='hr':
-#         user.hr_approval='Approved'
-#         user.approved_by=userID
-#         db.session.commit()
-#         print("Hr Approval ", user.hr_approval)
-#         print("Status ", user.status)
-#         emit('leave_hr_approval_update', {'userId': userID, 'hr_approval': user.hr_approval}, broadcast=True)
-
-# @views.route('/leave_decline',methods=['POST','GET'])
-# def leave_decline():
-#     user = json.loads(request.data)
-#     userID = user['userId']
-#     user = leave.query.filter_by(emp_id=userID).first()
-#     print(" USER : ",user)
-#     current_user='hr'
-#     if current_user=='hr':
-#         user.hr_approval='Declined'
-#         user.status='Declined'
-#         db.session.commit()
-#         print("Hr Approval ", user.hr_approval)
-#         print("Status ", user.status)
-#         emit('leave_hr_approval_update', {'userId': userID, 'hr_approval': user.hr_approval}, broadcast=True)
 
 @views.route('/late_approve', methods=['POST', 'GET'])
 def late_approve():
@@ -542,7 +444,7 @@ def late_approve():
     if user:
         user.late_balance -= 1
         email=user.email
-        late_balance=user.late_balance
+        late_balance=user.late_balance-1
         db.session.commit()
     else:
         print(f"Employee with emp_id {emp_id} not found.")
@@ -638,7 +540,7 @@ def leave_approve():
     if user:
         user.leave_balance -= 1
         email=user.email
-        leave_balance=user.leave_balance
+        leave_balance=user.leave_balance-1
         db.session.commit()
     else:
         print(f"Employee with emp_id {emp_id} not found.")
@@ -786,15 +688,18 @@ def upload_select():
             # print(file_type,"file_type")
             # Customize response based on file_type
             if file_type == 'attendance':
-                # print("j=ubjxk")
-                filename = secure_filename(file.filename)
-                # print(filename)
-                file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
-                file.save(file_path)
-                # print('hello')
-                attend_excel_data(file_path)
-                # print("babdckzub")
-                return redirect(url_for('views.calculate'))
+                try:
+                    # print("j=ubjxk")
+                    filename = secure_filename(file.filename)
+                    # print(filename)
+                    file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
+                    file.save(file_path)
+                    # print('hello')
+                    attend_excel_data(file_path)
+                    # print("babdckzub")
+                    return redirect(url_for('views.calculate'))
+                except:
+                    flash('Oops! Something Went wrong.','error')
             
             elif file_type == 'addEmployee':
                 filename = secure_filename(file.filename)
@@ -863,7 +768,9 @@ def del_single_emp():
         db.session.delete(emp)
         db.session.commit()
         print(f"Row with emp_id {emp_id} deleted successfully.")
+        flash('Employee Deleted Succesfully','success')
     else:
+        flash('Employee Not Deleted','error')
         print(f"Row with emp_id {emp_id} not found.")
     return redirect(url_for('views.admin'))
 
@@ -873,14 +780,25 @@ def del_multiple_emp():
         return redirect(url_for('auth.logout'))
     selected_employee_ids = request.form.getlist('select')
     print(selected_employee_ids)
-    for i in selected_employee_ids:
-        emp=Emp_login.query.filter_by(emp_id=i).first()
-        if emp: 
-            db.session.delete(emp)
-            db.session.commit()
-            print(f"Row with emp_id {i} deleted successfully.")
-        else:
-            print(f"Row with emp_id {i} not found.")
+    # for i in selected_employee_ids:
+    #     emp=Emp_login.query.filter_by(emp_id=i).first()
+    #     if emp: 
+    #         db.session.delete(emp)
+    #         db.session.commit()
+    #         flash('Employees Deleted Succesfully','success')
+    #         print(f"Row with emp_id {i} deleted successfully.")
+    #     else:
+    #         flash('Employees Not Deleted','error')
+    #         print(f"Row with emp_id {i} not found.")
+    employees_deleted = Emp_login.query.filter(Emp_login.emp_id.in_(selected_employee_ids)).delete(synchronize_session=False)
+
+    if employees_deleted:
+        db.session.commit()
+        flash('Employees Deleted Successfully', 'success')
+        print("Rows deleted successfully.")
+    else:
+        flash('Employees Not Deleted', 'error')
+        print("Rows not found.")
     return redirect(url_for('views.admin'))
 
 @views.route('/edit_employee',methods=['POST'])
@@ -910,42 +828,27 @@ def edit_employee():
 @views.route('/user-edit',methods=['POST'])
 @login_required
 def handle_user_editform_callback():
-    data = request.json
-    print("data :",data)
-    new_req=None
-    emp_id=data.get('ID')
-    user=Emp_login.query.filter_by(emp_id=emp_id).first()
-    name = user.name
-    if data.get('newName'):
-        print('new Name')
-        newdata = data.get('newName')
-        olddata = data.get('oldName')
-        new_req=user_edit(emp_id=emp_id, name=name, old_data=olddata, new_data=newdata, data_type='name')
+    try:
+        data = request.json
+        print("data :",data)
+        new_req=None
+        emp_id=data.get('empId')
+        print(emp_id)
+        user=Emp_login.query.filter_by(emp_id=emp_id).first()
+        name = user.name
+        newdata = data.get('new')
+        data_type = data.get('type')
+        olddata = data.get('old')
+        new_req=user_edit(emp_id=emp_id, name=name, old_data=olddata, new_data=newdata, data_type=data_type)
+        db.session.add(new_req)
+        db.session.commit()
+        result={'status':True,'message':'Message Sene Successfully'}
 
-    elif data.get('newDate'):
-        print('new Date')
-        newdata = data.get('newDate')
-        olddata = data.get('oldDate')
-        new_req=user_edit(emp_id=emp_id, name=name, old_data=olddata, new_data=newdata, data_type='date')
+    except Exception as e:
+        print("line 972",e)
+        result={'status':False,'message':'Message Not Sent'}
 
-
-    elif data.get('newEmail'):
-        print('new email')
-        newdata=data.get('newEmail')
-        olddata=data.get('oldemail')
-        new_req=user_edit(emp_id=emp_id, name=name, old_data=olddata, new_data=newdata, data_type='email')
-
-    elif data.get('newMobileNumber'):
-        print('new number')
-        newdata=data.get('newMobileNumber')
-        olddata=data.get('oldphone')
-        new_req=user_edit(emp_id=emp_id, name=name, old_data=olddata, new_data=newdata, data_type='phoneNumber')
-    else:
-        print("data not received properly")
-
-    db.session.add(new_req)
-    db.session.commit()
-    return jsonify({'data':"request received"})
+    return jsonify(result)
     
 
 @views.route('/user_edit_data',methods=['POST'])
@@ -978,26 +881,20 @@ def accept_edit():
     new_data=data.get('new_data')
 
     emp=Emp_login.query.filter_by(emp_id=emp_id).first()
-    old_value=getattr(emp,data_type)
-    if old_data==old_value:
-        setattr(emp,data_type,new_data)
-    else:
-        print("data not matched")
+    # old_value=getattr(emp,data_type)
+    setattr(emp,data_type,new_data)
 
     late_table=late.query.filter_by(emp_id=emp_id).first()
     if late_table:
-        old_value=getattr(emp,data_type)    
-        if old_data==old_value:
-            setattr(emp,data_type,new_data)
-        else:
-            print("data not matched")
+        # old_value=getattr(emp,data_type)    
+        setattr(emp,data_type,new_data)
+        
     leave_table=leave.query.filter_by(emp_id=emp_id).first()
     if leave_table:
-        old_value=getattr(emp,data_type)
-        if old_data==old_value:
-            setattr(emp,data_type,new_data)
-        else:
-            print("data not matched")
+        # old_value=getattr(emp,data_type)
+        
+        setattr(emp,data_type,new_data)
+        
     
     
     user=user_edit.query.filter_by(id=id).first()
@@ -1125,7 +1022,7 @@ def send_message():
 
     attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date,Attendance.emp_id==id).first()
     
-    if attendance.attendance=='Leave':
+    if attendance.attendance=='Absent':
         message = f"""
         Dear {emp.name}:
         It is a gentle reminder to you,
@@ -1201,6 +1098,7 @@ def bring_req_profile():
     data = request.json
     req_id = data.get('id')
     permission_type = data.get('permission_type')
+    print('views 1249',req_id)
     table=[]
     
     print('permission_type ',permission_type)
@@ -1216,8 +1114,8 @@ def bring_req_profile():
     reason = table.reason
     req_id = table.id
 
-    notify = notifications.query.filter_by(permission_type=permission_type.capitalize(), emp_id=emp_id,from_time=from_time,to_time=to_time,reason=reason).first()
-    # print(notify)
+    notify = notifications.query.filter_by(permission_type=permission_type.capitalize(), req_id=req_id).first()
+    print(notify)
     if notify:
         # If the notifications exists, delete it
         db.session.delete(notify)
@@ -1262,25 +1160,110 @@ def save_attendance():
 
     if attendance.inTime=='-':
         punchIn=form_data['punchIn']
-        attendance.attendance=punchIn
-        db.session.commit()
+        if punchIn=='absent':
+            attendance.attendance='Absent'
+            db.session.commit()
+        elif punchIn=='communicated':
+            attendance.attendance='Leave'
+            db.session.commit()
     else:
         hours, minutes = map(int, attendance.lateBy.split(':'))
         # print(hours * 60 + minutes >10)
         if (hours * 60 + minutes >10):
-            punchIn=form_data['punchIn']
-            attendance.attendance=punchIn
-            db.session.commit()
+            wrongShift=form_data['wrongShift'] # half-day,present
+            if wrongShift=='half-day':
+                attendance.attendance='Half day'
+                db.session.commit()
+            elif wrongShift=='Present':
+                attendance.attendance='Present'
+                db.session.commit()
 
-    if attendance.outTime=='-':
-        punchOut=form_data['punchOut']
-        attendance.attendance=punchOut
-        db.session.commit()
+
+    if attendance.outTime=='-' and attendance.inTime!='-':
+        punchOut=form_data['punchOut'] # mis-pinch, shift-continue
+        if punchOut=='mis-pinch':
+            attendance.outTime='Miss Punch'
+            db.session.commit()
+        elif punchOut=='shift-continue':
+            new_req=comp_off(emp_id=emp_id,date=date)                        
+            db.session.add(new_req)
+            db.session.commit()
 
     if attendance.attendance=='Wrong Shift':
         wrongshift=form_data['wrongShift']
-        attendance.attendance=wrongshift
-        db.session.commit()
-                    
+        if wrongshift=='wrong-shift':
+            attendance.attendance='Wrong Shift'
+            db.session.commit()
+        elif attendance.branch == 'KKL':
+            new_req=call_duty(emp_id=emp_id,date=date,inTime=attendance.inTime,outTime=attendance.outTime)
+            db.session.add(new_req)
+            db.session.commit()
+        else:
+            overtime=attendance.overtime  # need to write code for this.......
+            print(overtime)
+            db.session.commit()
+    print('\n\n\n\n Attendance saved successfully \n\n\n\n')
+
 
     return jsonify({'message': 'Attendance saved successfully'})
+
+
+# @views.route('/check_user_request')
+# def check_user_request():
+#     emp_id = request.json
+#     late_det=late.query.filter_by(emp_id=emp_id).all()
+#     leave_det=leave.query.filter_by(emp_id=emp_id).all()
+#     return jsonify ({'late_det':late_det,'leave_det':leave_det})
+
+@views.route('get_chart')
+def get_chart():
+    chartDet={
+        'total_present':0,
+        'kkl_employee':0,
+        'dr_employee':0,
+        'ft_employee':0,
+    }
+    current_date=datetime.now()
+    today = current_date.strftime('%Y-%m-%d')
+    # print('today',today)
+    # yesterday = (current_date - timedelta(days=1)).strftime('%Y-%m-%d')
+    # print('yesterday',yesterday)
+    # week_off=Week_off.query.filter_by(date=today).count()
+    # Emp=Emp_login.query.filter_by(freezed_account=0).count()
+
+    # chartDet['total_employee']=Emp-week_off
+    # chartDet['total_absent']=Attendance.query.filter(Attendance.attendance=='Leave',func.date(Attendance.date)==today).count()
+    attendance = Attendance.query.filter(Attendance.inTime != '-', Attendance.outTime == '-',func.date(Attendance.date)==today).all()
+    chartDet['total_present']=len(attendance)
+    chartDet['kkl_employee']=Attendance.query.filter(Attendance.branch=='KKL',Attendance.inTime != '-', Attendance.outTime == '-',func.date(Attendance.date)==today).count()
+    chartDet['dr_employee']=Attendance.query.filter(Attendance.branch=='DR',Attendance.inTime != '-', Attendance.outTime == '-',func.date(Attendance.date)==today).count()
+    chartDet['ft_employee']=Attendance.query.filter(Attendance.branch=='FT',Attendance.inTime != '-', Attendance.outTime == '-',func.date(Attendance.date)==today).count()
+    # chartDet['yesterday_total_absent']=Attendance.query.filter(Attendance.attendance=='Leave',func.date(Attendance.date)==yesterday).count()
+    # chartDet['yesterday_total_present'] = Attendance.query.filter(Attendance.inTime != '-', Attendance.outTime == '-',func.date(Attendance.date)==yesterday).count()
+
+    print('\n\n\n\n', chartDet)
+
+    return jsonify (chartDet)
+
+@views.route('start',methods =['POST',"GET"])
+def start():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(fetch_and_store_data, trigger='interval', seconds=5)
+    scheduler.start()
+    return redirect('/')
+
+
+@views.route('/createXL', methods=['GET', 'POST'])
+@login_required
+def createFile():
+    if createXL():
+        return redirect(url_for('views.downloadXL'))
+    else:
+        return "Error creating Excel file"
+    
+
+@views.route('/downloadXL', methods=['GET', 'POST'])
+@login_required
+def downloadXL():
+    saveFolder = current_app.config['DAY_ATTENDANCE_FOLDER']
+    return send_from_directory(saveFolder, "merged_data.xlsx", as_attachment=True)

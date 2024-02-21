@@ -410,7 +410,7 @@ function sendAlertMsg(currentShift, lastShift) {
     )
       .then((response) => response.json())
       .then((data) => {
-        console.log(data);
+        // console.log(data);
       });
   }
 }
@@ -457,7 +457,7 @@ function checkElapsedTime() {
 
   // Check if 17 minutes have elapsed and alert has not been sent
   if (elapsedMinutes >= 10 && !alertSent) {
-    console.log("Alert: 10 minutes have elapsed since the shift started!");
+    // console.log("Alert: 10 minutes have elapsed since the shift started!");
     if (!alertSent) {
       sendAlertMsg(current_last_shift[0], current_last_shift[1]);
     } // Set flag to true to indicate that the alert has been sent
@@ -522,6 +522,7 @@ function save_changes(emp_id, date) {
         console.log("error here");
       }
       console.log(data);
+      window.location.href = '';
     })
     .catch((error) => {
       // Handle fetch error

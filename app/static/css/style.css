@@ -8,6 +8,57 @@
 
 /* css to copy  */
 
+.alert {
+  padding: 15px;
+  border-radius: 5px;
+  position: absolute;
+  z-index: 100;
+  width: 100%;
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+}
+
+.alert-icon {
+  margin-right: 10px;
+}
+
+.alert-message {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.alert-error {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+.alert-message p {
+  font-size: 20px;
+}
+
+.btn-close {
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-size: 20px;
+  position: relative;
+  right: 10px;
+}
+
+.btn-close:focus {
+  outline: none;
+}
+
 .reload {
   display: none;
 }

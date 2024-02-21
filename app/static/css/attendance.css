@@ -47,10 +47,9 @@
   align-items: center;
   gap: 10px;
 }
-
 .download,
 .grid,
-.list {
+.list, .downloadImage {
   width: 37px;
   height: 37px;
   border-radius: 50%;

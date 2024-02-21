@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from flask import current_app as app
 from flask import  flash,redirect,session
-from .models import Attendance, Shift_time, Emp_login,Festival,late,leave,Week_off,comp_off
+from .models import Attendance, Shift_time, Emp_login,Festival,late,leave,Week_off,comp_off,call_duty
 from . import db
 from os import path
 import datetime
@@ -20,7 +20,15 @@ from sqlalchemy import func
 import pandas as pd
 from sqlalchemy.orm import aliased
 from .task import *
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, func, or_
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from . import mysql_engine,sqlite_engine
+from sqlalchemy.ext.automap import automap_base
+from flask import current_app
+import sqlite3
 scheduler = sched.scheduler(time.time, time.sleep)
+
 
 def send_mail(email, subject, body):
     sender_email = "kklimited1013@gmail.com"
@@ -172,26 +180,45 @@ def calculate_Attendance(chunk_size=100):
             for attendance in attendance_records:
                 # print(attendance.employee.shift)
                 shift = Shift_time.query.filter_by(shiftType=attendance.employee.shift).first()
-                inTime = (attendance.inTime).time()
+                if attendance.inTime=='-':
+                    inTime='-'
+                else:
+                    attend_date=attendance.date.date()
+
+                    inTime = datetime.combine(attend_date, (datetime.strptime(attendance.inTime, '%d-%m-%Y %H:%M').time()))
+                    # inTime = datetime.strptime(attendance.date + ' ' + attendance.inTime, '%Y-%m-%d %H:%M:%S')
+
+                if attendance.outTime =='-':
+                    outTime='-'
+                else:
+                    attend_date=attendance.date.date()
+                    outTime = datetime.combine(attend_date, (datetime.strptime(attendance.outTime, '%d-%m-%Y %H:%M').time()))
+
+                
                 shiftIntime = datetime.strptime(shift.shiftIntime,'%H:%M').time()
                 shiftOuttime = datetime.strptime(shift.shift_Outtime,'%H:%M').time()
+                shiftIntime = datetime.combine(datetime.today(), shiftIntime)
+                shiftOuttime = datetime.combine(datetime.today(), shiftOuttime)
 
-                lateBy = calculate_time_difference_with_dates(shiftIntime, inTime)
-                if '-' in lateBy:
-                    attendance.lateBy='00:00'
-                else:
-                    attendance.lateBy = lateBy
-                print(lateBy)
                 
-                if attendance.inTime!='-':
+                if inTime!='-':
+                    lateBy = calculate_time_difference_with_dates(shiftIntime, inTime)
+                    if '-' in lateBy:
+                        attendance.lateBy='00:00'
+                    else:
+                        attendance.lateBy = lateBy
+                    print(lateBy)
+                else:
+                    attendance.lateBy='-'
+                
+                if inTime!='-':
                     hours, minutes = map(int, attendance.lateBy.split(':'))
                     # print(hours * 60 + minutes >10)
                     if (hours * 60 + minutes >10):
-                        attendance.attendance='Half-day'
+                        attendance.attendance='Half day'
 
 
-                if attendance.outTime != "00:00":
-                    outTime = (attendance.outTime).time()
+                if outTime != "-":
 
                     earlyGoingBy = calculate_time_difference_with_dates(outTime, shiftOuttime)
                     if "-" in earlyGoingBy:
@@ -208,19 +235,21 @@ def calculate_Attendance(chunk_size=100):
                     overtime_hours = calculate_time_difference_with_dates(shiftOuttime, outTime)
                     attendance.overtime = overtime_hours
                 else:
-                    out_time = datetime.now().strftime("%H:%M")
-                    if out_time != "00:00": 
-                        earlyGoingBy = calculate_time_difference_with_dates(out_time, shiftOuttime)
-                        attendance.earlyGoingBy = earlyGoingBy
-                        attendance.TotalDuration = calculate_time_difference_with_dates(inTime, out_time)
-                        attendance.overtime = "00:00"
+                    # out_time = datetime.now().strftime("%H:%M")
+                    # if out_time != "00:00": 
+                        # earlyGoingBy = calculate_time_difference_with_dates(out_time, shiftOuttime)
+                    attendance.overtime = "-"
+                    # attendance.earlyGoingBy = earlyGoingBy
+                    attendance.earlyGoingBy = '-'
+                    # attendance.TotalDuration = calculate_time_difference_with_dates(inTime, out_time)
+                    attendance.TotalDuration = '-'
             
             db.session.commit()
 
 def calculate_time_difference_with_dates(datetime1, datetime2):
 
-    datetime1 = datetime.combine(datetime.today(), datetime1)
-    datetime2 = datetime.combine(datetime.today(), datetime2)
+    # datetime1 = datetime.combine(datetime.today(), datetime1)
+    # datetime2 = datetime.combine(datetime.today(), datetime2)
 
     time_difference = datetime2 - datetime1
 
@@ -378,12 +407,13 @@ def attend_excel_data(file_path):
                         leave_check = db.session.query(leave).filter_by(emp_id=empid,date=today_date, status='Approved').first()
                         late_check = db.session.query(late).filter_by(emp_id=empid,date=today_date, status='Approved').first()
 
-
                         if leave_check or late_check:
-                            attendance_status = 'Communicated'
+                            attendance_status = 'Leave'
                         elif week_off:
                             attendance_status='Week Off'
                         else:
+                            # if emp.branch=='FT':
+                                # check_ft(today_date,empid)
                             c_off=comp_off.query.filter_by(emp_id=empid).first()
                             if c_off:
                                 attendance_status='C Off'
@@ -391,7 +421,7 @@ def attend_excel_data(file_path):
                                 db.session.commit()
                             else:
                                 check_leave(today_date,empid)
-                                attendance_status = 'Leave'
+                                attendance_status = 'Absent'
                     else:
                         if current_shift != emp.shift:
                             attendance_status='Wrong Shift'
@@ -405,19 +435,8 @@ def attend_excel_data(file_path):
 
                 branch=Emp_login.query.filter_by(emp_id=empid).first().branch
 
-                intime_str=row['intime']
-                outtime_str=row['outtime']
-                print(type(intime_str))
-                
-                if intime_str=='-':
-                    intime='-'
-                else:
-                    intime=datetime.strptime(intime_str, '%d-%m-%Y %H:%M')
-                
-                if outtime_str=='-':
-                    outtime='-'
-                else:
-                    outtime=datetime.strptime(outtime_str, '%d-%m-%Y %H:%M')
+                intime=row['intime']
+                outtime=row['outtime']
 
             
                 # print("attendance_status",attendance_status)
@@ -445,7 +464,7 @@ def update_freeze_status_and_remove_absences(emp_id):
 
 
         thirty_days_ago = datetime.now() - timedelta(days=30)
-        absent_records = Attendance.query.filter_by(emp_id=emp_id, attendance='Leave').filter(Attendance.date >= thirty_days_ago).all()
+        absent_records = Attendance.query.filter_by(emp_id=emp_id, attendance='Absent').filter(Attendance.date >= thirty_days_ago).all()
 
         # print(f"Employee ID: {emp_id}")
         # print(f"Absent Records: {len(absent_records)}")
@@ -683,3 +702,77 @@ def check_leave(date_str, emp_id):
             previous_date_attend.attendance = 'Leave'
             db.session.commit()
 
+def createXL():
+    try:
+        saveFolder = current_app.config['DAY_ATTENDANCE_FOLDER']
+        
+        # Connect to the SQLite database
+        sqlite_file = 'app/database.db'
+        conn = sqlite3.connect(sqlite_file)
+        
+        # Read data from the 'call_duty' table
+        call_duty_df = pd.read_sql_query("SELECT * FROM call_duty", conn)
+        
+        # Read data from the 'Attendance' table
+        attendance_df = pd.read_sql_query("SELECT * FROM Attendance", conn)
+        
+        # Merge the dataframes with a left join to keep all rows from 'attendance_df'
+        merged_df = pd.merge(attendance_df, call_duty_df, on='emp_id', how='left', suffixes=('_attendance', '_call_duty'))
+        
+        # Save the merged dataframe to Excel
+        merged_df.to_excel(os.path.join(saveFolder, "merged_data.xlsx"), index=False)
+        
+        return True  # Return True if the file creation is successful
+    except Exception as e:
+        error_message = "Error creating Excel file: {}".format(str(e))
+        print(error_message)
+        return False  # Return False if an error occurs during file creation
+
+
+Base = automap_base()
+Base.prepare(mysql_engine, reflect=True)
+
+# Define MySQL model
+MySQLAttendance = Base.classes.Attendance
+
+from sqlalchemy.orm import Session
+def fetch_and_store_data():
+    SessionMySQL = sessionmaker(bind=mysql_engine)
+    SessionSQLite = sessionmaker(bind=sqlite_engine)
+    try:
+        current_date = datetime.now().date()
+        session_mysql = SessionMySQL()
+        session_sqlite = SessionSQLite()
+
+        mysql_data = session_mysql.query(MySQLAttendance).filter(
+            (func.date(MySQLAttendance.time) == current_date)
+        ).all()
+
+        for record in mysql_data:
+            existing_record = session_sqlite.query(Attendance).filter_by(
+                emp_id=record.emp_id, inTime=record.inTime, outTime=record.outTime
+            ).first()
+
+            if not existing_record:
+                print("\n\n\n\n\n row.emp_id:", record.emp_id)
+                print("row.inTime:", record.inTime)
+                print("row.outTime:", record.outTime)
+                sqlite_record = Attendance(
+                            emp_id=record.emp_id,
+                            inTime=record.inTime,
+                            outTime=record.outTime,
+                        )
+                session_sqlite.add(sqlite_record)
+            else:
+                print("No existing record found for emp_id:", record.emp_id)
+
+        session_mysql.close()
+        
+        session_sqlite.commit()
+        session_sqlite.close()
+
+    except Exception as e:
+        print("Exception:", e)
+
+def check_ft(date,emp_id):
+    pass
