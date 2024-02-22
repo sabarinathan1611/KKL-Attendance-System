@@ -7,7 +7,6 @@ from flask import  flash,redirect,session
 from .models import Attendance, Shift_time, Emp_login,Festival,late,leave,Week_off,comp_off,call_duty
 from . import db
 from os import path
-import datetime
 import sched
 from twilio.rest import Client
 import schedule
@@ -255,8 +254,8 @@ def calculate_time_difference(time1, time2):
     time2_str = time2.strftime('%H:%M:%S')
 
     # Convert time strings to datetime objects (without seconds)
-    time1_obj = datetime.strptime(time1_str, '%H:%M:%S').time()
-    time2_obj = datetime.strptime(time2_str, '%H:%M:%S').time()
+    time1_obj = datetime.strptime(time1_str, '%H:%M:%S').time
+    time2_obj = datetime.strptime(time2_str, '%H:%M:%S').time
 
     # Convert time objects to seconds
     seconds1 = time1_obj.hour * 3600 + time1_obj.minute * 60
@@ -378,117 +377,6 @@ def shiftypdate():
             db.session.commit()
     
     return len(employees)  
-
-# def attend_excel_data(file_path):
-#     print('Attending Excel Data')
-#     if os.path.exists(file_path):
-#         sheet_names = pd.ExcelFile(file_path).sheet_names
-
-#         for sheet_name in sheet_names:
-#             df = None
-#             if file_path.lower().endswith('.xlsx'):
-#                 df = pd.read_excel(file_path, sheet_name, engine='openpyxl')
-#             elif file_path.lower().endswith('.xls'):
-#                 df = pd.read_excel(file_path, sheet_name, engine='xlrd')
-#             else:
-#                 print("Unsupported file format")
-#                 return  # Handle unsupported format
-
-#             for index, row in df.iterrows():
-#                 empid = row['emp_id']
-#                 print("Processing: ", empid)
-
-                
-                
-#                 emp = db.session.query(Emp_login).filter_by(emp_id=empid).first()
-#                 #print(emp)
-#                 shift_times = Shift_time.query.all()
-#                 current_time = datetime.now().time()
-#                 current_date = datetime.now().date()
-#                 # = None
-#                 for shift in shift_times:
-#                         # shift_start_time = datetime.strptime(%H:%M:%S,'%H:%M:%S').time()
-#                         # shift_end_time = datetime.strptime(shift.shift_Outtime,'%H:%M:%S').time()
-#                         shift_start_time=shift.shiftIntime.strftime('%H:%M:%S')
-#                         shift_end_time=shift.shift_Outtime.strftime('%H:%M:%S')
-#                         if shift_start_time <= current_time <= shift_end_time:
-#                             current_shift = shift.shiftType
-#                             break
-#                 #print(current_shift,":current_shift")
-                
-#                 shift_type = emp.shift
-#                 #print("shift_type:",shift_type)
-#                 shitfTime = Shift_time.query.filter_by(shiftType=emp.shift).first()
-#                 #print("shitfTime:",shitfTime)
-                
-#                 today_date = datetime.now().strftime("%d.%m.%Y")
-#                 #print("today_date",today_date)
-#                 is_holiday = Festival.query.filter(Festival.date == today_date).first()
-#                 #print(is_holiday,"is_holiday")
-                
-#                 week_off = Week_off.query.filter_by(emp_id=empid, date=today_date).order_by(Week_off.date.desc()).first()
-#                 print(week_off)
-#                 if is_holiday:
-#                     attendance_status = 'Holiday'
-#                 else:
-#                     if str(row['intime']) == "-":
-#                         leave_check = db.session.query(leave).filter_by(emp_id=empid,date=today_date, status='Approved').first()
-#                         late_check = db.session.query(late).filter_by(emp_id=empid,date=today_date, status='Approved').first()
-
-#                         if leave_check or late_check:
-#                             attendance_status = 'Leave'
-#                         elif week_off:
-#                             attendance_status='Week Off'
-#                         else:
-#                             # if emp.branch=='FT':
-#                                 # check_ft(today_date,empid)
-#                             c_off=comp_off.query.filter_by(emp_id=empid).first()
-#                             if c_off:
-#                                 attendance_status='C Off'
-#                                 db.session.delete(c_off)
-#                                 db.session.commit()
-#                             else:
-#                                 check_leave(today_date,empid)
-#                                 attendance_status = 'Absent'
-#                     else:
-#                         if current_shift != emp.shift:
-#                             attendance_status='Wrong Shift'
-#                         elif week_off:
-#                             attendance_status='Wop'
-#                             new_req=comp_off(emp_id=empid,date=today_date)                        
-#                             db.session.add(new_req)
-#                             db.session.commit()
-#                         else:
-#                             attendance_status = 'Present'   
-
-#                 branch=Emp_login.query.filter_by(emp_id=empid).first().branch
-
-#                 intime=row['intime']
-#                 outtime=row['outtime']
-
-            
-#                 # print("attendance_status",attendance_status)
-#                 attendance = Attendance(
-#                     emp_id=empid,
-#                     name=emp.name,
-#                     inTime=intime,
-#                     outTime=outtime,
-#                     branch=branch,
-#                     shiftType=shift_type,
-#                     attendance=attendance_status,
-#                     shiftIntime=shitfTime.shiftIntime,
-#                     shift_Outtime=shitfTime.shift_Outtime,
-#                 )
-#                 db.session.add(attendance)
-#                 update_freeze_status_and_remove_absences(empid)
-#         db.session.commit()
-#     else:
-#         print("File not found")
-
-
-
-
-
 
 def attend_excel_data(file_path):
     print('Attending Excel Data')
