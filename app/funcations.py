@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,time
 import smtplib
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
@@ -12,7 +12,6 @@ import sched
 from twilio.rest import Client
 import schedule
 import time
-from datetime import datetime, timedelta
 from sqlalchemy import text 
 from email.mime.text import MIMEText
 from twilio.base.exceptions import TwilioRestException
@@ -20,7 +19,7 @@ from sqlalchemy import func
 import pandas as pd
 from sqlalchemy.orm import aliased
 from .task import *
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, func, or_
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, func, or_, and_
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from . import mysql_engine,sqlite_engine
@@ -159,8 +158,11 @@ def process_excel_data(file_path):
 
             for index, row in df.iterrows():
                 shift_type = row['Shift']
-                in_time = row['S. InTime']
-                out_time = row['S. OutTime']
+                in_time_str = row['S. InTime']
+                out_time_str = row['S. OutTime']
+
+                in_time = datetime.strptime(in_time_str, '%H:%M:%S').time()
+                out_time = datetime.strptime(out_time_str, '%H:%M:%S').time()
             
                 print("Processing: ", shift_type)
 
@@ -169,128 +171,152 @@ def process_excel_data(file_path):
                 update_or_add_shift(shift_type, in_time, out_time)
 
 def calculate_Attendance(chunk_size=100):
-    total_employees = Emp_login.query.count()
-    total_chunks = (total_employees + chunk_size - 1) // chunk_size
+    with app.app_context():
+        total_employees = Emp_login.query.count()
+        total_chunks = (total_employees + chunk_size - 1) // chunk_size
 
-    for chunk_index in range(total_chunks):
-        employees = Emp_login.query.offset(chunk_index * chunk_size).limit(chunk_size).all()
-        for employee in employees:
-            attendance_records = Attendance.query.filter_by(emp_id=employee.id).all()
+        for chunk_index in range(total_chunks):
+            employees = Emp_login.query.offset(chunk_index * chunk_size).limit(chunk_size).all()
+            for employee in employees:
+                attendance_records = Attendance.query.filter_by(emp_id=employee.id).all()
 
-            for attendance in attendance_records:
-                # print(attendance.employee.shift)
-                shift = Shift_time.query.filter_by(shiftType=attendance.employee.shift).first()
-                if attendance.inTime=='-':
-                    inTime='-'
-                else:
-                    attend_date=attendance.date.date()
-
-                    inTime = datetime.combine(attend_date, (datetime.strptime(attendance.inTime, '%d-%m-%Y %H:%M').time()))
-                    # inTime = datetime.strptime(attendance.date + ' ' + attendance.inTime, '%Y-%m-%d %H:%M:%S')
-
-                if attendance.outTime =='-':
-                    outTime='-'
-                else:
-                    attend_date=attendance.date.date()
-                    outTime = datetime.combine(attend_date, (datetime.strptime(attendance.outTime, '%d-%m-%Y %H:%M').time()))
-
-                
-                shiftIntime = datetime.strptime(shift.shiftIntime,'%H:%M').time()
-                shiftOuttime = datetime.strptime(shift.shift_Outtime,'%H:%M').time()
-                shiftIntime = datetime.combine(datetime.today(), shiftIntime)
-                shiftOuttime = datetime.combine(datetime.today(), shiftOuttime)
-
-                
-                if inTime!='-':
-                    lateBy = calculate_time_difference_with_dates(shiftIntime, inTime)
-                    if '-' in lateBy:
-                        attendance.lateBy='00:00'
+                for attendance in attendance_records:
+                    # print(attendance.employee.shift)
+                    shift = Shift_time.query.filter_by(shiftType=attendance.employee.shift).first()
+                    if attendance.inTime=='-':
+                        inTime='-'
                     else:
-                        attendance.lateBy = lateBy
-                    print(lateBy)
-                else:
-                    attendance.lateBy='-'
+                        attend_date=attendance.date.date()
+
+                        inTime = datetime.combine(attend_date, (datetime.strptime(attendance.inTime, '%d-%m-%Y %H:%M').time()))
+                        # inTime = datetime.strptime(attendance.date + ' ' + attendance.inTime, '%Y-%m-%d %H:%M:%S')
+
+                    if attendance.outTime =='-':
+                        outTime='-'
+                    else:
+                        attend_date=attendance.date.date()
+                        outTime = datetime.combine(attend_date, (datetime.strptime(attendance.outTime, '%d-%m-%Y %H:%M').time()))
+
+                    
+                    # shiftIntime = datetime.strptime(shift.shiftIntime,'%H:%M:%S').time()
+                    # shiftOuttime = datetime.strptime(shift.shift_Outtime,'%H:%M:%S').time()
+                    # shiftIntime = datetime.combine(datetime.today(), shiftIntime)
+                    # shiftOuttime = datetime.combine(datetime.today(), shiftOuttime)
+
+                    
+                    if inTime!='-':
+                        lateBy = calculate_time_difference(shift.shiftIntime, inTime)
+                        # late = calculate_time_difference('22:00', '06:01')  # sin , in
+                        # late_time = datetime.strptime(lateBy, '%H:%M:%S').time()
+                        if lateBy>mytime(8, 0):
+                            lateBy=None
+                        print(lateBy)
+                    else:
+                        attendance.lateBy=None
+                    
+                    if inTime!=None:
+                        lateBy_str=attendance.lateBy
+                        print(lateBy)
+                        hours, minutes,seconds = map(int, lateBy_str.split(':'))
+                        # print(hours * 60 + minutes >10)
+                        if (hours * 60 + minutes >10):
+                            attendance.attendance='Half day'
+
+
+                    if outTime != None:
+
+                        earlyGoingBy = calculate_time_difference(outTime , shift.shiftOuttime)  # out , sout
+                        if earlyGoingBy>time(8, 0, 0):
+                            earlyGoingBy=None
+
+                        time_worked = calculate_time_difference(inTime, outTime)
+                        if "-" in str(time_worked):
+                            attendance.TotalDuration = None
+                        else:
+                            attendance.TotalDuration = time_worked
+
+                        overtime_hours = calculate_time_difference(shift.shiftOuttime, outTime)
+                        attendance.overtime = overtime_hours
+                    else:
+                        # out_time = datetime.now().strftime("%H:%M")
+                        # if out_time != "00:00": 
+                            # earlyGoingBy = calculate_time_difference(out_time, shiftOuttime)
+                        attendance.overtime = None
+                        # attendance.earlyGoingBy = earlyGoingBy
+                        attendance.earlyGoingBy = None
+                        # attendance.TotalDuration = calculate_time_difference_with_dates(inTime, out_time)
+                        attendance.TotalDuration = None
                 
-                if inTime!='-':
-                    hours, minutes = map(int, attendance.lateBy.split(':'))
-                    # print(hours * 60 + minutes >10)
-                    if (hours * 60 + minutes >10):
-                        attendance.attendance='Half day'
+        return db.session.commit()
 
-
-                if outTime != "-":
-
-                    earlyGoingBy = calculate_time_difference_with_dates(outTime, shiftOuttime)
-                    if "-" in earlyGoingBy:
-                        attendance.earlyGoingBy = "00:00"
-                    else:
-                        attendance.earlyGoingBy = earlyGoingBy
-
-                    time_worked = calculate_time_difference_with_dates(inTime, outTime)
-                    if "-" in time_worked:
-                        attendance.TotalDuration = "00:00"
-                    else:
-                        attendance.TotalDuration = time_worked
-
-                    overtime_hours = calculate_time_difference_with_dates(shiftOuttime, outTime)
-                    attendance.overtime = overtime_hours
-                else:
-                    # out_time = datetime.now().strftime("%H:%M")
-                    # if out_time != "00:00": 
-                        # earlyGoingBy = calculate_time_difference_with_dates(out_time, shiftOuttime)
-                    attendance.overtime = "-"
-                    # attendance.earlyGoingBy = earlyGoingBy
-                    attendance.earlyGoingBy = '-'
-                    # attendance.TotalDuration = calculate_time_difference_with_dates(inTime, out_time)
-                    attendance.TotalDuration = '-'
-            
-            db.session.commit()
-
-def calculate_time_difference_with_dates(datetime1, datetime2):
-
-    # datetime1 = datetime.combine(datetime.today(), datetime1)
-    # datetime2 = datetime.combine(datetime.today(), datetime2)
-
-    time_difference = datetime2 - datetime1
-
-    # No need to adjust for crossing midnight as datetime handles it
-    hours, remainder = divmod(time_difference.total_seconds(), 3600)
-    minutes = remainder // 60
-
-    return f"{int(hours):02d}:{int(minutes):02d}"
-
-def calculate_time_difference(time1_str, time2_str):
-    #print("DEBUG - time1_str:", time1_str)
-    #print("DEBUG - time2_str:", time2_str)
+def calculate_time_difference(time1, time2):
+    # Convert time objects to strings
+    time1_str = time1.strftime('%H:%M:%S')
+    time2_str = time2.strftime('%H:%M:%S')
 
     # Convert time strings to datetime objects (without seconds)
-    time_format = '%H:%M'
-    
-    try:
-        if time1_str == "00:00" or time2_str == "00:00":
-            return "00:00"
-            
-        time1 = datetime.strptime(time1_str, time_format)
-        time2 = datetime.strptime(time2_str, time_format)
-    except ValueError as e:
-        #print("ValueError:", e)
-        return "00:00"
+    time1_obj = datetime.strptime(time1_str, '%H:%M:%S').time()
+    time2_obj = datetime.strptime(time2_str, '%H:%M:%S').time()
 
-    # Calculate time difference in seconds
-    time_difference_seconds = (time2 - time1).total_seconds()
+    # Convert time objects to seconds
+    seconds1 = time1_obj.hour * 3600 + time1_obj.minute * 60
+    seconds2 = time2_obj.hour * 3600 + time2_obj.minute * 60
+
+    # Calculate the difference in seconds
+    difference_seconds = abs(seconds2 - seconds1)
 
     # Convert seconds to hours and minutes
-    total_minutes = time_difference_seconds // 60
-
-    if total_minutes < 0:
-        total_minutes += 24 * 60
-
+    total_minutes = difference_seconds // 60
     total_hours = total_minutes // 60
     minutes = total_minutes % 60
 
-    formatted_difference = f"{int(total_hours)}:{int(minutes):02d}"
+    # Format the difference as a time object
+    formatted_difference = time(hour=int(total_hours), minute=int(minutes))
+    print('\n\n\n\n\n\n\n\n\n\n\n',formatted_difference)
+
     return formatted_difference
-    
+
+# def calculate_time_difference(time1, time2):
+
+#     # Convert time strings to datetime objects (without seconds)
+#     time_format = '%H:%M:%S'
+
+#     # seconds1 = time1.hour * 3600 + time1.minute * 60 + time1.second
+#     # seconds2 = time2.hour * 3600 + time2.minute * 60 + time2.second
+#     # difference_seconds = abs(seconds2 - seconds1)
+#     time1 = datetime.strptime(str(time1), time_format).time()
+#     time2 = datetime.strptime(str(time2), time_format).time()
+#     seconds1 = time1.hour * 3600 + time1.minute * 60
+#     seconds2 = time2.hour * 3600 + time2.minute * 60
+
+#     # Calculate the difference in seconds
+#     difference_seconds = abs(seconds2 - seconds1)
+
+#     # Convert seconds to hours and minutes
+#     total_minutes = difference_seconds // 60
+#     total_hours = total_minutes // 60
+#     minutes = total_minutes % 60
+
+#     # Format the difference as a time object
+#     formatted_difference = time(hour=int(total_hours), minute=int(minutes))
+
+#     # format_time1 = datetime.combine(datetime.min, time1)
+#     # format_time2 = datetime.combine(datetime.min, time2)
+#     # print('\n\n\n\n\n\n\n\ndatetime 2 ',format_time2 - format_time1)
+
+#     # total_minutes = (format_time2 - format_time1).total_seconds()//60
+
+
+#     # Convert seconds to hours and minutes
+#     # total_minutes = time_difference_seconds // 60
+
+#     # total_hours = total_minutes // 60
+#     # minutes = total_minutes % 60
+
+#     # formatted_difference = f"{int(total_hours)}:{int(minutes):02d}"
+#     # formatted_difference=datetime.strptime(formatted_difference,'%H:%M')
+#     return (formatted_difference)  
+
 def update_wages_for_present_employees():
     
     current_date = datetime.datetime.now().date()
@@ -353,6 +379,117 @@ def shiftypdate():
     
     return len(employees)  
 
+# def attend_excel_data(file_path):
+#     print('Attending Excel Data')
+#     if os.path.exists(file_path):
+#         sheet_names = pd.ExcelFile(file_path).sheet_names
+
+#         for sheet_name in sheet_names:
+#             df = None
+#             if file_path.lower().endswith('.xlsx'):
+#                 df = pd.read_excel(file_path, sheet_name, engine='openpyxl')
+#             elif file_path.lower().endswith('.xls'):
+#                 df = pd.read_excel(file_path, sheet_name, engine='xlrd')
+#             else:
+#                 print("Unsupported file format")
+#                 return  # Handle unsupported format
+
+#             for index, row in df.iterrows():
+#                 empid = row['emp_id']
+#                 print("Processing: ", empid)
+
+                
+                
+#                 emp = db.session.query(Emp_login).filter_by(emp_id=empid).first()
+#                 #print(emp)
+#                 shift_times = Shift_time.query.all()
+#                 current_time = datetime.now().time()
+#                 current_date = datetime.now().date()
+#                 # = None
+#                 for shift in shift_times:
+#                         # shift_start_time = datetime.strptime(%H:%M:%S,'%H:%M:%S').time()
+#                         # shift_end_time = datetime.strptime(shift.shift_Outtime,'%H:%M:%S').time()
+#                         shift_start_time=shift.shiftIntime.strftime('%H:%M:%S')
+#                         shift_end_time=shift.shift_Outtime.strftime('%H:%M:%S')
+#                         if shift_start_time <= current_time <= shift_end_time:
+#                             current_shift = shift.shiftType
+#                             break
+#                 #print(current_shift,":current_shift")
+                
+#                 shift_type = emp.shift
+#                 #print("shift_type:",shift_type)
+#                 shitfTime = Shift_time.query.filter_by(shiftType=emp.shift).first()
+#                 #print("shitfTime:",shitfTime)
+                
+#                 today_date = datetime.now().strftime("%d.%m.%Y")
+#                 #print("today_date",today_date)
+#                 is_holiday = Festival.query.filter(Festival.date == today_date).first()
+#                 #print(is_holiday,"is_holiday")
+                
+#                 week_off = Week_off.query.filter_by(emp_id=empid, date=today_date).order_by(Week_off.date.desc()).first()
+#                 print(week_off)
+#                 if is_holiday:
+#                     attendance_status = 'Holiday'
+#                 else:
+#                     if str(row['intime']) == "-":
+#                         leave_check = db.session.query(leave).filter_by(emp_id=empid,date=today_date, status='Approved').first()
+#                         late_check = db.session.query(late).filter_by(emp_id=empid,date=today_date, status='Approved').first()
+
+#                         if leave_check or late_check:
+#                             attendance_status = 'Leave'
+#                         elif week_off:
+#                             attendance_status='Week Off'
+#                         else:
+#                             # if emp.branch=='FT':
+#                                 # check_ft(today_date,empid)
+#                             c_off=comp_off.query.filter_by(emp_id=empid).first()
+#                             if c_off:
+#                                 attendance_status='C Off'
+#                                 db.session.delete(c_off)
+#                                 db.session.commit()
+#                             else:
+#                                 check_leave(today_date,empid)
+#                                 attendance_status = 'Absent'
+#                     else:
+#                         if current_shift != emp.shift:
+#                             attendance_status='Wrong Shift'
+#                         elif week_off:
+#                             attendance_status='Wop'
+#                             new_req=comp_off(emp_id=empid,date=today_date)                        
+#                             db.session.add(new_req)
+#                             db.session.commit()
+#                         else:
+#                             attendance_status = 'Present'   
+
+#                 branch=Emp_login.query.filter_by(emp_id=empid).first().branch
+
+#                 intime=row['intime']
+#                 outtime=row['outtime']
+
+            
+#                 # print("attendance_status",attendance_status)
+#                 attendance = Attendance(
+#                     emp_id=empid,
+#                     name=emp.name,
+#                     inTime=intime,
+#                     outTime=outtime,
+#                     branch=branch,
+#                     shiftType=shift_type,
+#                     attendance=attendance_status,
+#                     shiftIntime=shitfTime.shiftIntime,
+#                     shift_Outtime=shitfTime.shift_Outtime,
+#                 )
+#                 db.session.add(attendance)
+#                 update_freeze_status_and_remove_absences(empid)
+#         db.session.commit()
+#     else:
+#         print("File not found")
+
+
+
+
+
+
 def attend_excel_data(file_path):
     print('Attending Excel Data')
     if os.path.exists(file_path):
@@ -381,8 +518,10 @@ def attend_excel_data(file_path):
                 current_date = datetime.now().date()
                 # = None
                 for shift in shift_times:
-                        shift_start_time = datetime.strptime(shift.shiftIntime,'%H:%M').time()
-                        shift_end_time = datetime.strptime(shift.shift_Outtime,'%H:%M').time()
+                        # shift_start_time = datetime.strptime(%H:%M:%S,'%H:%M:%S').time()
+                        # shift_end_time = datetime.strptime(shift.shift_Outtime,'%H:%M:%S').time()
+                        shift_start_time=shift.shiftIntime.strftime('%H:%M:%S')
+                        shift_end_time=shift.shift_Outtime.strftime('%H:%M:%S')
                         if shift_start_time <= current_time <= shift_end_time:
                             current_shift = shift.shiftType
                             break
@@ -395,7 +534,7 @@ def attend_excel_data(file_path):
                 
                 today_date = datetime.now().strftime("%d.%m.%Y")
                 #print("today_date",today_date)
-                is_holiday = Festival.query.filter(Festival.date == today_date).all()
+                is_holiday = Festival.query.filter(Festival.date == today_date).first()
                 #print(is_holiday,"is_holiday")
                 
                 week_off = Week_off.query.filter_by(emp_id=empid, date=today_date).order_by(Week_off.date.desc()).first()
@@ -735,44 +874,173 @@ Base.prepare(mysql_engine, reflect=True)
 # Define MySQL model
 MySQLAttendance = Base.classes.Attendance
 
+SessionSQLite = sessionmaker(bind=sqlite_engine)
+session_sqlite = SessionSQLite()
+
 from sqlalchemy.orm import Session
 def fetch_and_store_data():
-    SessionMySQL = sessionmaker(bind=mysql_engine)
-    SessionSQLite = sessionmaker(bind=sqlite_engine)
+    
+        SessionMySQL = sessionmaker(bind=mysql_engine)
+        SessionSQLite = sessionmaker(bind=sqlite_engine)
+        try:
+            current_date = datetime.now().date()
+            # current_date = (datetime.now() - timedelta(days=1)).date()
+            # print("n\n\n\n\n\n\current date:", current_date)
+            session_mysql = SessionMySQL()
+            session_sqlite = SessionSQLite()
+
+            mysql_data = session_mysql.query(MySQLAttendance).filter(
+                (func.date(MySQLAttendance.time) == current_date)
+            ).all()
+
+            print(mysql_data)
+
+            for record in mysql_data:
+                
+                existing_record = session_sqlite.query(Attendance).filter(
+                    and_(Attendance.emp_id == record.emp_id, func.date(Attendance.inTime) == current_date)
+                ).first()
+                    
+                
+
+                if not existing_record:
+                    # print('\n\n\n\n\n akjbcsbdv \n\n\n\n\n')
+                    emp = session_sqlite.query(Emp_login).filter_by(emp_id=record.emp_id).first()
+                    print("\n\n\n\n\n\n ",emp.emp_id,'\n\n\n\n')
+                    # emp=Emp_login.query.filter_by(emp_id=record.emp_id).first()
+                    # print('\n\n\n\n\n akjbcsbdv \n\n\n\n\n')
+                    shiftTime = session_sqlite.query(Shift_time).filter_by(shiftType=emp.shift).first()
+                    
+                    # shiftTime=Shift_time.query.filter_by(shiftType=emp.shiftType).first()
+                    print('\n\n\n\n\n akjbcsbdv \n\n\n\n\n')
+                    # First instance, update inTime
+                    sqlite_record = Attendance(
+                        emp_id=record.emp_id,
+                        name=emp.name,
+                        branch=emp.branch,
+                        shiftType=emp.shift,
+                        shiftIntime=shiftTime.shiftIntime,
+                        shift_Outtime=shiftTime.shift_Outtime,
+                        inTime=record.time,
+                        outTime=None,
+                    )
+                    session_sqlite.add(sqlite_record)
+                    session_sqlite.commit()
+                    print('\n\n\n\n',sqlite_record.id)
+                    calculate_Attendance_from_db(sqlite_record.id)
+
+                else:
+                    if existing_record.inTime!=record.time:
+                    # If inTime is already set, update outTime
+                        existing_record.outTime = record.time
+                        session_sqlite.add(existing_record)
+                        session_sqlite.commit()
+                        calculate_Attendance_from_db(existing_record.id)
+
+            session_mysql.close()
+
+            session_sqlite.close()
+
+        except Exception as e:
+            print("Exception:", e)
+
+# def calculate_Attendance_from_db(id):
+#     with app.app_context():
+#         try:
+#             attendance = Attendance.query.filter_by(id=id).first()
+#             shift = Shift_time.query.filter_by(shiftType=attendance.employee.shift).first()
+#             if attendance.inTime == '-':
+#                 inTime = '-'
+#             else:
+#                 attend_date = attendance.date.date()
+#                 inTime = datetime.combine(attend_date, (datetime.strptime(attendance.inTime, '%d-%m-%Y %H:%M').time()))
+                
+#             if attendance.outTime == '-':
+#                 outTime = '-'
+#             else:
+#                 attend_date = attendance.date.date()
+#                 outTime = datetime.combine(attend_date, (datetime.strptime(attendance.outTime, '%d-%m-%Y %H:%M').time()))
+                
+#             if inTime != '-':
+#                 lateBy = calculate_time_difference(shift.shiftIntime, inTime)
+#                 if lateBy > mytime(8, 0):
+#                     lateBy = None
+#                 print(lateBy)
+#             else:
+#                 attendance.lateBy = None
+                
+#             if inTime is not None:
+#                 lateBy_str = attendance.lateBy
+#                 print(lateBy)
+#                 hours, minutes, seconds = map(int, lateBy_str.split(':'))
+#                 if (hours * 60 + minutes > 10):
+#                     attendance.attendance = 'Half day'
+                    
+#             if outTime is not None:
+#                 earlyGoingBy = calculate_time_difference(outTime, shift.shiftOuttime)
+#                 if earlyGoingBy > time(8, 0, 0):
+#                     earlyGoingBy = None
+#                 time_worked = calculate_time_difference(inTime, outTime)
+#                 if "-" in str(time_worked):
+#                     attendance.TotalDuration = None
+#                 else:
+#                     attendance.TotalDuration = time_worked
+#                 overtime_hours = calculate_time_difference(shift.shiftOuttime, outTime)
+#                 attendance.overtime = overtime_hours
+#             else:
+#                 attendance.overtime = None
+#                 attendance.earlyGoingBy = None
+#                 attendance.TotalDuration = None
+                
+#             db.session.commit()
+            
+#         except Exception as e:
+#             print("Exception:", e)
+
+
+def calculate_Attendance_from_db(id):
     try:
-        current_date = datetime.now().date()
-        session_mysql = SessionMySQL()
-        session_sqlite = SessionSQLite()
+        attendance = session_sqlite.query(Attendance).filter_by(id=id).first()
+        shift = session_sqlite.query(Shift_time).filter_by(shiftType=attendance.shiftType).first()
+        inTime=attendance.inTime
+        print('\n\n\n\n\n\nintime :',inTime)
+        outTime=attendance.outTime
+        print('\n\n\n\n\n\nintime :',outTime)
 
-        mysql_data = session_mysql.query(MySQLAttendance).filter(
-            (func.date(MySQLAttendance.time) == current_date)
-        ).all()
+        if inTime != None:
+            lateBy = calculate_time_difference(shift.shiftIntime, inTime.time())
+            if lateBy > mytime(8, 0):
+                lateBy = None
+            print('\n\n\n\n\nlate: ',lateBy)
+        else:
+            attendance.lateBy = None
 
-        for record in mysql_data:
-            existing_record = session_sqlite.query(Attendance).filter_by(
-                emp_id=record.emp_id, inTime=record.inTime, outTime=record.outTime
-            ).first()
+        if inTime is not None:
+            lateBy_str = attendance.lateBy
+            print('\n\n\n\n\nlate: ',lateBy)
 
-            if not existing_record:
-                print("\n\n\n\n\n row.emp_id:", record.emp_id)
-                print("row.inTime:", record.inTime)
-                print("row.outTime:", record.outTime)
-                sqlite_record = Attendance(
-                            emp_id=record.emp_id,
-                            inTime=record.inTime,
-                            outTime=record.outTime,
-                        )
-                session_sqlite.add(sqlite_record)
+            hours, minutes, seconds = map(int, lateBy_str.split(':'))
+            if (hours * 60 + minutes > 10):
+                attendance.attendance = 'Half day'
+
+        if outTime is not None:
+            earlyGoingBy = calculate_time_difference(outTime.time(), shift.shift_Outtime)
+            if earlyGoingBy > time(8, 0, 0):
+                earlyGoingBy = None
+            time_worked = calculate_time_difference(inTime.time(), outTime.time())
+            if "-" in str(time_worked):
+                attendance.TotalDuration = None
             else:
-                print("No existing record found for emp_id:", record.emp_id)
+                attendance.TotalDuration = time_worked
+            overtime_hours = calculate_time_difference(shift.shift_Outtime, outTime.time())
+            attendance.overtime = overtime_hours
+        else:
+            attendance.overtime = None
+            attendance.earlyGoingBy = None
+            attendance.TotalDuration = None
 
-        session_mysql.close()
-        
         session_sqlite.commit()
-        session_sqlite.close()
+
 
     except Exception as e:
         print("Exception:", e)
-
-def check_ft(date,emp_id):
-    pass

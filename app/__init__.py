@@ -39,7 +39,7 @@ def create_app():
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_PORT'] = 465
     app.config['MAIL_USE_SSL'] = True
-    app.config['MYSQL_HOST'] = '192.168.137.199'
+    app.config['MYSQL_HOST'] = '192.168.137.98'
     app.config['MYSQL_USER'] = 'sabari'
     app.config['MYSQL_PASSWORD'] = '12345678'
     app.config['MYSQL_DB'] = 'server'

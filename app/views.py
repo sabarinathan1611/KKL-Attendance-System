@@ -1241,14 +1241,15 @@ def get_chart():
     # chartDet['yesterday_total_absent']=Attendance.query.filter(Attendance.attendance=='Leave',func.date(Attendance.date)==yesterday).count()
     # chartDet['yesterday_total_present'] = Attendance.query.filter(Attendance.inTime != '-', Attendance.outTime == '-',func.date(Attendance.date)==yesterday).count()
 
-    print('\n\n\n\n', chartDet)
+    # print('\n\n\n\n', chartDet)
 
     return jsonify (chartDet)
 
 @views.route('start',methods =['POST',"GET"])
 def start():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(fetch_and_store_data, trigger='interval', seconds=5)
+    scheduler.add_job(fetch_and_store_data, trigger='interval', seconds=10)
+    # scheduler.add_job(calculate_Attendance, trigger='interval', seconds=10)
     scheduler.start()
     return redirect('/')
 
@@ -1267,3 +1268,14 @@ def createFile():
 def downloadXL():
     saveFolder = current_app.config['DAY_ATTENDANCE_FOLDER']
     return send_from_directory(saveFolder, "merged_data.xlsx", as_attachment=True)
+
+@views.route('/del_atten', methods=['GET', 'POST'])
+@login_required
+def del_atten():
+    atten=Attendance.query.all()
+    if atten:
+        for atten in atten:
+            db.session.delete(atten)
+            db.session.commit()
+    return redirect('/')
+

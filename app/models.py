@@ -58,20 +58,20 @@ class Attendance(db.Model,UserMixin):
     date = db.Column(db.DateTime(timezone=True), default=current_time)
     emp_id = db.Column(db.Integer, db.ForeignKey('emp_login.id'))
     name = db.Column(db.String(150))
-    attendance =db.Column(db.String(150))  # Half day , Present , Week Off , Leave , C Off , Wrong Shift , Wop , Holiday , Absent
+    attendance =db.Column(db.String(150))
     branch =db.Column(db.String(150),default='KKL')
-    # wages_per_Day=db.Column(db.String(150))
-    inTime=db.Column(db.String(150))
-    outTime=db.Column(db.String(150))
+    wages_per_Day=db.Column(db.String(150))
+    inTime=db.Column(db.DateTime(timezone=True))
+    outTime=db.Column(db.DateTime(timezone=True))
     overtime=db.Column(db.String(150),default='00:00')
     employee = db.relationship('Emp_login', back_populates='attendances')
     shiftType=db.Column(db.String(150))
-    shiftIntime = db.Column(db.String(150))
-    shift_Outtime = db.Column(db.String(150))
+    shiftIntime = db.Column(db.Time(timezone=True), default=current_time)
+    shift_Outtime = db.Column(db.Time(timezone=True), default=current_time)
     TotalDuration=db.Column(db.String(150))
     lateBy=db.Column(db.String(150))
     earlyGoingBy=db.Column(db.String(150))
-    # punchRecords=db.Column(db.String(150))	
+    punchRecords=db.Column(db.String(150))	
     
 
 
@@ -85,8 +85,8 @@ class LoginEmp(db.Model, UserMixin):
     
 class Shift_time(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    shiftIntime = db.Column(db.String(150))
-    shift_Outtime = db.Column(db.String(150))
+    shiftIntime = db.Column(db.Time(timezone=True), default=current_time)
+    shift_Outtime = db.Column(db.Time(timezone=True), default=current_time)
     shiftType = db.Column(db.String(150))
 
     
