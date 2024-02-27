@@ -841,8 +841,8 @@ from sqlalchemy.orm import Session
 def fetch_and_store_data():
     
     try:
-            # current_date = datetime.now().date()
-            current_date = (datetime.now() - timedelta(days=2)).date()
+            current_date = datetime.now().date()
+            # current_date = (datetime.now() - timedelta(days=2)).date()
             # print("n\n\n\n\n\n\current date:", current_date)
             session_mysql = SessionMySQL()
             
@@ -964,8 +964,8 @@ def fetch_and_store_data():
                         # atten=session_sqlite.query(Attendance).filter(Attendance.emp_id==emp.emp_id,func.date(Attendance.date)==datetime.now().date()).first()
                         atten = session_sqlite.query(Attendance).filter(
                                     Attendance.emp_id == emp.emp_id,
-                                    # Attendance.date == datetime.now().date()).first()
-                                    Attendance.date ==(datetime.now() - timedelta(days=2)).date()).first()
+                                    Attendance.date == datetime.now().date()).first()
+                                    # Attendance.date ==(datetime.now() - timedelta(days=2)).date()).first()
                         print("\n\n\n\n\n\n\n\n\n\n\n\natten",atten)
                         if not atten:
                             session_sqlite.add(sqlite_record)
@@ -2002,7 +2002,7 @@ def fetch_and_store_data():
                 (func.date(MySQLAttendance.time) == current_date)
             ).all()
 
-            print(mysql_data)
+            print(mysql_data)  
 
             for record in mysql_data:
                 
