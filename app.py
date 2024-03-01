@@ -8,10 +8,10 @@ import random
 app = create_app()
 socketio.init_app(app)  #  Initialize socketio with the app
 
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'sabari'
-app.config['MYSQL_DB'] = 'server'
+# app.config['MYSQL_HOST'] = 'localhost'
+# app.config['MYSQL_USER'] = 'root'
+# app.config['MYSQL_PASSWORD'] = 'sabari'
+# app.config['MYSQL_DB'] = 'server'
 
 # mysql = MySQL(app)
 

@@ -149,7 +149,7 @@
               <td class="shift">{{attendance.shiftType}}</td>
               <td class="shiftInTime">{{attendance.shiftIntime}}</td>
               <td class="shiftOutTime">{{attendance.shift_Outtime}}</td>
-              {% if attendance.attendance != 'Wrong Shift' and attendance.inTime=='-' %}
+              {% if attendance.attendance != 'Wrong Shift' and attendance.inTime==None %}
                   <td class="shiftInTime">
                     <div class="table-tag punchOptionsDiv">
                       <label for="punchOptions">{{attendance.inTime}}</label>
@@ -163,8 +163,8 @@
                 <td class="shiftInTime">{{attendance.inTime}}
               {% endif %}
               
-              {% if attendance.outTime =='-' and
-              attendance.inTime!='-'%}
+              {% if attendance.outTime ==None and
+              attendance.inTime!=None%}
 
               <td class="outtime">
                 <div class="table-tag punchOptionsDiv">
@@ -232,7 +232,7 @@
               </td>
               <td class="action action-{{attendance.emp_id}}">
                 {% if attendance.attendance=='Wrong Shift' or attendance.attendance=='Half day'
-                or attendance.outTime=='-' %}
+                or attendance.outTime==None %}
                 <form class="btns-container">
                   <input type="hidden" name="empid" value="${id}" />
                   <button

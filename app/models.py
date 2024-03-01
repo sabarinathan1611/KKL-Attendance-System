@@ -66,8 +66,8 @@ class Attendance(db.Model,UserMixin):
     overtime=db.Column(db.Time(timezone=True))
     employee = db.relationship('Emp_login', back_populates='attendances')
     shiftType=db.Column(db.String(150))
-    shiftIntime = db.Column(db.Time(timezone=True))
-    shift_Outtime = db.Column(db.Time(timezone=True))
+    shiftIntime = db.Column(db.DateTime(timezone=True))
+    shift_Outtime = db.Column(db.DateTime(timezone=True))
     TotalDuration=db.Column(db.Time(timezone=True))
     lateBy=db.Column(db.Time(timezone=True))
     earlyGoingBy=db.Column(db.Time(timezone=True))
@@ -198,3 +198,7 @@ class call_duty(db.Model):
     date= db.Column(db.DateTime(timezone=True))
     inTime= db.Column(db.DateTime(timezone=True))
     outTime= db.Column(db.DateTime(timezone=True))
+
+# class Start(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     isActive=db.Column(db.Boolean(150),default=False)

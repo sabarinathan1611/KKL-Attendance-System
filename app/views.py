@@ -1,6 +1,6 @@
 from flask_login import login_required, current_user,login_user
 from . import db
-from .models import Attendance,Shift_time,Backup, late, leave,notifications ,NewShift,Emp_login,user_edit,Week_off,call_duty
+from .models import Attendance,Shift_time,Backup, late, leave,notifications ,Emp_login,user_edit,Week_off,call_duty
 from flask import Blueprint, render_template, request, flash, redirect, url_for,jsonify,session
 import json
 import datetime
@@ -35,7 +35,7 @@ def admin():
     if current_user.role == 'employee':
         return redirect(url_for('auth.logout'))
     else :
-        current_time = datetime.now().strftime('%H:%M:%S')
+        # current_time = datetime.now().strftime('%H:%M:%S')
 
         current_date = datetime.now().strftime('%Y-%m-%d')
         employee_attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date).all()
@@ -49,20 +49,16 @@ def admin():
         emp_login_freezed = [emp for emp in emp_login if emp.freezed_account == 1]
         emp_login_active = [emp for emp in emp_login if emp.freezed_account == 0]
         
-        # Combine the lists, placing the freezed_account=1 records at the end
+        # Combine the lists, placing the freezed_account=1 records at the end1
         emp_login_sorted = emp_login_active + emp_login_freezed
         
         month_attend=month_attendance()
         employee_data=month_attend[0]
         date=month_attend[1]
-        # print(employee_attendance[0].id)
-
-        # for attend in employee_attendance:
-        #     attend.inTime=attend.inTime.strftime('%H:%M')
-        #     attend.outTime=attend.outTime.strftime('%H:%M')
         create_dummy_attendance()
-        flash('Logged In Successfully','success')
         
+        flash('Logged In Successfully','success')
+
     return render_template('admin.html',employee_data=employee_data,date=date,emp_login=emp_login, notification=notification, attendance=employee_attendance, late_permission=late_permission, leave_permission=leave_permission,emp_login_sorted=emp_login_sorted)
 
 @views.route('/edit', methods=['POST', 'GET'])
@@ -137,7 +133,7 @@ def delete_employee():
         print(str(e))
         return jsonify({'error': str(e)}), 500
 
-    return "Employee deleted successfully!", 200
+    
 
     
 @views.route('/profile-view')
@@ -1159,7 +1155,7 @@ def save_attendance():
     date=form_data['date']
     attendance=Attendance.query.filter_by(emp_id=emp_id,date=date).first()
 
-    if attendance.inTime=='-':
+    if attendance.inTime==None:
         punchIn=form_data['punchIn']
         if punchIn=='absent':
             attendance.attendance='Absent'
@@ -1168,9 +1164,11 @@ def save_attendance():
             attendance.attendance='Leave'
             db.session.commit()
     else:
-        hours, minutes = map(int, attendance.lateBy.split(':'))
+        # hours, minutes = map(int, attendance.lateBy.split(':'))
+        hours=attendance.lateBy.hour
+        minutes=attendance.lateBy.minute
         # print(hours * 60 + minutes >10)
-        if (hours * 60 + minutes >10):
+        if ((hours * 60 + minutes )>10):
             wrongShift=form_data['wrongShift'] # half-day,present
             if wrongShift=='half-day':
                 attendance.attendance='Half day'
@@ -1234,11 +1232,11 @@ def get_chart():
 
     # chartDet['total_employee']=Emp-week_off
     # chartDet['total_absent']=Attendance.query.filter(Attendance.attendance=='Leave',func.date(Attendance.date)==today).count()
-    attendance = Attendance.query.filter(Attendance.inTime != '-', Attendance.outTime == '-',func.date(Attendance.date)==today).all()
+    attendance = Attendance.query.filter(Attendance.inTime != None, Attendance.outTime == None,func.date(Attendance.date)==today).all()
     chartDet['total_present']=len(attendance)
-    chartDet['kkl_employee']=Attendance.query.filter(Attendance.branch=='KKL',Attendance.inTime != '-', Attendance.outTime == '-',func.date(Attendance.date)==today).count()
-    chartDet['dr_employee']=Attendance.query.filter(Attendance.branch=='DR',Attendance.inTime != '-', Attendance.outTime == '-',func.date(Attendance.date)==today).count()
-    chartDet['ft_employee']=Attendance.query.filter(Attendance.branch=='FT',Attendance.inTime != '-', Attendance.outTime == '-',func.date(Attendance.date)==today).count()
+    chartDet['kkl_employee']=Attendance.query.filter(Attendance.branch=='KKL',Attendance.inTime != None, Attendance.outTime == None,func.date(Attendance.date)==today).count()
+    chartDet['dr_employee']=Attendance.query.filter(Attendance.branch=='DR',Attendance.inTime != None, Attendance.outTime == None,func.date(Attendance.date)==today).count()
+    chartDet['ft_employee']=Attendance.query.filter(Attendance.branch=='FT',Attendance.inTime != None, Attendance.outTime == None,func.date(Attendance.date)==today).count()
     # chartDet['yesterday_total_absent']=Attendance.query.filter(Attendance.attendance=='Leave',func.date(Attendance.date)==yesterday).count()
     # chartDet['yesterday_total_present'] = Attendance.query.filter(Attendance.inTime != '-', Attendance.outTime == '-',func.date(Attendance.date)==yesterday).count()
 
@@ -1249,7 +1247,7 @@ def get_chart():
 @views.route('/start',methods =['POST',"GET"])
 def start():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(fetch_and_store_data, trigger='interval', seconds=5)
+    scheduler.add_job(fetch_and_store_data, trigger='interval', seconds=10)
     scheduler.add_job(create_dummy_attendance, trigger='interval', seconds=10)
     scheduler.start()
     return redirect('/')
