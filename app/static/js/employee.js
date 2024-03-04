@@ -137,17 +137,17 @@ all_field.forEach((field) => {
   });
 });
 
-function check(emp_id){
-  fetch("/check_user_request", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(emp_id),
-  })
-    .then((response) => response.json()) // Adjust if the response is JSON
-    .then((data) => {
+// function check(emp_id){
+//   fetch("/check_user_request", {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify(emp_id),
+//   })
+//     .then((response) => response.json()) // Adjust if the response is JSON
+//     .then((data) => {
       
-    });
-};
-setInterval(check(emp_id),1000);
+//     });
+// };
+// setInterval(check(emp_id),1000);

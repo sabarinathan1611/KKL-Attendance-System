@@ -653,7 +653,16 @@ tr:nth-child(even) {
     max-width: calc(100%);
     min-width: 100%;
   }
-
+  .brand_name{
+    font-size: 20px;
+  }
+  .brand_logo{
+    min-width: 50px;
+  }
+  .logout{
+    padding: 8px;
+    font-size: 14px;
+  }
   .leave_request {
     width: 100%;
   }

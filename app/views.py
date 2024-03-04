@@ -55,7 +55,8 @@ def admin():
         month_attend=month_attendance()
         employee_data=month_attend[0]
         date=month_attend[1]
-        create_dummy_attendance()
+        # create_dummy_attendance()
+        
         
         flash('Logged In Successfully','success')
 
@@ -255,6 +256,7 @@ def handle_disconnect():
 @socketio.on('late')
 @login_required
 def handle_lateform_callback(lateDet):
+    print('\n\nlate socket triggered\n\n\n')
     emp_id=current_user.emp_id
     # emp_name=session.get('name')
     emp=Emp_login.query.filter_by(emp_id=emp_id).first()
@@ -297,6 +299,7 @@ def handle_lateform_callback(lateDet):
 
 @socketio.on('leave')
 def handle_leaveform_callback(leaveDet):
+    print('\n\n\nleave came\n\n\n')
     emp_id=current_user.emp_id
     # emp_name=session.get('name')
     emp=Emp_login.query.filter_by(emp_id=emp_id).first()
@@ -395,9 +398,9 @@ def user_dashboard():
         
         late_det=late.query.filter_by(emp_id=emp_id).all()
         leave_det=leave.query.filter_by(emp_id=emp_id).all()
-        all_permission = late.query.filter(late.date).union(leave.query.filter(leave.date)).order_by('date').all()
+        # all_permission = late.query.filter(late.date).union(leave.query.filter(leave.date)).order_by(text('date')).all()
         flash('Logged In Successfully','success')        
-    return render_template("emp_dashboard.html",user=user,date=date,attendance_details=attendance_details,late=late_det,leave=leave_det,all_permission=all_permission)
+    return render_template("emp_dashboard.html",user=user,date=date,attendance_details=attendance_details,late=late_det,leave=leave_det)
 
 @views.route("/attendance_upload",methods=['POST','GET'])
 @login_required
@@ -1232,11 +1235,11 @@ def get_chart():
 
     # chartDet['total_employee']=Emp-week_off
     # chartDet['total_absent']=Attendance.query.filter(Attendance.attendance=='Leave',func.date(Attendance.date)==today).count()
-    attendance = Attendance.query.filter(Attendance.inTime != None, Attendance.outTime == None,func.date(Attendance.date)==today).all()
+    attendance = Attendance.query.filter(Attendance.inTime != None, Attendance.outTime == None).all()
     chartDet['total_present']=len(attendance)
-    chartDet['kkl_employee']=Attendance.query.filter(Attendance.branch=='KKL',Attendance.inTime != None, Attendance.outTime == None,func.date(Attendance.date)==today).count()
-    chartDet['dr_employee']=Attendance.query.filter(Attendance.branch=='DR',Attendance.inTime != None, Attendance.outTime == None,func.date(Attendance.date)==today).count()
-    chartDet['ft_employee']=Attendance.query.filter(Attendance.branch=='FT',Attendance.inTime != None, Attendance.outTime == None,func.date(Attendance.date)==today).count()
+    chartDet['kkl_employee']=Attendance.query.filter(Attendance.branch=='KKL',Attendance.inTime != None, Attendance.outTime == None).count()
+    chartDet['dr_employee']=Attendance.query.filter(Attendance.branch=='DR',Attendance.inTime != None, Attendance.outTime == None).count()
+    chartDet['ft_employee']=Attendance.query.filter(Attendance.branch=='FT',Attendance.inTime != None, Attendance.outTime == None).count()
     # chartDet['yesterday_total_absent']=Attendance.query.filter(Attendance.attendance=='Leave',func.date(Attendance.date)==yesterday).count()
     # chartDet['yesterday_total_present'] = Attendance.query.filter(Attendance.inTime != '-', Attendance.outTime == '-',func.date(Attendance.date)==yesterday).count()
 

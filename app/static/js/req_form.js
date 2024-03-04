@@ -12,6 +12,7 @@ leave_submitBtn.addEventListener("click", function () {
   leaveDet.to_time = ToTime.value;
   console.log("Form Data:", leaveDet);
   socket.emit("leave", leaveDet);
+  console.log(socket.emit("leave", leaveDet));
   document.getElementById("leave_form").reset();
 });
 

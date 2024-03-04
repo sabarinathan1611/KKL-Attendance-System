@@ -26,15 +26,6 @@ from . import mysql_engine,sqlite_engine
 from sqlalchemy.ext.automap import automap_base
 from flask import current_app
 import sqlite3
-Base = automap_base()
-Base.prepare(mysql_engine, reflect=True)
-MySQLAttendance = Base.classes.attendance
-SessionSQLite = sessionmaker(bind=sqlite_engine)
-session_sqlite = SessionSQLite()
-SessionMySQL = sessionmaker(bind=mysql_engine)
-
-print("\n\n\n\n\n\n\n\n\n\n\n\n\n running outside")
-from sqlalchemy.orm import Session
 scheduler = sched.scheduler(time.time, time.sleep)
 
 
@@ -98,7 +89,7 @@ def validate_and_format_phone_number(phone_number):
     return phone_number
     
 def update_or_add_shift(shift_type, in_time, out_time):
-    existing_shift = session_sqlite.query(Shift_time).filter_by(shiftType=shift_type).first()
+    existing_shift = Shift_time.query.filter_by(shiftType=shift_type).first()
     print("update_or_add_shift")
     
   
@@ -107,7 +98,7 @@ def update_or_add_shift(shift_type, in_time, out_time):
         existing_shift.shiftIntime = in_time
         existing_shift.shift_Outtime = out_time
         print("Shift updated")
-        return session_sqlite.commit()
+        return db.session.commit()
        
     else:
         # Add new shift
@@ -116,11 +107,11 @@ def update_or_add_shift(shift_type, in_time, out_time):
             shift_Outtime=out_time,
             shiftType=shift_type,
         )
-        session_sqlite.add(new_shift)
+        db.session.add(new_shift)
         
 
         print("New shift added")
-        return session_sqlite.commit()
+        return db.session.commit()
     
 def read_weekoff(file_path):
     print("Prestn",file_path)
@@ -148,8 +139,8 @@ def read_weekoff(file_path):
                     emp_id=emp_id,
                 date=week_off
                         )
-                session_sqlite.add(new_week_off)
-            session_sqlite.commit()
+                db.session.add(new_week_off)
+            db.session.commit()
 
 def process_excel_data(file_path):
     if os.path.exists(file_path):
@@ -181,17 +172,17 @@ def process_excel_data(file_path):
 
 def calculate_Attendance(chunk_size=100):
     with app.app_context():
-        total_employees = session_sqlite.query(Emp_login).count()
+        total_employees = Emp_login.query.count()
         total_chunks = (total_employees + chunk_size - 1) // chunk_size
 
         for chunk_index in range(total_chunks):
-            employees = session_sqlite.query(Emp_login).offset(chunk_index * chunk_size).limit(chunk_size).all()
+            employees = Emp_login.query.offset(chunk_index * chunk_size).limit(chunk_size).all()
             for employee in employees:
-                attendance_records = session_sqlite.query(Attendance).filter_by(emp_id=employee.id).all()
+                attendance_records = Attendance.query.filter_by(emp_id=employee.id).all()
 
                 for attendance in attendance_records:
                     # print(attendance.employee.shift)
-                    shift = session_sqlite.query(Shift_time).filter_by(shiftType=attendance.employee.shift).first()
+                    shift = Shift_time.query.filter_by(shiftType=attendance.employee.shift).first()
                     if attendance.inTime=='-':
                         inTime='-'
                     else:
@@ -255,7 +246,7 @@ def calculate_Attendance(chunk_size=100):
                         # attendance.TotalDuration = calculate_time_difference_with_dates(inTime, out_time)
                         attendance.TotalDuration = None
                 
-        return session_sqlite.commit()
+        return db.session.commit()
 
 # def calculate_time_difference(time1, time2):
 
@@ -300,7 +291,7 @@ def calculate_Attendance(chunk_size=100):
 
 
 def shiftypdate():
-    employees = session_sqlite.query(Emp_login).all()  # Fetch all employees
+    employees = Emp_login.query.all()  # Fetch all employees
     
     for employee in employees:
         attendance_count = len(employee.attendances)
@@ -311,7 +302,7 @@ def shiftypdate():
             current_shift_index = shifts.index(employee.shift)
             new_shift_index = (current_shift_index + 1) % len(shifts)
             employee.shift = shifts[new_shift_index]
-            session_sqlite.commit()
+            db.session.commit()
     
     return len(employees)  
 
@@ -336,9 +327,9 @@ def attend_excel_data(file_path):
 
                 
                 
-                emp = session_sqlite.query(Emp_login).filter_by(emp_id=empid).first()
+                emp = db.session.query(Emp_login).filter_by(emp_id=empid).first()
                 #print(emp)
-                shift_times = session_sqlite.query(Shift_time).all()
+                shift_times = Shift_time.query.all()
                 current_time = datetime.now().time()
                 current_date = datetime.now().date()
                 # = None
@@ -354,22 +345,22 @@ def attend_excel_data(file_path):
                 
                 shift_type = emp.shift
                 #print("shift_type:",shift_type)
-                shitfTime = session_sqlite.query(Shift_time).filter_by(shiftType=emp.shift).first()
+                shitfTime = Shift_time.query.filter_by(shiftType=emp.shift).first()
                 #print("shitfTime:",shitfTime)
                 
                 today_date = datetime.now().strftime("%d.%m.%Y")
                 #print("today_date",today_date)
-                is_holiday = session_sqlite.query(Festival).filter(Festival.date == today_date).first()
+                is_holiday = Festival.query.filter(Festival.date == today_date).first()
                 #print(is_holiday,"is_holiday")
                 
-                week_off = session_sqlite.query(Week_off).filter_by(emp_id=empid, date=today_date).order_by(Week_off.date.desc()).first()
+                week_off = Week_off.query.filter_by(emp_id=empid, date=today_date).order_by(Week_off.date.desc()).first()
                 print(week_off)
                 if is_holiday:
                     attendance_status = 'Holiday'
                 else:
                     if str(row['intime']) == "-":
-                        leave_check = session_sqlite.query(leave).filter_by(emp_id=empid,date=today_date, status='Approved').first()
-                        late_check = session_sqlite.query(late).filter_by(emp_id=empid,date=today_date, status='Approved').first()
+                        leave_check = db.session.query(leave).filter_by(emp_id=empid,date=today_date, status='Approved').first()
+                        late_check = db.session.query(late).filter_by(emp_id=empid,date=today_date, status='Approved').first()
 
                         if leave_check or late_check:
                             attendance_status = 'Leave'
@@ -378,11 +369,11 @@ def attend_excel_data(file_path):
                         else:
                             if emp.branch=='FT':
                                 check_ft(today_date,empid)
-                            c_off=session_sqlite.query(comp_off).filter_by(emp_id=empid).first()
+                            c_off=comp_off.query.filter_by(emp_id=empid).first()
                             if c_off:
                                 attendance_status='C Off'
-                                session_sqlite.delete(c_off)
-                                session_sqlite.commit()
+                                db.session.delete(c_off)
+                                db.session.commit()
                             else:
                                 check_leave(today_date,empid)
                                 attendance_status = 'Absent'
@@ -392,12 +383,12 @@ def attend_excel_data(file_path):
                         elif week_off:
                             attendance_status='Wop'
                             new_req=comp_off(emp_id=empid,date=today_date)                        
-                            session_sqlite.add(new_req)
-                            session_sqlite.commit()
+                            db.session.add(new_req)
+                            db.session.commit()
                         else:
                             attendance_status = 'Present'   
 
-                branch=session_sqlite.query(Emp_login).filter_by(emp_id=empid).first().branch
+                branch=Emp_login.query.filter_by(emp_id=empid).first().branch
 
                 intime=row['intime']
                 outtime=row['outtime']
@@ -415,20 +406,20 @@ def attend_excel_data(file_path):
                     shiftIntime=shitfTime.shiftIntime,
                     shift_Outtime=shitfTime.shift_Outtime,
                 )
-                session_sqlite.add(attendance)
+                db.session.add(attendance)
                 update_freeze_status_and_remove_absences(empid)
-        session_sqlite.commit()
+        db.session.commit()
     else:
         print("File not found")
 
 def update_freeze_status_and_remove_absences(emp_id):
     try:
         
-        emp = session_sqlite.query(Emp_login).filter_by(emp_id=emp_id).first()
+        emp = Emp_login.query.filter_by(emp_id=emp_id).first()
 
 
         thirty_days_ago = datetime.now() - timedelta(days=30)
-        absent_records = session_sqlite.query(Attendance).filter_by(emp_id=emp_id, attendance='Absent').filter(Attendance.date >= thirty_days_ago).all()
+        absent_records = Attendance.query.filter_by(emp_id=emp_id, attendance='Absent').filter(Attendance.date >= thirty_days_ago).all()
 
         # print(f"Employee ID: {emp_id}")
         # print(f"Absent Records: {len(absent_records)}")
@@ -441,21 +432,21 @@ def update_freeze_status_and_remove_absences(emp_id):
             emp.freezed_account = False
             # print("the employee freeze has been removed")
 
-        session_sqlite.commit()
+        db.session.commit()
         return f"Success: Freeze status updated and attendance records deleted for employee {emp_id}."
 
     except Exception as e:
-        session_sqlite.rollback()
+        db.session.rollback()
         print(f"Error: {str(e)}")
         return f"Error: {str(e)}"
 
 def delete_all_employees():
     try:
-        session_sqlite.query(Attendance).delete()
-        session_sqlite.commit()
+        db.session.query(Attendance).delete()
+        db.session.commit()
         print("All employee data deleted successfully.")
     except Exception as e:
-        session_sqlite.rollback()
+        db.session.rollback()
         print("An error occurred:", str(e))
         
 def read_excel_data(file_path, sheet_name=None):
@@ -494,7 +485,7 @@ def add_employee(file_path):
                     print("Processing: ", emp_id)
                     
 
-                    existing_emp = session_sqlite.query(Emp_login).filter_by(id=emp_id).first()
+                    existing_emp = db.session.query(Emp_login).filter_by(id=emp_id).first()
                     if not existing_emp:
                         data_to_insert.append({
                             'emp_id': emp_id,
@@ -521,20 +512,20 @@ def add_employee(file_path):
 
 
             if data_to_insert:
-                with session_sqlite.begin_nested():
-                    session_sqlite.bulk_insert_mappings(Emp_login, data_to_insert)
-                    session_sqlite.commit()
+                with db.session.begin_nested():
+                    db.session.bulk_insert_mappings(Emp_login, data_to_insert)
+                    db.session.commit()
                 print("Data added successfully.")
                 
             else:
                 print("No new data to add.")
             
-            session_sqlite.commit()  # Commit the main transaction
+            db.session.commit()  # Commit the main transaction
         else:
             print("File not found")
     except Exception as e:
         print(f"An error occurred: {e}")
-        session_sqlite.rollback()  # Rollback changes in case of an exception
+        db.session.rollback()  # Rollback changes in case of an exception
 
 def up_festival(file_path):
     try:
@@ -543,13 +534,13 @@ def up_festival(file_path):
         if not os.path.exists(file_path):
             flash("File does not exist", "error")
             return
-        # with session_sqlite.begin():
-        #     if session_sqlite.query(Festival):
-        #         session_sqlite.query(Festival).delete()
-        session_sqlite.commit()
-        with session_sqlite.begin():
+        # with db.session.begin():
+        #     if db.session.query(Festival):
+        #         db.session.query(Festival).delete()
+        db.session.commit()
+        with db.session.begin():
             # Delete all records from the Festival table
-            session_sqlite.query(Festival).delete()
+            db.session.query(Festival).delete()
         
         
         # print('done 1')
@@ -579,21 +570,21 @@ def up_festival(file_path):
                         holiday=row['Public Holidays'],
                         date=row['Date'],
                     )
-                    session_sqlite.add(add_festival)
+                    db.session.add(add_festival)
                 except Exception as e:
                     # Handle specific errors or print more information for debugging
                     print(f"Error adding festival at index {index}: {str(e)}")
             # print('done 3')
 
                 # Commit the changes to the database
-        session_sqlite.commit()
+        db.session.commit()
         flash("Festivals added successfully", category="success")
     except Exception as e:
         print("festival upload error",e)
         flash(f"Error adding festivals: {str(e)}", category="error")
 
 def check_send_sms(emp_id):
-    emp = session_sqlite.query(Emp_login).filter_by(emp_id=emp_id).first()
+    emp = Emp_login.query.filter_by(emp_id=emp_id).first()
     
     if emp:
         Phonenum = emp.phoneNumber
@@ -618,7 +609,7 @@ def month_attendance():
     start_date, end_date = get_last_month_dates()
 
     # Query the database for last month's attendance up to the current date
-    last_month_attendance = session_sqlite.query(Attendance).filter(
+    last_month_attendance = db.session.query(Attendance).filter(
         Attendance.date.between(start_date, end_date)
     ).all()
     # print(start_date,end_date)
@@ -664,7 +655,7 @@ def check_leave(date_str, emp_id):
     if previous_date_attend and (previous_date_attend.attendance == 'Holiday' or previous_date_attend.attendance == 'Week Off'):
         if previous_previous_date_attend and previous_previous_date_attend.attendance == 'Leave':
             previous_date_attend.attendance = 'Leave'
-            session_sqlite.commit()
+            db.session.commit()
 
 def createXL():
     try:
@@ -740,33 +731,29 @@ def calculate_time_difference(time1, time2):
     return time_difference.time()
 
 def create_dummy_attendance():
-        current_time_with_ms = datetime.now().time()
-        current_time = datetime.strptime(current_time_with_ms.strftime('%H:%M:%S'), '%H:%M:%S').time()
-        shift_times = session_sqlite.query(Shift_time).all()
+        current_time = datetime.now().time()
+        shift_times = Shift_time.query.all()
         print(shift_times,'\n\n\n\n\n')
 
+        atten=Attendance.query.filter_by(attendance=None).all()
+        for atten in atten:
+            if atten.shiftType!=current_shift:
+                atten.attendance='Absent'
+                db.session.commit()
         for shift in shift_times:
-            print('\n\n\n\n',shift.shiftIntime)
             if shift.shiftIntime <= current_time < shift.shift_Outtime:
                 current_shift = shift.shiftType
-                print('\n\n\n current shift',current_shift)
-
-                atten=session_sqlite.query(Attendance).filter_by(attendance=None).all()
-                for atten in atten:
-                    if atten.shiftType!=current_shift:
-                        atten.attendance='Absent'
-                        session_sqlite.commit()
                 # current_shift = '8C'
             # if current_time == shift.shiftIntime:
                 # Call your function here
                 # emp=session_sqlite.query(Emp_login).filter_by(Shift=current_shift).all()
                 print('\\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n',current_shift)
-                emp=session_sqlite.query(Emp_login).filter_by(shift=current_shift).all()
+                emp=Emp_login.query.filter_by(shift=current_shift).all()
                 for emp in emp:
                     attendance_status=None
 
-                    week_off = session_sqlite.query(Week_off).filter_by(emp_id=emp.emp_id, date=datetime.now().date()).order_by(Week_off.date.desc()).first()
-                    leave_check = session_sqlite.query(leave).filter_by(emp_id=emp.emp_id,date=datetime.now().date(), status='Approved').first()
+                    week_off = Week_off.query.filter_by(emp_id=emp.emp_id, date=datetime.now().date()).order_by(Week_off.date.desc()).first()
+                    leave_check = leave.query.filter_by(emp_id=emp.emp_id,date=datetime.now().date(), status='Approved').first()
                     # late_check = session_sqlite.query(late).filter_by(emp_id=emp_id,date=datetime.now().date(), status='Approved').first()
                     if week_off:
                         attendance_status='Week Off'
@@ -777,7 +764,7 @@ def create_dummy_attendance():
                             if status!=None:
                                 attendance_status=status
                     
-                    atten=session_sqlite.query(Attendance).filter(Attendance.emp_id==emp.emp_id,func.date(Attendance.date)==datetime.now().date()).first()
+                    atten=Attendance.query.filter(Attendance.emp_id==emp.emp_id,func.date(Attendance.date)==datetime.now().date()).first()
                     # print('\n\n\n\n\n',atten,'\n\n\n\n')
 
                     shiftIntime,shift_Outtime=check_shift(shift.shiftIntime,shift.shift_Outtime)
@@ -795,16 +782,22 @@ def create_dummy_attendance():
                                 outTime=None,
                             )
                         print('\n\n\n\n hello da \n\n\n\n')
-                        session_sqlite.add(dummy_atten)
-                        session_sqlite.commit()
+                        db.session.add(dummy_atten)
+                        db.session.commit()
                     else:
                         print('\n\n\n\n\n\n',atten)
             
-            else:
-                print(shift.shiftIntime , '<= ', current_time, '<', shift.shift_Outtime)
 
 
+Base = automap_base()
+Base.prepare(mysql_engine, reflect=True)
+MySQLAttendance = Base.classes.attendance
+SessionSQLite = sessionmaker(bind=sqlite_engine)
+session_sqlite = SessionSQLite()
+SessionMySQL = sessionmaker(bind=mysql_engine)
 
+print("\n\n\n\n\n\n\n\n\n\n\n\n\n running outside")
+from sqlalchemy.orm import Session
 
 # def create_dummy_attendance():
 #     current_time = datetime.now().time()
@@ -822,7 +815,7 @@ def create_dummy_attendance():
 #             for atten in atten:
 #                 if atten.shiftType!=current_shift:
 #                     atten.attendance='Absent'
-#                     session_sqlite.commit()
+#                     db.session.commit()
 #             emp=session_sqlite.query(Emp_login).filter_by(shift=current_shift).all()
 #             for emp in emp:
 #                 attendance_status=None
@@ -857,8 +850,8 @@ def create_dummy_attendance():
 #                             outTime=None,
 #                         )
 #                     print('\n\n\n\n hello da \n\n\n\n')
-#                     session_sqlite.add(dummy_atten)
-#                     session_sqlite.commit()
+#                     db.session.add(dummy_atten)
+#                     db.session.commit()
 #                 else:
 #                     print('\n\n\n\n\n\n',atten)
       
@@ -904,7 +897,7 @@ def fetch_and_store_data():
                 ).first() 
 
                 yesterday_atten=session_sqlite.query(Attendance).filter(
-                    and_(Attendance.emp_id == record.emp_id, func.date(Attendance.date) == yesterday_date,Attendance.inTime!=None , Attendance.outTime==None)
+                    and_(Attendance.emp_id == record.emp_id, func.date(Attendance.date) == yesterday_date, Attendance.outTime==None)
                 ).first()
                 if yesterday_atten:
                     print(yesterday_atten , '\n\n\n\n\n')
@@ -1029,26 +1022,22 @@ def check_ft(today_date, emp_id):
     three_before_date = today_date - timedelta(days=3)
     four_before_date = today_date - timedelta(days=4)
 
-    yesterday_attend=session_sqlite.query(Attendance).filter_by(emp_id=emp_id,date=yesterday_date).first().attendance
+    yesterday_attend=Attendance.query.filter_by(emp_id=emp_id,date=yesterday_date).first().attendance
     if yesterday_attend=='Present' or yesterday_attend=='Half day' :
-        two_before_attend=session_sqlite.query(Attendance).filter_by(emp_id=emp_id,date=two_before_date).first().attendance
+        two_before_attend=Attendance.query.filter_by(emp_id=emp_id,date=two_before_date).first().attendance
         if two_before_attend=='Present' or two_before_attend=='Half day':
-            two_before_attend_s_continue=session_sqlite.query(comp_off).filter_by(emp_id=emp_id,date=two_before_attend)
-            yesterday_attend_s_continue=session_sqlite.query(comp_off).filter_by(emp_id=emp_id,date=yesterday_attend)
-            if two_before_attend_s_continue or yesterday_attend_s_continue:
+            two_before_attend_s_continue=comp_off.query.filter_by(emp_id=emp_id,date=two_before_attend)
+            three_before_attend_s_continue=comp_off.query.filter_by(emp_id=emp_id,date=three_before_attend)
+            if two_before_attend_s_continue or three_before_attend_s_continue:
                 if two_before_attend_s_continue:
-                    session_sqlite.delete(two_before_attend_s_continue)
-                if yesterday_attend_s_continue:
-                    session_sqlite.delete(yesterday_attend_s_continue)
-                session_sqlite.commit()
-                three_before_attend=session_sqlite.query(Attendance).filter_by(emp_id=emp_id,date=three_before_date).first().attendance
-                if three_before_attend=='Week Off':
-                    return 'Rest'
-                elif four_before_attend=='Rest':
-                    return 'Week Off'
-            three_before_attend=session_sqlite.query(Attendance).filter_by(emp_id=emp_id,date=three_before_date).first().attendance
+                    db.session.delete(two_before_attend_s_continue)
+                if three_before_attend_s_continue:
+                    db.session.delete(three_before_attend_s_continue)
+                db.session.commit()
+                temp= 'Rest'
+            three_before_attend=Attendance.query.filter_by(emp_id=emp_id,date=three_before_date).first().attendance
             if three_before_attend=='Present' or three_before_attend=='Half day':    
-                four_before_attend=session_sqlite.query(Attendance).filter_by(emp_id=emp_id,date=four_before_date).first().attendance
+                four_before_attend=Attendance.query.filter_by(emp_id=emp_id,date=four_before_date).first().attendance
                 if four_before_attend=='Week Off':
                     return 'Rest'
                 elif four_before_attend=='Rest':
@@ -1058,35 +1047,11 @@ def check_ft(today_date, emp_id):
         else:
             return None
     else:
-        two_before_attend_s_continue=session_sqlite.query(comp_off).filter_by(emp_id=emp_id,date=two_before_attend)
+        two_before_attend_s_continue=comp_off.query.filter_by(emp_id=emp_id,date=two_before_attend)
         if two_before_attend_s_continue:
 
             return 'Rest'
         else:
             return None
     
-
-def get_current_shift():
-    now = datetime.now().time()
-    now=datetime(2024,2,2,5,0,0).time()
-    print(now)
-    # current_time = datetime.strptime(now.strftime('%H:%M:%S'), '%H:%M:%S').time()
-    shift_times = session_sqlite.query(Shift_time).all()
-    shifts=[]
-    for shift in shift_times:
-        start=shift.shiftIntime
-        end=shift.shift_Outtime
-        
-        if start < end:
-            if start <= now < end:
-                print(start , '<', now , '<', end)
-                shifts.append(shift.shiftType)
-        else: # Over midnight
-            if start <= now or now < end:
-                print(start , '<', now , '<', end)
-                shifts.append(shift.shiftType)
-
-    return shifts
-            
-print (get_current_shift() ,'\n\n\n\n\n\n\n')
-
+  
