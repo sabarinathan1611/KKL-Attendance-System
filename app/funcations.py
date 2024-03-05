@@ -1153,4 +1153,3 @@ def out_time_reminder_message():
         print("list of numbers ",number)
         send_sms(number, message_body)
 
-out_time_reminder_message()
