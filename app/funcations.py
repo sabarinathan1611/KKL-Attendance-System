@@ -1090,3 +1090,67 @@ def get_current_shift():
             
 print (get_current_shift() ,'\n\n\n\n\n\n\n')
 
+def out_time_reminder_email():
+    todaydate = datetime.now().date()
+    yesterday = (datetime.now() - timedelta(days=1)).date()
+
+    last_shift = session_sqlite.query(Attendance).filter((func.DATE(Attendance.date) == todaydate) & (Attendance.inTime != None) & (Attendance.outTime == None)).all()
+    yesterday_last_shift = session_sqlite.query(Attendance).filter((func.DATE(Attendance.date) == yesterday) & (Attendance.inTime != None) & (Attendance.outTime == None)).all()
+
+    print("\n\n\n\n\n\n\n\ninside the code")
+    print(last_shift)
+    print(yesterday_last_shift)
+
+    if last_shift:
+        for i in last_shift:
+            emailid = session_sqlite.query(Emp_login).filter_by(emp_id=i.emp_id).first()
+            print("\n\n\n\n\n\n\n\n\nemailid",emailid)
+            if emailid:
+                email = emailid.email
+                subject = "Out Time Missing"
+                body = f"Dear Employee,\n\nYour out time is missing for today's shift. Please make sure to record your out time before leaving the premises.\n\nBest regards,\nKanchi Karpooram Limited"
+                send_mail(email, subject, body)
+
+    if yesterday_last_shift:
+        for i in yesterday_last_shift:
+            emailid = session_sqlite.query(Emp_login).filter_by(emp_id=i.emp_id).first()
+            print("\n\n\n\n\n\n\n\n\nemailid",emailid)
+            if emailid:
+                email = emailid.email
+                subject = "Out Time Missing"
+                body = f"Dear Employee,\n\nYour out time is missing for today's shift. Please make sure to record your out time before leaving the premises.\n\nBest regards,\nKanchi Karpooram Limited"
+                send_mail(email, subject, body)
+
+def out_time_reminder_message():
+    todaydate = datetime.now().date()
+    yesterday = (datetime.now() - timedelta(days=1)).date()
+
+    last_shift = session_sqlite.query(Attendance).filter((func.DATE(Attendance.date) == todaydate) & (Attendance.inTime != None) & (Attendance.outTime == None)).all()
+    yesterday_last_shift = session_sqlite.query(Attendance).filter((func.DATE(Attendance.date) == yesterday) & (Attendance.inTime != None) & (Attendance.outTime == None)).all()
+
+    print("\n\n\n\n\n\n\n\ninside the code")
+    print(last_shift)
+    print(yesterday_last_shift)
+
+    if last_shift:
+        for i in last_shift:
+            number = []
+            emailid = session_sqlite.query(Emp_login).filter_by(emp_id=i.emp_id).first()
+            print("\n\n\n\n\n\n\n\n\nemailid",emailid)
+            if emailid:
+                number.append(emailid.phoneNumber)
+                message_body = f"Dear Employee,\n\nYour out time is missing for today's shift. Please make sure to record your out time before leaving the premises.\n\nBest regards,\nKanchi Karpooram Limited"
+        send_sms(number, message_body)
+
+    if yesterday_last_shift:
+        number = []
+        for i in yesterday_last_shift:
+            emailid = session_sqlite.query(Emp_login).filter_by(emp_id=i.emp_id).first()
+            print("\n\n\n\n\n\n\n\n\nemailid",emailid)
+            if emailid:
+                number.append(emailid.phoneNumber)
+                message_body = f"Dear Employee,\n\nYour out time is missing for today's shift. Please make sure to record your out time before leaving the premises.\n\nBest regards,\nKanchi Karpooram Limited"
+        print("list of numbers ",number)
+        send_sms(number, message_body)
+
+out_time_reminder_message()

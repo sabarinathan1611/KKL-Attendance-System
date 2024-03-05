@@ -4,18 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KKL - Employee</title>
-    <script
+    <!-- <script
       src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js4"
       crossorigin="anonymous"
-    ></script>
+    ></script> -->
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+            
     <!-- <script src="https://cdn.socket.io/4.7.2/socket.io.js"></script> -->
-    <script
+    <!-- <script
       src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
       crossorigin="anonymous"
     ></script>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.js" crossorigin="anonymous"></script>
-    
+     -->
+
+     
 
     <link rel="stylesheet" href="static/css/employee.css" />
     <link
@@ -597,6 +603,13 @@
       });
 
       var socket = io();
+
+      socket.on('connect', () => {
+    console.log('Connected to backend server.');
+});
+      socket.on('dicconnect', () => {
+    console.log('Disconnected from backend server.');
+});
 
       socket.on("leave", function (leave_permission) {
         var tbody = document.querySelector(".request_table_tbody");

@@ -57,7 +57,6 @@ def create_app():
     from . import models
     from .models import Attendance,Emp_login
     models.db.init_app(app)
-    socketio.init_app(app)
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
     login_manager.init_app(app)
@@ -65,7 +64,6 @@ def create_app():
     def load_user(user_id):
         return Emp_login.query.get(int(user_id))
     # Create the database if it doesn't exist
-    create_database(app)
 
     # Define the engines
     mysql_engine = create_engine(
@@ -84,6 +82,8 @@ def create_app():
     app.register_blueprint(auth, url_prefix='/')
 
     # Mail configuration
+    socketio.init_app(app)
+    create_database(app)
 
 
     return app

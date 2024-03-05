@@ -1252,6 +1252,15 @@ def start():
     scheduler = BackgroundScheduler()
     scheduler.add_job(fetch_and_store_data, trigger='interval', seconds=10)
     scheduler.add_job(create_dummy_attendance, trigger='interval', seconds=10)
+
+    scheduler.add_job(out_time_reminder_email, trigger='cron', hour='6', minute='10')
+    scheduler.add_job(out_time_reminder_email, trigger='cron', hour='14', minute='10')
+    scheduler.add_job(out_time_reminder_email, trigger='cron', hour='22', minute='10')
+    
+    scheduler.add_job(out_time_reminder_message, trigger='cron', hour='6', minute='10')
+    scheduler.add_job(out_time_reminder_message, trigger='cron', hour='14', minute='10')
+    scheduler.add_job(out_time_reminder_message, trigger='cron', hour='22', minute='10')
+
     scheduler.start()
     return redirect('/')
 
@@ -1280,3 +1289,4 @@ def del_atten():
             db.session.delete(atten)
             db.session.commit()
     return redirect('/')
+
