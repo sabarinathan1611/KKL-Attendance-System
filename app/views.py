@@ -48,19 +48,20 @@ def admin():
 
         emp_login_freezed = [emp for emp in emp_login if emp.freezed_account == 1]
         emp_login_active = [emp for emp in emp_login if emp.freezed_account == 0]
-        
+        create_dummy_attendance()
         # Combine the lists, placing the freezed_account=1 records at the end1
         emp_login_sorted = emp_login_active + emp_login_freezed
         
         month_attend=month_attendance()
         employee_data=month_attend[0]
         date=month_attend[1]
+        backup=Backup.query.all()
         # create_dummy_attendance()
         
         
         flash('Logged In Successfully','success')
 
-    return render_template('admin.html',employee_data=employee_data,date=date,emp_login=emp_login, notification=notification, attendance=employee_attendance, late_permission=late_permission, leave_permission=leave_permission,emp_login_sorted=emp_login_sorted)
+    return render_template('admin.html',employee_data=employee_data,backup=backup,date=date,emp_login=emp_login, notification=notification, attendance=employee_attendance, late_permission=late_permission, leave_permission=leave_permission,emp_login_sorted=emp_login_sorted)
 
 @views.route('/edit', methods=['POST', 'GET'])
 @login_required
@@ -687,21 +688,21 @@ def upload_select():
             file = request.files['emp']
             # print(file_type,"file_type")
             # Customize response based on file_type
-            if file_type == 'attendance':
-                try:
-                    # print("j=ubjxk")
-                    filename = secure_filename(file.filename)
-                    # print(filename)
-                    file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
-                    file.save(file_path)
-                    # print('hello')
-                    attend_excel_data(file_path)
-                    # print("babdckzub")
-                    return redirect(url_for('views.calculate'))
-                except:
-                    flash('Oops! Something Went wrong.','error')
+            # if file_type == 'attendance':
+            #     try:
+            #         # print("j=ubjxk")
+            #         filename = secure_filename(file.filename)
+            #         # print(filename)
+            #         file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
+            #         file.save(file_path)
+            #         # print('hello')
+            #         attend_excel_data(file_path)
+            #         # print("babdckzub")
+            #         return redirect(url_for('views.calculate'))
+            #     except:
+            #         flash('Oops! Something Went wrong.','error')
             
-            elif file_type == 'addEmployee':
+            if file_type == 'addEmployee':
                 filename = secure_filename(file.filename)
                 # print(filename)
                 file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
@@ -726,7 +727,7 @@ def upload_select():
 
             elif file_type=='festival':
                 filename = secure_filename(file.filename)
-                # print(filename)
+                print(filename,'\n\n\n\nfilename')
                 try:
                     file_path = os.path.join(app.config['EXCEL_FOLDER'], str(filename))  # Use correct case 'EXCEL_FOLDER
                     # print('nuubyv')
@@ -764,7 +765,36 @@ def del_single_emp():
         return redirect(url_for('auth.logout'))
     emp_id=request.form.get('empid')
     emp=Emp_login.query.filter_by(emp_id=emp_id).first()
-    if emp: 
+    atten_emp=Attendance.query.filter_by(emp_id=emp_id).all()
+    notify= notifications.query.filter_by(emp_id=emp_id).all()
+    db.session.delete(notify)
+    db.session.commit()
+    user=user_edit.query.filter_by(emp_id=emp_id).all()
+    db.session.delete(user)
+    db.session.commit()
+
+    atten_emp_count = Attendance.query.filter((Attendance.emp_id == emp_id) & ((Attendance.attendance == "Present") | (Attendance.attendance == "Half day"))).count()
+
+    if atten_emp:
+        for atten in atten_emp:
+            db.session.delete(atten)
+            db.session.commit()
+    if emp:
+        backup_entry = Backup(
+            date=datetime.now(),
+            email=emp.email,
+            name=emp.name,
+            password=emp.password,
+            emp_id=emp.emp_id,
+            branch=emp.branch,
+            phoneNumber=emp.phoneNumber,
+            role=emp.role,
+            address=emp.address,
+            gender=emp.gender,
+            shift=emp.shift,
+            worked=atten_emp_count
+        )
+        db.session.add(backup_entry) 
         db.session.delete(emp)
         db.session.commit()
         print(f"Row with emp_id {emp_id} deleted successfully.")
@@ -779,7 +809,42 @@ def del_multiple_emp():
     if current_user.role == 'employee':
         return redirect(url_for('auth.logout'))
     selected_employee_ids = request.form.getlist('select')
-    print(selected_employee_ids)
+    print("\n\n\n\n\n\n\n\n\n",selected_employee_ids)
+    
+    for emplo in selected_employee_ids:
+        emp=Emp_login.query.filter_by(emp_id=emplo).first()
+        atten_emp=Attendance.query.filter_by(emp_id=emplo).all()
+        atten_emp_count = Attendance.query.filter((Attendance.emp_id == emplo) & ((Attendance.attendance == "Present") | (Attendance.attendance == "Half day"))).count()
+        if emp:
+            if atten_emp:
+                for atten in atten_emp:
+                    db.session.delete(atten)
+                    db.session.commit()
+
+            notify= notifications.query.filter_by(emp_id=emplo).all()
+            db.session.delete(notify)
+            db.session.commit()
+            user=user_edit.query.filter_by(emp_id=emplo).all()
+            db.session.delete(user)
+            db.session.commit()
+            backup_entry = Backup(
+                date=datetime.now(),
+                email=emp.email,
+                name=emp.name,
+                password=emp.password,
+                emp_id=emp.emp_id,
+                branch=emp.branch,
+                phoneNumber=emp.phoneNumber,
+                role=emp.role,
+                address=emp.address,
+                gender=emp.gender,
+                shift=emp.shift,
+                worked=atten_emp_count
+                
+            )
+            db.session.add(backup_entry) 
+            db.session.delete(emp)
+            db.session.commit()
     # for i in selected_employee_ids:
     #     emp=Emp_login.query.filter_by(emp_id=i).first()
     #     if emp: 
@@ -790,17 +855,17 @@ def del_multiple_emp():
     #     else:
     #         flash('Employees Not Deleted','error')
     #         print(f"Row with emp_id {i} not found.")
-    employees_deleted = Emp_login.query.filter(Emp_login.emp_id.in_(selected_employee_ids)).delete(synchronize_session=False)
-
-    if employees_deleted:
-        db.session.commit()
-        flash('Employees Deleted Successfully', 'success')
-        print("Rows deleted successfully.")
-    else:
-        flash('Employees Not Deleted', 'error')
-        print("Rows not found.")
+    # employees_deleted = Emp_login.query.filter(Emp_login.emp_id.in_(selected_employee_ids)).delete(synchronize_session=False)
+    
+    
+    # if employees_deleted:
+    #     db.session.commit()
+            flash('Employees Deleted Successfully', 'success')
+            print("Rows deleted successfully.")
+        else:
+            flash('Employees Not Deleted', 'error')
+            print("Rows not found.")
     return redirect(url_for('views.admin'))
-
 @views.route('/edit_employee',methods=['POST'])
 def edit_employee():
     if current_user.role == 'employee':
@@ -879,6 +944,12 @@ def accept_edit():
     data_type=data.get('data_type')
     old_data=data.get('old_data')
     new_data=data.get('new_data')
+
+    if data_type=='name':
+        atten=Attendance.query.filter_by(emp_id=emp_id).all()
+        for atten in atten:
+            atten.name=new_data
+            db.session.commit()
 
     emp=Emp_login.query.filter_by(emp_id=emp_id).first()
     # old_value=getattr(emp,data_type)
@@ -1247,23 +1318,44 @@ def get_chart():
 
     return jsonify (chartDet)
 
+# @views.route('/start',methods =['POST',"GET"])
+# def start():
+#     scheduler = BackgroundScheduler()
+#     scheduler.add_job(fetch_and_store_data, trigger='interval', seconds=10)
+#     scheduler.add_job(create_dummy_attendance, trigger='cron', hour='6')
+#     scheduler.add_job(create_dummy_attendance, trigger='cron', hour='14')
+#     scheduler.add_job(create_dummy_attendance, trigger='cron', hour='22')
+
+#     scheduler.add_job(out_time_reminder_email, trigger='cron', hour='6', minute='10')
+#     scheduler.add_job(out_time_reminder_email, trigger='cron', hour='14', minute='10')
+#     scheduler.add_job(out_time_reminder_email, trigger='cron', hour='22', minute='10')
+    
+#     scheduler.add_job(out_time_reminder_message, trigger='cron', hour='6', minute='10')
+#     scheduler.add_job(out_time_reminder_message, trigger='cron', hour='14', minute='10')
+#     scheduler.add_job(out_time_reminder_message, trigger='cron', hour='22', minute='10')
+
+#     scheduler.start()
+#     return redirect('/')
+
 @views.route('/start',methods =['POST',"GET"])
 def start():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(fetch_and_store_data, trigger='interval', seconds=10)
-    scheduler.add_job(create_dummy_attendance, trigger='interval', seconds=10)
-
-    scheduler.add_job(out_time_reminder_email, trigger='cron', hour='6', minute='10')
-    scheduler.add_job(out_time_reminder_email, trigger='cron', hour='14', minute='10')
-    scheduler.add_job(out_time_reminder_email, trigger='cron', hour='22', minute='10')
-    
-    scheduler.add_job(out_time_reminder_message, trigger='cron', hour='6', minute='10')
-    scheduler.add_job(out_time_reminder_message, trigger='cron', hour='14', minute='10')
-    scheduler.add_job(out_time_reminder_message, trigger='cron', hour='22', minute='10')
-
+    shifts=Shift_time.query.all()
+    print("\n\n\n\n\n\n\n\n\n\n\n\n",shifts)
+    scheduler.add_job(fetch_and_store_data, trigger='interval', minutes=5)
+    scheduler.add_job(create_dummy_attendance, trigger='interval', minutes=5)
+    for shift in shifts:
+        shift_time = shift.shiftIntime
+        hour = shift_time.hour
+        print("\n\n\n\n\n\n\n\n\n\n",hour)
+        scheduler.add_job(call_fun, trigger='cron', hour=hour, minute='15')
+        
     scheduler.start()
     return redirect('/')
 
+def call_fun():
+    out_time_reminder_email()
+    out_time_reminder_message()
 
 @views.route('/createXL', methods=['GET', 'POST'])
 @login_required

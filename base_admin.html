@@ -184,7 +184,6 @@
             <p class="menu-name">Employees</p>
           <!-- </a> -->
         </li>
-        
         <li class="menu-option action-menu" index="2">
           <!-- <a href="/late_req_table" class="side_bar_a"> -->
             <span class="icon">
@@ -204,11 +203,12 @@
         <li class="menu-option action-menu" index="5">
           <!-- <a href="/leave_req_table" class="side_bar_a"> -->
             <span class="icon">
-              <i class="fas fa-folder-open"></i>
+              <i class="fas fa-calendar-plus"></i>
             </span>
             <p class="menu-name">Backup</p>
           <!-- </a> -->
         </li>
+
         <li class="menu-option upload-option">
           <span class="icon">
             <i class="fas fa-upload"></i>
@@ -359,7 +359,6 @@
         </a>
         <form
           method="POST"
-          class="upload_form"
           action="/uploadselect"
           enctype="multipart/form-data"
         >
@@ -382,6 +381,7 @@
               />
               add employee
             </label>
+            
             <label class="label">
               <input
                 type="radio"
@@ -405,7 +405,7 @@
             <!-- <input type="file" name="file" id="file" hidden /> -->
             <input
               type="file"
-              class="form-control-file uploaded-file file-upload"
+              class="form-control-file uploaded-file"
               id="file"
               name="emp"
               accept=".xlsx,.xls"

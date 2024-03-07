@@ -149,7 +149,7 @@
               <td class="shift">{{attendance.shiftType}}</td>
               <td class="shiftInTime">{{attendance.shiftIntime}}</td>
               <td class="shiftOutTime">{{attendance.shift_Outtime}}</td>
-              {% if attendance.attendance != 'Wrong Shift' and attendance.inTime==None and attendance.attendance!='Holiday'%}
+              {% if attendance.attendance != 'Wrong Shift' and attendance.inTime==None %}
                   <td class="shiftInTime">
                     <div class="table-tag punchOptionsDiv">
                       <label for="punchOptions">{{attendance.inTime}}</label>
@@ -195,16 +195,10 @@
                 <i class="fas fa-check-circle"></i> O.T {% elif
                 attendance.attendance == "Leave" %}
                 <i class="fas fa-phone"></i>Leave {% elif
-                  attendance.attendance == "Hp" %}
-                  <i class="fas fa-check-circle"></i>H. Present {% elif
-                    attendance.attendance == "Week Off" %}
-                    <i class="fas fa-check-circle"></i>Week Off {% elif
-                  attendance.attendance == "Holiday" %}
-                  <i class="fas fa-check-circle"></i>Holiday {% elif
                 attendance.attendance == "Wrong Shift" %} {% if
                 attendance.branch=='KKL' %}
                 <div class="table-tag punchOptionsDiv">
-                  <label for="punchOptions" class="rowStatus">Wrong Shift:</label>
+                  <label for="punchOptions">Wrong Shift:</label>
                   <select
                     id="punchOptions"
                     class="punchOptions wrongshift-{{attendance.emp_id}}"
@@ -330,6 +324,7 @@
     </div>
   </section>
 </section>
+
 <section class="employee-container page-action" style="display: none; flex-direction: column" index="1">
   <section class="frame today-attendance">
     <div class="inner-frame">
@@ -488,6 +483,7 @@
   </script>
 
 </section>
+
 <section class="employee-container page-action" style="display: none; flex-direction: column" index="5">
   <section class="frame today-attendance">
     <div class="inner-frame">

@@ -92,21 +92,20 @@ class Shift_time(db.Model):
     
     
 class Backup(db.Model):
-    id=db.Column(db.Integer,primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.DateTime(timezone=True), default=current_time)
-    emp_id = db.Column(db.Integer, db.ForeignKey('emp_login.id'))
-    attendance =db.Column(db.String(150))
-    wages_per_Day=db.Column(db.String(150))
-    inTime=db.Column(db.String(150))
-    outTime=db.Column(db.String(150))
-    overtime=db.Column(db.String(150),default='00:00')
-    shiftType=db.Column(db.String(150))
-    shiftIntime = db.Column(db.String(150))
-    shift_Outtime = db.Column(db.String(150))
-    TotalDuration=db.Column(db.String(150))
-    lateBy=db.Column(db.String(150))
-    earlyGoingBy=db.Column(db.String(150))
-    punchRecords=db.Column(db.String(150))	
+    email = db.Column(db.String(150))
+    name = db.Column(db.String(150))
+    password = db.Column(db.String(150))
+    emp_id = db.Column(db.Integer)
+    branch=db.Column(db.String(150))  
+    phoneNumber=db.Column(db.Integer)   
+    role =db.Column(db.String(150))
+    address = db.Column(db.String(150))
+    gender = db.Column(db.String(150))
+    shift=db.Column(db.String(150))
+    attendances = db.Column(db.String(150))
+    worked=db.Column(db.Integer) 
     
     
     
@@ -171,6 +170,8 @@ class Festival(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     holiday=db.Column(db.String(150), nullable=False)
     date=db.Column(db.String(150), nullable=False)
+    # date= db.Column(db.Date())
+
 
 class user_edit(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)

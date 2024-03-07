@@ -92,8 +92,8 @@ function filter(currentShift) {
     ) {
       row.style.display = "none";
       if (
-        row.querySelector(".status").textContent.toLowerCase().trim() ==
-        "wrong shift"
+        row.querySelector(".rowStatus").textContent.toLowerCase().trim() ==
+        "wrong shift:"
       ) {
         row.style.display = "";
       }

@@ -685,3 +685,20 @@ document
 //       element.remove();
 //   }
 // }
+document.querySelector('.file-upload').addEventListener('click', function (event) {
+  let form = document.querySelector('.upload_form')
+  let checkboxes = form.querySelectorAll('input[type="radio"]');
+  let isChecked = false;
+  console.log('cjnxfdvkjjv \n\n\n');
+
+  checkboxes.forEach(function(checkbox) {
+    if (checkbox.checked) {
+      isChecked = true;
+    }
+  });
+
+  if (!isChecked) {
+    alert('Please select a file type before submitting.');
+    event.preventDefault(); // Prevent form submission
+  }
+});
