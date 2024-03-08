@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="static/css/chart.css">
   </head>
   <body>
+    
     <!-- {% block flash %} {% endblock %} -->
     <!-- {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -581,10 +582,7 @@
       </div>
     </section>
 
-    <script src="static/js/script.js"></script>
-    <script src="/static/js/filter.js"></script>
-    <script src="/static/js/action.js"></script>
-    <script src="static/js/chart.js"></script>
+
 
     {% block scripts %}
      
@@ -725,7 +723,14 @@
             countNotification();
       });
     </script>
-
+      <script src="static/js/chart.js"></script>
+    <script>
+      let current_shifts=`{{current_shifts | safe}}`;
+      console.log((current_shifts));
+    </script>
+    <script src="static/js/script.js"></script>
+    <script src="/static/js/filter.js"></script>
+    <script src="/static/js/action.js"></script>
 
   </body>
 </html>

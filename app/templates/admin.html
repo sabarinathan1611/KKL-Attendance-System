@@ -99,7 +99,7 @@
       </select>
     </ul>
   </menu>
-
+      
   <section
     class="frame today-attendance"
     style="display: flex"
@@ -498,10 +498,10 @@
           </p>
         </div>
         <div class="frame-options">
-          <button type="button" class="list btn-display active" emp-index="2">
+          <button type="button" class="list btn-backup-display active" backup-index="2">
             <i class="fas fa-list-ul"></i>
           </button>
-          <button type="button" class="grid btn-display" emp-index="3">
+          <button type="button" class="grid btn-backup-display" backup-index="3">
             <i class="fas fa-grip"></i>
           </button>
           <button type="button" class="download">
@@ -511,8 +511,8 @@
       </div>
       <div class="frame-body">
         <div
-          class="list-container empdisplay"
-          emp-index="2"
+          class="list-container backupdisplay"
+          backup-index="2"
           style="display: flex"
         >
           <table class="employee-table" style="margin-top: 10px">
@@ -555,9 +555,9 @@
           </table>
         </div>
         <div
-          class="grid-container empdisplay"
+          class="grid-container backupdisplay"
           style="margin-top: 10px"
-          emp-index="3"
+          backup-index="3"
           style="display: none"
         >
           {% for emp in backup %}

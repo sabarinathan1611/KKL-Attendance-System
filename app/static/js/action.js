@@ -97,3 +97,25 @@ btn_display.forEach((btn) => {
     btn.classList.add("active");
   });
 });
+
+const btn_backup__display = document.querySelectorAll(".btn-backup-display");
+const display_backup_box = document.querySelectorAll(".backupdisplay");
+
+btn_backup__display.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    let btnIndex = btn.getAttribute("backup-index");
+    console.log(btnIndex);
+    display_backup_box.forEach((box) => {
+      let boxIndex = box.getAttribute("backup-index");
+      if (btnIndex == boxIndex) {
+        box.style.display = "flex";
+      } else {
+        box.style.display = "none";
+      }
+    });
+    btn_backup__display.forEach((display) => {
+      display.classList.remove("active");
+    });
+    btn.classList.add("active");
+  });
+});

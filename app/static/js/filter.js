@@ -4,21 +4,20 @@ const all_shiftDisplay = document.querySelectorAll(".currentShift");
 
 let finaldetails;
 
-const currentShift = getCurrentShift();
-filter(currentShift);
+filter(current_shifts);
 
 let shiftSelect = document.getElementById("shift");
 
 shiftSelect.addEventListener("change", () => {
   let shift = shiftSelect.value;
   if (shift == "current" || shift.length <= 0) {
-    filter(currentShift);
+    filter(current_shifts);
   } else if (shift == "all") {
     all_rows.forEach((row) => {
       row.style.display = "";
     });
   } else {
-    filter(shift.toLowerCase());
+    filter(shift.toUpperCase());
   }
 });
 // function sendAlert(id, action) {
@@ -71,9 +70,9 @@ function filter(currentShift) {
     // console.log(
     //   currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase()
     // );
-
+   
     if (
-      currentShift.toUpperCase() == row.getAttribute("data-shift").toUpperCase()
+      currentShift.includes(row.getAttribute("data-shift").toUpperCase())
     ) {
       row.style.display = "";
       // console.log(row);
@@ -84,43 +83,33 @@ function filter(currentShift) {
         row.style.display = "";
       }
     }
-
+      
     if (
-      (currentShift.toUpperCase() ==
-        row.getAttribute("data-shift").toUpperCase()) ==
+      (currentShift.includes(row.getAttribute("data-shift").toUpperCase())) ==
       false
     ) {
       row.style.display = "none";
-      if (
-        row.querySelector(".rowStatus").textContent.toLowerCase().trim() ==
-        "wrong shift:"
-      ) {
-        row.style.display = "";
-      }
+     if (row.querySelector(".rowStatus")) {
+       if (
+         row.querySelector(".rowStatus").textContent.toLowerCase().trim() ==
+         "wrong shift:"
+       ) {
+         row.style.display = "";
+       }
+     }
     }
     all_shiftDisplay.forEach((display) => {
       // console.log(currentShift.toUpperCase());
       // console.log(display.children[0]);
-      display.children[0].innerHTML = `<span class='tag'>${currentShift.toUpperCase()}</span>`;
+      shift = currentShift.replace("[", "");
+      shift = shift.replace("]", "");
+      shift = shift.replaceAll("'", "");
+      
+      display.children[0].innerHTML = `<span class='tag'>${shift.toUpperCase()}</span>`;
     });
   });
 }
 
-function getCurrentShift() {
-  const currentTime = new Date();
-  const currentHour = currentTime.getHours();
-
-  if (currentHour >= 6 && currentHour < 14) {
-    return "8A";
-  } else if (currentHour >= 14 && currentHour < 22) {
-    return "8B";
-  } else if (currentHour >= 22 && currentHour < 6) {
-    return "8C";
-  } else {
-    // console.log(`else part returned`);
-    return "8A";
-  }
-}
 
 all_rows.forEach((row) => {
   let id = row.querySelector(".emp_id").innerHTML;

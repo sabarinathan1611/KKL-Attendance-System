@@ -41,7 +41,7 @@ def admin():
         employee_attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date).all()
 
         emp_login=Emp_login.query.order_by(Emp_login.emp_id).all()
-        
+        current_shifts=get_current_shift()
         late_permission=late.query.order_by(late.date).all()
         leave_permission=leave.query.order_by(leave.date).all()
         notification=notifications.query.order_by(notifications.timestamp).all()
@@ -57,11 +57,11 @@ def admin():
         date=month_attend[1]
         backup=Backup.query.all()
         # create_dummy_attendance()
-        
+        print('curre\n\n\n',current_shifts)
         
         flash('Logged In Successfully','success')
 
-    return render_template('admin.html',employee_data=employee_data,backup=backup,date=date,emp_login=emp_login, notification=notification, attendance=employee_attendance, late_permission=late_permission, leave_permission=leave_permission,emp_login_sorted=emp_login_sorted)
+    return render_template('admin.html',current_shifts=current_shifts,employee_data=employee_data,backup=backup,date=date,emp_login=emp_login, notification=notification, attendance=employee_attendance, late_permission=late_permission, leave_permission=leave_permission,emp_login_sorted=emp_login_sorted)
 
 @views.route('/edit', methods=['POST', 'GET'])
 @login_required
@@ -1010,6 +1010,7 @@ def decline_edit():
     #     # Send a JSON response indicating the employee was not found
     #     return jsonify({"error": "Employee not found"})
 @views.route('/fetch_emp_details',methods=['POST'])
+@login_required
 def fetch_emp_details():
     if current_user.role == 'employee':
         return redirect(url_for('auth.logout'))
@@ -1025,6 +1026,7 @@ def fetch_emp_details():
     return jsonify(response_data)
 
 @views.route('/send_message_data',methods=['GET'])
+@login_required
 def send_message_data():
     try:
         print('hi')
@@ -1082,6 +1084,7 @@ def send_message_data():
 
 
 @views.route('/send_message', methods=['POST'])
+@login_required
 def send_message():
     data = request.json
     id = data.get('id')
@@ -1129,6 +1132,7 @@ def send_message():
         return jsonify({"error": "Employee not found"})
 
 @views.route('/send_continue_message',methods=['POST'])
+@login_required
 def send_continue_message():
     data = request.json
     id = data.get('id')
@@ -1219,6 +1223,7 @@ def bring_req_profile():
     return jsonify ({'data':req_details})
 
 @views.route('/save_attendance',methods=['POST'])
+@login_required
 def save_attendance():
     form_data = request.form
 
@@ -1289,6 +1294,7 @@ def save_attendance():
 #     return jsonify ({'late_det':late_det,'leave_det':leave_det})
 
 @views.route('get_chart')
+@login_required
 def get_chart():
     chartDet={
         'total_present':0,
@@ -1338,12 +1344,13 @@ def get_chart():
 #     return redirect('/')
 
 @views.route('/start',methods =['POST',"GET"])
+@login_required
 def start():
     scheduler = BackgroundScheduler()
     shifts=Shift_time.query.all()
     print("\n\n\n\n\n\n\n\n\n\n\n\n",shifts)
-    scheduler.add_job(fetch_and_store_data, trigger='interval', minutes=5)
-    scheduler.add_job(create_dummy_attendance, trigger='interval', minutes=5)
+    scheduler.add_job(fetch_and_store_data, trigger='interval', seconds=10)
+    scheduler.add_job(create_dummy_attendance, trigger='interval', seconds=10)
     for shift in shifts:
         shift_time = shift.shiftIntime
         hour = shift_time.hour

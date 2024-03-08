@@ -1,5 +1,4 @@
 console.log("chart.js");
-console.clear();
 
 var myData,
   total_employee,

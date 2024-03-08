@@ -431,7 +431,6 @@ def update_freeze_status_and_remove_absences(emp_id):
 
         thirty_days_ago = datetime.now() - timedelta(days=30)
         absent_records = session_sqlite.query(Attendance).filter(Attendance.emp_id==emp_id, or_(Attendance.attendance=='Absent',Attendance.attendance==None)).filter(Attendance.date >= thirty_days_ago).all()
-
         # print(f"Employee ID: {emp_id}")
         # print(f"Absent Records: {len(absent_records)}")
 
@@ -977,15 +976,13 @@ def fetch_and_store_data():
                     if existing_record.inTime==None:
                         existing_record.inTime=record.time
                         week_off = session_sqlite.query(Week_off).filter_by(emp_id=emp.emp_id, date=str(datetime.now().date())).first()
-
-                        if emp.shift not in current_shifts:
-                            attendance_status='Wrong Shift'
-                        elif check_holiday(datetime.now().date()):
+                        attendance_status = 'Present'
+                        if check_holiday(datetime.now().date()):
                             attendance_status = 'Hp'
                         elif week_off:
                             attendance_status = 'Wop'
-                        else:
-                            attendance_status = 'Present'
+                        elif emp.shift not in current_shifts:
+                            attendance_status='Wrong Shift'
                         if emp.branch=='FT':
                             status=check_ft(emp_id,current_date)
                             if status=='Week Off':
