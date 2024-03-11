@@ -31,32 +31,12 @@ class Emp_login(db.Model, UserMixin):
     shift=db.Column(db.String(150))
     attendances = db.relationship('Attendance', back_populates='employee', cascade='all, delete-orphan')
     freezed_account =db.Column(db.Boolean(150),default=False)
-
-
-# class Employee(db.Model, UserMixin):
-#     id = db.Column(db.Integer, primary_key=True)
-#     emp_id = db.Column(db.Integer)
-#     name = db.Column(db.String(150), nullable=False)
-#     date = db.Column(db.DateTime(timezone=True), default=current_time)
-#     dob = db.Column(db.DateTime(timezone=True))
-#     designation = db.Column(db.String(150), nullable=True)
-#     workType = db.Column(db.String(150))
-#     email = db.Column(db.String(150))
-#     phoneNumber = db.Column(db.String(150))
-#     adharNumber = db.Column(db.Integer)
-#     gender = db.Column(db.String(150))
-#     address = db.Column(db.String(150))
-#     mimetype =db.Column(db.String(150))
-#     profile_pic = db.Column(db.String(100000), default='Default/Default.jpeg')
-    
-#     attendances = db.relationship('Attendance', back_populates='employee', cascade='all, delete-orphan')
-#     shift=db.Column(db.String(150))
     
     
 class Attendance(db.Model,UserMixin):
     id=db.Column(db.Integer,primary_key=True)
     date = db.Column(db.DateTime(timezone=True), default=current_time)
-    emp_id = db.Column(db.Integer, db.ForeignKey('emp_login.id'))
+    emp_id = db.Column(db.Integer, db.ForeignKey('emp_login.emp_id'))
     name = db.Column(db.String(150))
     attendance =db.Column(db.String(150))
     branch =db.Column(db.String(150),default='KKL')

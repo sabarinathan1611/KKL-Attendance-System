@@ -46,8 +46,8 @@ def admin():
         leave_permission=leave.query.order_by(leave.date).all()
         notification=notifications.query.order_by(notifications.timestamp).all()
 
-        emp_login_freezed = [emp for emp in emp_login if emp.freezed_account == 1]
-        emp_login_active = [emp for emp in emp_login if emp.freezed_account == 0]
+        emp_login_freezed = [emp for emp in emp_login if emp.freezed_account == True]
+        emp_login_active = [emp for emp in emp_login if emp.freezed_account == False]
         create_dummy_attendance()
         # Combine the lists, placing the freezed_account=1 records at the end1
         emp_login_sorted = emp_login_active + emp_login_freezed
@@ -1389,3 +1389,30 @@ def del_atten():
             db.session.commit()
     return redirect('/')
 
+@views.route('/unfreeze',methods=['POST','GET'])
+@login_required
+def unfreeze():
+    data=request.json
+    emp_id=data.get('emp_id')
+    print(emp_id)
+    
+    # atten=Attendance.query.filter_by(emp_id=emp_id).first()
+    # print(atten.emp_id.freezed_account,'\n\n\n')
+    emp=Emp_login.query.filter_by(emp_id=emp_id).first()
+    if emp:
+        if emp.freezed_account==True:
+            emp.freezed_account=False
+            db.session.commit()
+            flash('Employee Unfreezed Successfully','success')
+            return jsonify("Unfreezed")
+        else:
+            flash('Already Unfreezed')
+            return jsonify("Already freezed",emp_id)
+
+    else:
+        flash('Employee Not exists')
+        return jsonify("Employee Not exists",emp_id)
+
+
+
+    

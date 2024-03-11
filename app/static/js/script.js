@@ -702,3 +702,33 @@ document.querySelector('.file-upload').addEventListener('click', function (event
     event.preventDefault(); // Prevent form submission
   }
 });
+
+let unfreezeButtons = document.querySelectorAll('.unfreeze-btn');
+if (unfreezeButtons) {
+  unfreezeButtons.forEach((btn) => {
+    let emp_id = btn.getAttribute('emp-id'); // Use data attribute instead of name
+    console.log(emp_id);
+    btn.addEventListener('click',()=> {
+      fetch("/unfreeze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ emp_id: emp_id }), // Pass emp_id as an object
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data);
+          if (data === "Unfreezed") {
+            btn.innerHTML = `<div class="tag">Active</div>`; // Update status cell
+            btn.parentElement.classList.remove('freezed');
+          } else {
+            alert('Employee Not Found or Already Unfreezed'); // Alert if error occurred
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    })
+  })
+}

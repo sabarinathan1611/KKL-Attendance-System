@@ -898,16 +898,21 @@ def fetch_and_store_data():
             current_date = datetime.now().date()
             session_mysql = SessionMySQL()
             yesterday_date=current_date - timedelta(days=1)
-            print('\n\n\n\nyesterday date da',yesterday_date)
+            # print('\n\n\n\nyesterday date da',yesterday_date)
             
 
             mysql_data = session_mysql.query(MySQLAttendance).filter(
                 (func.date(MySQLAttendance.time) == current_date)
             ).all()
 
-            print(mysql_data)
+            # print(mysql_data)
 
             for record in mysql_data:
+
+                emp=session_sqlite.query(Emp_login).filter_by(emp_id=emp_id).first()
+                if emp.freezed_account==1:
+                    emp.freezed_account==0
+                    session_sqlite.commit()
                 
                 existing_record = session_sqlite.query(Attendance).filter(
                     and_(Attendance.emp_id == record.emp_id, func.date(Attendance.date) == current_date)
@@ -945,12 +950,12 @@ def fetch_and_store_data():
                         attendance_status = 'Wop'
                     else:
                         attendance_status = 'Present'
-                    print('\n\nok with 947\n\n')
+                    # print('\n\nok with 947\n\n')
                     if emp.branch=='FT':
                         status=check_ft(emp_id,current_date)
                         if status=='Week Off':
                             attendance_status='Wop'
-                    print('\n\nok with 952\n\n')
+                    # print('\n\nok with 952\n\n')
 
                     emp_shift=session_sqlite.query(Emp_login).filter_by(emp_id=emp_id).first().shift
                     shift_time=session_sqlite.query(Shift_time).filter_by(shiftType=emp_shift).first()
@@ -999,7 +1004,7 @@ def fetch_and_store_data():
                                 existing_record.outTime = record.time
                                 # session_sqlite.add(existing_record)
                                 session_sqlite.commit()
-                                print('\n\n\n\n fetch down',existing_record.id)
+                                # print('\n\n\n\n fetch down',existing_record.id)
                                 calculate_Attendance_from_db(existing_record.id)
 
 

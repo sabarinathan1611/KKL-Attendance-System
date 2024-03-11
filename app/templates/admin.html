@@ -141,7 +141,11 @@
           <tbody class="tableBody">
             {% if attendance %} {% for attendance in attendance %}
 
+            {% if attendance.employee.freezed_account %}
+            <tr data-shift="{{attendance.shiftType}}" style="background: aquamarine !important;">
+            {% else %}
             <tr data-shift="{{attendance.shiftType}}">
+            {% endif %}
               <td class="emp_id">{{attendance.emp_id }}</td>
               <td class="name">{{attendance.name}}</td>
               <td class="attend_date">{{attendance.date.date()}}</td>
@@ -393,8 +397,9 @@
                   789 Maple Lane Apt 10B, Building C Suburbia City, District
                   67890 Territory State Countryland 54321
                 </td>
-                {% if emp.freezed_account==1 %}
-                <td class="status">Freezed</td>
+                {% if emp.freezed_account== 1 %}
+                <td class="status unfreeze unfreeze-btn" emp-id="{{emp.emp_id}}">Freezed</td>
+                <!-- <td class="status">Freezed</td> -->
                 {% else %}
                 <td class="status">Active</td>
                 {% endif %}
