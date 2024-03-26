@@ -258,12 +258,16 @@ def addEmpShifts(file_path):
                     setattr(new_shift, str(day_num), shift_type)
                 db.session.add(new_shift)
                 db.session.commit()
+            session['flash_message']=['File Uploaded Successfully','success']
+            
         else:
             print('File Does Not Exists')
+            session['flash_message']=['File Not Exists','error']
+
     except Exception as e:
+        session['flash_message']=['File Not Uploaded','error']
         print(f"An error occurred: {e}")
-        # session['flash_message']=[f'File Error {e}','error']
-        session_sqlite.rollback()  # Rollback changes in case of an exception
+        session_sqlite.rollback() 
 
 # def addEmpShifts(file_path):
 #     try:
@@ -459,9 +463,14 @@ def add_employee(file_path):
                 print("No new data to add.")
             
             session_sqlite.commit()  # Commit the main transaction
+            session['flash_message']=['File Uploaded Successfully','success']
+
         else:
             print("File not found")
+            session['flash_message']=['File Not Exists','error']
+
     except Exception as e:
+        session['flash_message']=['File Not Uploaded','error']
         print(f"An error occurred: {e}")
         session_sqlite.rollback()  # Rollback changes in case of an exception
 

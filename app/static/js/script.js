@@ -687,14 +687,15 @@ if (unfreezeButtons) {
 }
 
 let deleteFlash=document.getElementById('delete-message-btn');
+setInterval(() => {
+  flashDel
+}, 3000);
 if(deleteFlash){
   deleteFlash.addEventListener('click', flashDel);
-  setInterval(() => {
-    flashDel
-  }, 3000);
   
   function autoRemoveFlash(){
-    document.querySelector('.flash-message').style.top='-60px'
+        console.log('removed flash');
+        document.querySelector('.flash-message').style.top='-60px'
   }
   function flashDel() {
       fetch('/delete_flash_message', {
@@ -704,7 +705,8 @@ if(deleteFlash){
       .then(data => {
           // Handle response
           console.log(data.message);
-          // document.querySelector('.flash-message').style.top = '-60px';
+        // document.querySelector('.flash-message').style.top = '-60px';
+        console.log('removed flash session');
           autoRemoveFlash()
 
       })

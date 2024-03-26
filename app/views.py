@@ -471,21 +471,6 @@ def upload_select():
         # Handle file upload
         if 'emp' in request.files:
             file = request.files['emp']
-            # print(file_type,"file_type")
-            # Customize response based on file_type
-            # if file_type == 'attendance':
-            #     try:
-            #         # print("j=ubjxk")
-            #         filename = secure_filename(file.filename)
-            #         # print(filename)
-            #         file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
-            #         file.save(file_path)
-            #         # print('hello')
-            #         attend_excel_data(file_path)
-            #         # print("babdckzub")
-            #         return redirect(url_for('views.calculate'))
-            #     except:
-            #         flash('Oops! Something Went wrong.','error')
             
             if file_type == 'addEmployee':
                 filename = secure_filename(file.filename)
@@ -494,11 +479,9 @@ def upload_select():
                     file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
                     file.save(file_path)
                     add_employee(file_path)
-                    session['flash_message']=['File Uploaded Successfully','success']
 
                 except Exception as e:
                     print("Error type:", type(e).__name__)
-                    session['flash_message']=['File Not Uploaded','error']
 
                 return redirect(url_for('views.admin'))
             
@@ -508,11 +491,9 @@ def upload_select():
                     file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
                     file.save(file_path)
                     addEmpShifts(file_path)
-                    session['flash_message']=['File Uploaded Successfully','success']
 
                 except Exception as e:
                     print("Error type:", type(e).__name__)
-                    session['flash_message']=['File Not Uploaded','error']
 
                 return redirect(url_for('views.admin'))
 
