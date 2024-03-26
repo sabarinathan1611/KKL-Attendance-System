@@ -71,25 +71,6 @@ def login():
         print('Created Admin!')
 
     return render_template('login.html')
-# @auth.route('/login', methods=['POST', 'GET'])
-# def admin_login():
-#     if request.method == 'POST':
-#         emp_id = request.form.get('emp_id')
-#         password = request.form.get('password')
-#         print("emp_id", emp_id)
-#         print("pwd:", password)
-
-#         dbemp = Login_admin.query.filter_by(emp_id=emp_id).first()
-#         if dbemp:
-#             if check_password_hash(dbemp.password, password):
-#                 login_user(dbemp, remember=True)
-#                 return redirect(url_for('views.dashboard'))
-#             else:
-#                 flash("Incorrect Password", category='error')
-#         else:
-#             flash("Incorrect Employee ID", category='error')
-
-#     return render_template('emp_login.html')
 
 @auth.route('/login', methods=['POST', 'GET'])
 def admin_login():
@@ -101,21 +82,6 @@ def admin_login():
 def logout():
     logout_user()
     return redirect(url_for('auth.login'))
-
-@auth.route('/addemp', methods=['POST', 'GET'])
-@login_required
-def attendance():    
-    try:
-
-            file_path = os.path.join(app.config['EXCEL_FOLDER'], 'employee_data.xlsx')  # Use correct case 'EXCEL_FOLDER'
-            addemployee(file_path)  # Call the data processing function
-       
-
-    except Exception as e:
-        print("Error occurred:", e)
-        db.session.rollback()  # Rollback in case of error
-    return redirect(url_for('views.admin'))
-
 
 @auth.route('/signup',methods=['POST','GET'])
 @login_required

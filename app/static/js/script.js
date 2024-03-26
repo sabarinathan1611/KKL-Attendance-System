@@ -687,9 +687,7 @@ if (unfreezeButtons) {
 }
 
 let deleteFlash=document.getElementById('delete-message-btn');
-setInterval(() => {
-  flashDel
-}, 3000);
+setInterval(flashDel, 3000);
 if(deleteFlash){
   deleteFlash.addEventListener('click', flashDel);
   
@@ -697,24 +695,24 @@ if(deleteFlash){
         console.log('removed flash');
         document.querySelector('.flash-message').style.top='-60px'
   }
-  function flashDel() {
-      fetch('/delete_flash_message', {
-        method: 'POST'
-      })
-      .then(response => response.json())
-      .then(data => {
-          // Handle response
-          console.log(data.message);
-        // document.querySelector('.flash-message').style.top = '-60px';
-        console.log('removed flash session');
-          autoRemoveFlash()
-
-      })
-      .catch(error => {
-          console.error('Error:', error);
-      });
-      }
 }
+function flashDel() {
+    fetch('/delete_flash_message', {
+      method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Handle response
+        console.log(data.message);
+      // document.querySelector('.flash-message').style.top = '-60px';
+      console.log('removed flash session');
+        autoRemoveFlash()
+
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+    }
 
 let tagBtns = document.querySelectorAll('.atten-header-btn');
 tagBtns.forEach((btn) => {
