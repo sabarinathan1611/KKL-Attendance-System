@@ -75,12 +75,12 @@ function filter(currentShift) {
       currentShift.includes(row.getAttribute("data-shift").toUpperCase())
     ) {
       row.style.display = "";
-      // console.log(row);
-      if (
-        row.querySelector(".status").textContent.toLowerCase().trim() ==
-        "wrong shift"
-      ) {
-        row.style.display = "";
+      if (row.querySelector(".rowStatus")){
+        if (row.querySelector(".rowStatus").textContent.toLowerCase().trim() ==
+          "wrong shift:"
+        ) {
+          row.style.display = "";
+        }
       }
     }
       
@@ -91,10 +91,11 @@ function filter(currentShift) {
       row.style.display = "none";
      if (row.querySelector(".rowStatus")) {
        if (
-         row.querySelector(".rowStatus").textContent.toLowerCase().trim() ==
+         row.querySelector(".rowStatus").textContent.toLowerCase() ==
          "wrong shift:"
        ) {
          row.style.display = "";
+         row.style.backgroundColor='rgb(252, 166, 166)'
        }
      }
     }

@@ -34,6 +34,8 @@ def login():
                     if dbemail.role == "admin":
                         session['admin_name']=dbemail.name
                         print("admin session created")
+                        session['flash_message']=['Logged In Successfully','success']
+
                         return redirect(url_for('views.admin'))
 
                     elif dbemail.role == "employee":
@@ -43,12 +45,15 @@ def login():
                         session['phNumber']=dbemail.phoneNumber
                         session['leave_balance']=dbemail.leave_balance
                         session['late_balance']=dbemail.late_balance
+                        session['flash_message']=['Logged In Successfully','success']
                         return redirect(url_for('views.user_dashboard'))
                         #return redirect(url_for('views.emp_login'))
                     
                 else:
+                    session['flash_message']=['Incorrect Password','error']
                     flash("Incorrect Password", category='error')
             else:
+                session['flash_message']=['Incorrect Email','error']
                 flash("Incorrect Email", category='error')
     else:
         # Assuming you're using Flask's generate_password_hash to hash passwords during registration
@@ -58,6 +63,7 @@ def login():
             phoneNumber="123456789",
             password=generate_password_hash("admin"),
             role="admin",
+            designation='HR',
             emp_id='9999'
         )
         db.session.add(addAdmin)
@@ -112,32 +118,56 @@ def attendance():
 
 
 @auth.route('/signup',methods=['POST','GET'])
+@login_required
 def signup():
     if request.method == 'POST':
         # Get user input from the form
-        email = request.form['email']
-        password = request.form['password']
-        emp_id = request.form['emp_id']  # Assuming you have a form field for emp_id
+        emp_id = request.form['emp_id'] 
         name = request.form['name']
+        designation = request.form['designation']
+        email = request.form['email']
         ph_number = request.form['ph_number']
+        aadhar = request.form['aadhar'] 
+        gender = request.form['gender'] 
+        address = request.form['address'] 
+        branch = request.form['branch'] 
         role = request.form['role']
         # Check if a user with the same email already exists
         existing_user = Emp_login.query.filter_by(email=email).first()
-        existing_id = Emp_login.query.filter_by(id=emp_id).first()
+        existing_id = Emp_login.query.filter_by(emp_id=emp_id).first()
+        existing_aadhar = Emp_login.query.filter_by(aadhar=aadhar).first()
         if existing_user:
-            flash('Email already exists. Please choose a different email.')
-            
+            session['flash_message']=['Email already exists.','error']
+
         elif existing_id:
-            flash('Emp id already exists. Please choose a different email.')
+            session['flash_message']=['Emp id already exists.','error']
+
+        elif existing_aadhar:
+            session['flash_message']=['Aadhar Number already exists.','error']
+
         else:
             # Create a new Emp_login object and add it to the database
-            new_login = Emp_login(email=email, password=generate_password_hash(password), role=role,phoneNumber=ph_number, emp_id=emp_id, name=name)
+            # new_login = Emp_login(email=email, password=generate_password_hash(ph_number), role=role,phoneNumber=ph_number, emp_id=emp_id, name=name)
+            new_login = Emp_login(
+                email = email,
+                name = name,
+                aadhar = aadhar,
+                password = generate_password_hash(ph_number),
+                emp_id = emp_id,
+                branch=branch,
+                phoneNumber=ph_number,
+                role =role,
+                designation=designation,
+                address = address,
+                gender = gender
+            )
             db.session.add(new_login)
             db.session.commit()
+            session['flash_message']=['Emp id Added successfully','success']
 
             # Redirect to a success page or perform any other necessary actions
-            return render_template("login.html")
+            return redirect('/')
 
     # Render the signup form for GET requests
-    return render_template('signup.html')
+    return redirect('/')
 

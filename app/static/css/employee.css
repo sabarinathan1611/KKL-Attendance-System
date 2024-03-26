@@ -6,6 +6,53 @@
   text-decoration: none;
 }
 
+.flash-div{
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flash-message{
+  width: auto;
+  border-radius: 10px;
+  height: 30px;
+  position: fixed;
+  top: 55px;
+  z-index: 1000;
+  background-color: #000;
+  display: flex;
+  transition: .3s;
+  animation: .3s flash;
+  justify-content: center;
+  align-items: center;
+  font-size: 17px;
+  gap: 30px;
+  color: white;
+  padding: 7px 40px;
+}
+@media all and (max-width:410px){
+  .flash-message{
+    top: 5px;
+    width: 60vw;
+    font-size: 12px;
+    height: 40px;
+  }  
+}
+.flash-message.error{
+  background-color: rgb(214, 89, 70);
+}
+.flash-message.success{
+  background-color: #008000;
+}
+@keyframes flash {
+  from{
+    top: -30px;
+  }
+  to{
+    top:55px;
+  }
+}
+
 img {
   max-width: 100%;
   max-height: 100%;
@@ -353,6 +400,15 @@ label {
   white-space: nowrap;
 }
 
+button[type="button"] {
+  padding: 10px 15px;
+  background: #333333;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+}
 button[type="submit"] {
   padding: 10px 15px;
   background: #333333;

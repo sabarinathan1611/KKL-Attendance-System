@@ -354,10 +354,10 @@ function bringUserEdit() {
                 id="empid"
                 value="${user.emp_id}"
               />
-              <button class="request-btns confirm-request" data-action="accept" data-id="${user.id}" data-emp-id="${user.emp_id}" data-name="${user.name}" data-data-type="${user.data_type}" data-old-data="${user.old_data}" data-new-data="${user.new_data}">
+              <button class="request-btns confirm-request" data-action="accept" data-id="${user.id}">
                 <i class="fas fa-check"></i>Confirm
               </button>
-              <button class="request-btns cancel-request" data-action="decline" data-id="${user.id}" data-emp-id="${user.emp_id}" data-name="${user.name}" data-data-type="${user.data_type}" data-old-data="${user.old_data}" data-new-data="${user.new_data}">
+              <button class="request-btns cancel-request" data-action="decline" data-id="${user.id}">
                 <i class="fas fa-times"></i>Cancel
               </button>
             </div>
@@ -375,28 +375,18 @@ document.body.addEventListener("click", function (event) {
   if (target.classList.contains("request-btns")) {
     const action = target.dataset.action;
     const id = target.dataset.id;
-    const emp_id = target.dataset.empId;
-    const name = target.dataset.name;
-    const data_type = target.dataset.dataType;
-    const old_data = target.dataset.oldData;
-    const new_data = target.dataset.newData;
 
     if (action === "accept") {
-      AcceptEdit(id, emp_id, name, data_type, old_data, new_data);
+      AcceptEdit(id);
     } else if (action === "decline") {
-      DeclineEdit(id, emp_id, name, data_type, old_data, new_data);
+      DeclineEdit(id);
     }
   }
 });
 
-function AcceptEdit(id, emp_id, name, data_type, old_data, new_data) {
+function AcceptEdit(id) {
   const data = {
-    id: id,
-    emp_id: emp_id,
-    name: name,
-    data_type: data_type,
-    old_data: old_data,
-    new_data: new_data,
+    id: id
   };
   fetch("/accept_edit", {
     method: "POST",
@@ -413,12 +403,7 @@ function AcceptEdit(id, emp_id, name, data_type, old_data, new_data) {
 
 function DeclineEdit(id, emp_id, name, data_type, old_data, new_data) {
   const data = {
-    id: id,
-    emp_id: emp_id,
-    name: name,
-    data_type: data_type,
-    old_data: old_data,
-    new_data: new_data,
+    id: id
   };
   fetch("/decline_edit", {
     method: "POST",
@@ -456,7 +441,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 //reload part
-const load_btn = document.querySelector(".reload-option");
+// const load_btn = document.querySelector(".reload-option");
 
 function loadPage() {
   let loadDiv = document.querySelector(".reload");
@@ -467,12 +452,12 @@ document.addEventListener("DOMContentLoaded", () => {
   loadPage();
 });
 
-load_btn.addEventListener("click", () => {
-  loadPage();
-  setTimeout(() => {
-    document.querySelector(".reload").classList.remove("active");
-  }, 2000);
-});
+// load_btn.addEventListener("click", () => {
+//   loadPage();
+//   setTimeout(() => {
+//     document.querySelector(".reload").classList.remove("active");
+//   }, 2000);
+// });
 
 let loadDiv = document.querySelector(".reload");
 
@@ -646,19 +631,6 @@ function handleApproval(permissionType, action, id) {
     });
 }
 
-// socket.on('${permission_type}_hr_approval_update', function(data) {
-//     console.log(`${permission_type} details socket`);
-//     const userId = data.userId;
-//     const hrApproval = data.hr_approval;
-//     //document.getElementById(hrApproval.toLowerCase()).textContent = hrApproval;
-//     if (hrApproval=='Approved'){
-//         document.getElementById('approve').textContent = hrApproval;
-//     }
-//     else if (hrApproval=='Declined'){
-//         document.getElementById('decline').textContent = hrApproval;
-//     }
-// });
-
 let model_close = document.querySelector(".model-close");
 model_close.addEventListener("click", () => {
   var popupContainer = document.querySelector(".myPopup");
@@ -666,25 +638,6 @@ model_close.addEventListener("click", () => {
   popupContainer.style.display = "none";
 });
 
-document
-  .querySelector(".uploaded-file")
-  .addEventListener("keydown", function (event) {
-    // Check if the pressed key is Enter (keyCode 13)
-    if (event.keyCode === 13) {
-      // Trigger the button click event
-      document.getElementById("upload-btn").click();
-    }
-  });
-
-//flash message js
-
-// function removeFlashMessage(id) {
-//   console.log(id);
-//   var element = document.getElementById(id);
-//   if (element) {
-//       element.remove();
-//   }
-// }
 document.querySelector('.file-upload').addEventListener('click', function (event) {
   let form = document.querySelector('.upload_form')
   let checkboxes = form.querySelectorAll('input[type="radio"]');
@@ -732,3 +685,41 @@ if (unfreezeButtons) {
     })
   })
 }
+
+let deleteFlash=document.getElementById('delete-message-btn');
+if(deleteFlash){
+  deleteFlash.addEventListener('click', flashDel);
+  setInterval(() => {
+    flashDel
+  }, 3000);
+  
+  function autoRemoveFlash(){
+    document.querySelector('.flash-message').style.top='-60px'
+  }
+  function flashDel() {
+      fetch('/delete_flash_message', {
+        method: 'POST'
+      })
+      .then(response => response.json())
+      .then(data => {
+          // Handle response
+          console.log(data.message);
+          // document.querySelector('.flash-message').style.top = '-60px';
+          autoRemoveFlash()
+
+      })
+      .catch(error => {
+          console.error('Error:', error);
+      });
+      }
+}
+
+let tagBtns = document.querySelectorAll('.atten-header-btn');
+tagBtns.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    tagBtns.forEach(Button => {
+      Button.classList.remove('active');
+    })
+    btn.classList.add('active');
+  })
+})

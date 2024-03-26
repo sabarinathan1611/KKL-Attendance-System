@@ -72,15 +72,15 @@
 >
   <menu class="table-menu" style="display: flex">
     <ul class="btn-container">
-      <li class="tag-btn click active today-attend-btn" attend-index="0">
+      <li class="tag-btn click active today-attend-btn atten-header-btn" attend-index="0">
         Today Attendance
       </li>
-      <li class="tag-btn click month-attend-btn" attend-index="1">
+      <li class="tag-btn click month-attend-btn atten-header-btn" attend-index="1">
         This Month Attendance
       </li>
 
       <li>
-            <a href="/createXL" class="tag-btn" download>Downlode Attendance</a>
+            <a href="/createXL" class="tag-btn" download>Downlod Attendance</a>
       </li>
       <li>
             <a href="/del_atten" class="tag-btn">Del attendance</a>
@@ -111,7 +111,7 @@
           <p class="shift name"><span class="tag">A</span> ~ shift</p>
           <p class="frame-name">Attendance</p>
         </div>
-        <div class="frame-options">
+        <div class="frame-options" style="visibility: hidden;">
           <button type="button" class="download">
             <i class="fas fa-file-excel"></i>
           </button>
@@ -167,7 +167,12 @@
                 <td class="shiftInTime">{{attendance.inTime}}
               {% endif %}
               
-              {% if attendance.outTime ==None and
+              {% if attendance.outTime|string =='0001-01-01 00:00:00' and
+              attendance.inTime!=None%}
+              <td class="outtime">Miss Punch</td>
+
+            
+            {% elif attendance.outTime ==None and
               attendance.inTime!=None%}
 
               <td class="outtime">
@@ -181,6 +186,7 @@
                     <!-- <option value="grace-time">Grace Time</option>
                     <option value="over-time">Over Time</option> -->
                     <option value="mis-pinch">Miss Punch</option>
+                    <option value="none">None</option>
                   </select>
                 </div>
               </td>
@@ -203,6 +209,8 @@
                   <i class="fas fa-check-circle"></i>H. Present {% elif
                     attendance.attendance == "Week Off" %}
                     <i class="fas fa-check-circle"></i>Week Off {% elif
+                      attendance.attendance == "Wop" %}
+                      <i class="fas fa-check-circle"></i>Wop {% elif
                   attendance.attendance == "Holiday" %}
                   <i class="fas fa-check-circle"></i>Holiday {% elif
                 attendance.attendance == "Wrong Shift" %} {% if
@@ -215,16 +223,17 @@
                   >
                     <option value="call-duty">Call Duty (KKL)</option>
                     <option value="wrong-shift">Wrong Shift</option>
+                    <option value="present">Present</option>
                   </select>
                 </div>
                 {% else %}
                 <div class="table-tag punchOptionsDiv">
-                  <label for="punchOptions">Wrong Shift:</label>
+                  <label for="punchOptions" class="rowStatus">Wrong Shift:</label>
                   <select
                     id="punchOptions"
                     class="punchOptions wrongshift-{{attendance.emp_id}}"
                   >
-                    <option value="over-time">Over Time</option>
+                    <option value="present">Present</option>
                     <option value="wrong-shift">Wrong Shift</option>
                   </select>
                 </div>
@@ -234,7 +243,6 @@
                 <select id="punchOptions" class="punchOptions wrongshift-{{attendance.emp_id}}">
                         <option value="half-day">Half Day</option>
                         <option value="Present">Present</option>
-                        <!-- <option value="Communicated">Communicated</option> -->
                       </select>
                 
                 {% else %}
@@ -275,7 +283,7 @@
         <div class="frame-details">
           <p class="frame-name">Month Attendance</p>
         </div>
-        <div class="frame-options">
+        <div class="frame-options" style="visibility: hidden;">
           <button type="button" class="download">
             <i class="fas fa-file-excel"></i>
           </button>
@@ -301,9 +309,24 @@
                 <p style="display: none">Present</p>
                 <i class="fas fa-check-circle"></i>
               </td>
+              {% elif record.attendance =='Wrong Shift' %}
+              <td>
+                <p style="display: none">Wrong shift</p>
+                WS
+              </td>
               {% elif record.attendance =='O.T' %}
               <td>
                 <p style="display: none">O.T</p>
+                <i class="fas fa-clock" style="color: blue"></i>
+              </td>
+              {% elif record.attendance ==None %}
+              <td>
+                <p style="display: none">None</p>
+                -
+              </td>
+              {% elif record.attendance =='Half day' %}
+              <td>
+                <p style="display: none">1/2 P</p>
                 <i class="fas fa-clock" style="color: blue"></i>
               </td>
               {% elif record.attendance =='Week Off' %}
@@ -311,15 +334,39 @@
                 <p style="display: none">WO</p>
                 WO
               </td>
+              {% elif record.attendance =='Rest' %}
+              <td>
+                <p style="display: none">Present</p>
+                Rest
+              </td>
+              {% elif record.attendance =='Absent' %}
+              <td>
+                <p style="display: none">Absent</p>
+                <i class="fas fa-times-circle"></i>
+              </td>
               {% elif record.attendance =='Wop' %}
               <td>
                 <p style="display: none">WOP</p>
                 WOP
               </td>
+              {% elif record.attendance =='Holiday' %}
+              <td>
+                <p style="display: none">Holiday</p>
+                Holiday
+              </td>
+              {% elif record.attendance =='Hp' %}
+              <td>
+                <p style="display: none">Hp</p>
+                Hp
+              </td>
+              {% elif record.attendance =='Leave' %}
+              <td>
+                <i class="fas fa-phone"></i><p style="display: none">Communicated</p>
+              </td>
               {% else %}
               <td>
-                <p style="display: none">Absent</p>
-                <i class="fas fa-times-circle"></i>
+                <p style="display: none">-</p>
+                -
               </td>
               {% endif %} {% endfor %}
             </tr>
@@ -334,6 +381,7 @@
     </div>
   </section>
 </section>
+
 <section class="employee-container page-action" style="display: none; flex-direction: column" index="1">
   <section class="frame today-attendance">
     <div class="inner-frame">
@@ -493,6 +541,7 @@
   </script>
 
 </section>
+
 <section class="employee-container page-action" style="display: none; flex-direction: column" index="5">
   <section class="frame today-attendance">
     <div class="inner-frame">
@@ -645,6 +694,323 @@
 
 </section>
 
+<div
+        class="employee-container page-action"
+        style="display: none"
+        index="6"
+      >
+        <section class="frame today-attendance">
+          <div class="inner-frame">
+            <div class="frame-header">
+              <div class="frame-details">
+                <p class="frame-name">
+                  <i class="fas fa-user-plus"></i> Add Employee
+                </p>
+              </div>
+            </div>
+            <div class="frame-body">
+              <div class="list-container" style="display: flex">
+                <form action="/signup" method="post" class="addEmployee">
+                  <div class="input_field">
+                    <label>Employee ID</label>
+                    <input type="text" name="emp_id" id='emp_id' placeholder="eg: 10001" required/>
+                  </div>
+                  <div class="input_field">
+                    <label>Employee Name</label>
+                    <input
+                    type="text"
+                    name="name"
+                    id="name"
+                    placeholder="eg: John Doe"
+                    required
+                    />
+                  </div>
+                  <div class="input_field">
+                    <label>Designation</label>
+                    <input
+                    type="text"
+                    name="designation"
+                    id="designation"
+                    placeholder="eg: SECURITY ASSISTENT"
+                    required
+                    />
+                  </div>
+                  <div class="input_field">
+                    <label>Role</label>
+                    <select name="role" id="role">
+                      <option value="employee">Employee</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div class="input_field">
+                    <label>Email</label>
+                    <input
+                    type="email"
+                    name="email"
+                    id="email"
+                    placeholder="eg: JohnDoe@gmail.com"
+                    required
+                    />
+                  </div>
+                  <div class="input_field">
+                    <label>Phone Number</label>
+                    <input
+                    type="tel"
+                    name="ph_number"
+                    id="ph_number"
+                    placeholder="eg: 9182736450"
+                    pattern="[0-9]{10}"
+                    required
+                    />
+                  </div>
+                  <div class="input_field">
+                    <label>Aadhar Number</label>
+                    <input
+                    type="number"
+                    name="aadhar"
+                    id="aadhar"
+                    placeholder="eg: 9182 736 450"
+                    required
+                    />
+                  </div>
+                  <div class="input_field">
+                    <label>Gender</label>
+                    <select name="gender" id="gender" required>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                    </select>
+                  </div>
+                  <div class="input_field">
+                    <label>Branch</label>
+                    <!-- <input type="text" name="branch" id="branch" placeholder="eg: KKL"  required/> -->
+                    <select name="branch" id="branch" required>
+                      <option value="KKL">KKL</option>
+                      <option value="FT">FT</option>
+                      <option value="DR">DR</option>
+                    </select>
+                  </div>
+                  <div class="input_field">
+                    <label>Shift</label>
+                    <select name="shift" id="shift" required>
+                      <option value="8A">8A</option>
+                      <option value="8B">8B</option>
+                      <option value="8C">8C</option>
+                    </select>
+                    <!-- <input type="text" name="shift" id="shift" placeholder="eg: 8A"  required/> -->
+                  </div>
+                  <div class="input_field">
+                    <label>Address</label>
+                    <textarea type="text" name="address" id="address" required> </textarea>
+                  </div>
+                  <div class="button">
+                    <button type="submit" class="addEmployeeBtn">
+                      Add Employee
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+</div>
+
+<div
+        class="employee-container page-action"
+        style="display: block"
+        index="7"
+      >
+        <section class="frame today-attendance">
+          <div class="inner-frame">
+            <div class="frame-header">
+              <div class="frame-details multi-options">
+                <p class="frame-name">
+                  <i class="fas fa-search"></i> Search Employee
+                </p>
+                <div class="search_bar">
+                  <input
+                    type="search"
+                    name="search"
+                    id="empsearch"
+                    class="empSearch searchInput"
+                    placeholder="Search by employee ID..!"
+                    required
+                  />
+                  <input type="date" name="startDate" id="startDate" class="searchInput" />
+                  <input type="date" name="endDate" id="endDate" class="searchInput" />
+                  <button type="button" class="okBtn">
+                    <i class="fas fa-search"></i>
+                  </button>
+                </div>
+                <div class="print">
+                  <button type="button" class="donwload_search">
+                    <i class="fas fa-file-download"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="frame-body searchEmployeeSection">
+              <div class="list-container card_display" style="display: flex">
+                <div class="serac_card dataTextDisplay" data-id="">
+                  <p class="resultText text" style="margin-top: 20px">
+                    Your result will appear here..!
+                  </p>
+                </div>
+                <!-- <div class="serac_card">
+                  <div class="emp_profile">
+                    <img src="../static/img/" alt="emp image" />
+                  </div>
+                  <ul class="emp_details">
+                    <div class="half">
+                      <li class="empDetail line">
+                        Emp ID : <span>00001</span>
+                      </li>
+                      <li class="empDetail line">
+                        Emp Name : <span>Vinoth S</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Present : <span>20</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Wrong shift : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Call duty : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Half day : <span>10</span>
+                      </li>
+                    </div>
+                    <div class="half">
+                      <li class="empDetail line">
+                        No Of Week Off : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Week Off Present : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Leave : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Absent : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Holiday : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Holiday Present : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Rest: <span>10</span>
+                      </li>
+                    </div>
+                  </ul>
+                </div> -->
+                <!-- <div class="serac_card" data-id="2" data-name="sabari">
+                  <div class="emp_profile">
+                    <img src="/asset/images/male.jpeg" alt="emp image" />
+                  </div>
+                  <ul class="emp_details">
+                    <div class="half">
+                      <li class="empDetail line">
+                        Emp ID : <span>00001</span>
+                      </li>
+                      <li class="empDetail line">
+                        Emp Name : <span>Vinoth S</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Present : <span>20</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Wrong shift : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Call duty : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Half day : <span>10</span>
+                      </li>
+                    </div>
+                    <div class="half">
+                      <li class="empDetail line">
+                        No Of Week Off : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Week Off Present : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Leave : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Absent : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Holiday : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Holiday Present : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Rest: <span>10</span>
+                      </li>
+                    </div>
+                  </ul>
+                </div>
+                <div class="serac_card" data-id="3" data-name="tharun">
+                  <div class="emp_profile">
+                    <img src="/asset/images/male.jpeg" alt="emp image" />
+                  </div>
+                  <ul class="emp_details">
+                    <div class="half">
+                      <li class="empDetail line">
+                        Emp ID : <span>00001</span>
+                      </li>
+                      <li class="empDetail line">
+                        Emp Name : <span>Vinoth S</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Present : <span>20</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Wrong shift : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Call duty : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Half day : <span>10</span>
+                      </li>
+                    </div>
+                    <div class="half">
+                      <li class="empDetail line">
+                        No Of Week Off : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Week Off Present : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Leave : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Absent : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Holiday : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Holiday Present : <span>10</span>
+                      </li>
+                      <li class="empDetail line">
+                        No Of Rest: <span>10</span>
+                      </li>
+                    </div>
+                  </ul>
+                </div> -->
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
 <section class="attendance-container page-action"
         style="display: block"
         index="4">
@@ -656,13 +1022,6 @@
                   <i class="fas fa-users"></i>Employee count
                 </p>
               </div>
-              <!-- <select name="" id="selectOption" class="tag-btn">
-                <option value="today employee">Today Employee</option>
-                <option value="today attendance">Today Attendance</option>
-                <option value="yesterday employee">Yesterday Employee</option>
-                <option value="yesterday attendance">Yesterday Attendance</option>
-            </select> -->
-        
               <div class="frame-options">
                 <button type="button" class="downloadImage">
                   <i class="fas fa-file-download"></i>
@@ -678,6 +1037,16 @@
                   <ul class="details">
                     
                   </ul>
+                  <table class="currentEmpTable">
+                    <thead>
+                      <th>Emp Id</th>
+                      <th>Name</th>
+                      <th>Designation</th>
+                    </thead>
+                    <tbody class="analysis-table">
+                
+                    </tbody>
+                  </table>
                 </div>
              </div>
             </div>

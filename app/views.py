@@ -1,6 +1,6 @@
 from flask_login import login_required, current_user,login_user
 from . import db
-from .models import Attendance,Shift_time,Backup, late, leave,notifications ,Emp_login,user_edit,Week_off,call_duty
+from .models import Attendance,Shift_time,Backup, late, leave,notifications ,Emp_login,user_edit,call_duty
 from flask import Blueprint, render_template, request, flash, redirect, url_for,jsonify,session
 import json
 import datetime
@@ -33,13 +33,14 @@ from app import socketio
 def admin():    
     print(current_user.role) 
     if current_user.role == 'employee':
+        session['flash_message']=['Unauthorized Access','error']
         return redirect(url_for('auth.logout'))
     else :
+        create_dummy_attendance()
         # current_time = datetime.now().strftime('%H:%M:%S')
-
         current_date = datetime.now().strftime('%Y-%m-%d')
         employee_attendance = Attendance.query.filter(func.DATE(Attendance.date) == current_date).all()
-
+        employee_attendance.sort(key=lambda x: 0 if x.attendance == 'Wrong shift' else 1)
         emp_login=Emp_login.query.order_by(Emp_login.emp_id).all()
         current_shifts=get_current_shift()
         late_permission=late.query.order_by(late.date).all()
@@ -48,7 +49,7 @@ def admin():
 
         emp_login_freezed = [emp for emp in emp_login if emp.freezed_account == True]
         emp_login_active = [emp for emp in emp_login if emp.freezed_account == False]
-        create_dummy_attendance()
+        # create_dummy_attendance()
         # Combine the lists, placing the freezed_account=1 records at the end1
         emp_login_sorted = emp_login_active + emp_login_freezed
         
@@ -59,191 +60,15 @@ def admin():
         # create_dummy_attendance()
         print('curre\n\n\n',current_shifts)
         
-        flash('Logged In Successfully','success')
+        # session['flash_message'] = ['Logged in successfully!','success']
+
 
     return render_template('admin.html',current_shifts=current_shifts,employee_data=employee_data,backup=backup,date=date,emp_login=emp_login, notification=notification, attendance=employee_attendance, late_permission=late_permission, leave_permission=leave_permission,emp_login_sorted=emp_login_sorted)
 
-@views.route('/edit', methods=['POST', 'GET'])
-@login_required
-def empEdit():
-    if request.method == 'POST':
-        empid = session.get('emp_id')
-        name = request.form.get('name')
-        dob = request.form.get('dob')
-        workType = request.form.get('workType')
-        phoneNumber = request.form.get('phoneNumber')
-        adharNumber = request.form.get('adharNumber')
-        wages_per_Day = request.form.get('wages_per_Day')
-        gender = request.form.get('gender')
-        address = request.form.get('address')
-        dob_date = datetime.strptime(dob, '%Y-%m-%d').date()
-
-        # Query the database for an employee with the given 'empid'
-        emp = Emp_login.query.filter_by(id=empid).first()
-
-        if emp:
-            # Update the employee's data with the new information
-            emp.name = name
-            emp.dob = dob_date
-            emp.workType = workType
-            emp.phoneNumber = phoneNumber
-            emp.adharNumber = adharNumber
-            emp.wages_per_Day = wages_per_Day
-            emp.gender = gender
-            emp.address = address
-
-            # Commit the changes to the database
-            db.session.commit()
-        else:
-            flash('Employee not found!', 'error')
-
-        # Redirect the user _to the 'admin' page or route.
-    return redirect(url_for('views.admin'))
-    
-        
-@views.route('/delete-emp',methods=['POST'])
-@login_required
-def delete_employee():
-    try:
-        data = request.get_json()
-        print(data)
-        
-        if not data or 'EmpId' not in data:
-            return jsonify({'error': 'Invalid request data. EmpId is missing.'}), 400
-
-        emp_id = data['EmpId']
-        
-
-        # Check if an employee with the given emp_id exists in the database
-        employee = Emp_login.query.filter_by(id=int(emp_id)).first()
-        
-        attendance=Attendance.query.filter_by(id=int(emp_id)).all()
-        for record in attendance:
-            db.session.delete(record)
-
-        if employee is None:
-            return jsonify({'error': 'Employee not found.'}), 404
-
-        # If the employee is found, delete the record from the database
-        db.session.delete(employee)
-        
-        db.session.commit()
-
-        return jsonify({'message': 'Employee deleted successfully.'}), 200
-
-    except Exception as e:
-        print(str(e))
-        return jsonify({'error': str(e)}), 500
-
-    
-
-    
-@views.route('/profile-view')
-@login_required
-def profileView():
-    try: 
-        
-        employee =Emp_login.query.order_by(Emp_login.id)
-        
-        
-    except Exception as error:
-        flash(error)
-    current_date = datetime.now().date()
-    return render_template('profile.html',employee=employee,current_date=current_date)
-
-@views.route('/calculate',methods=['POST','GET'])
-def calculate():
-    if current_user.role == 'employee':
-        return redirect(url_for('auth.logout'))
-    calculate_Attendance()
-    # lol=Shift_time.query.filter_by(id=5).first()
-    # lol.shiftIntime="14:00"
-    # lol.shift_Outtime="22:00"
-    # db.session.commit()
-    # print(lol.shift_Outtime)
-    attendance=Attendance.query.all()
-    
-    return redirect('/')  
-
-# @views.route('/getshift',methods=['POST','GET'])
-# def get_shift():
-#     try:
-#         inshift = Shift_time.query.filter_by(id=1).first()
-#         if not inshift:
-#             file_path = os.path.join(app.config['Excel_FOLDER'], '01-08-23.xls')
-#             process_excel_data(file_path)  # Call the data processing function
-#         else:
-#             print("Shift not found")
-
-#     except Exception as e:
-#         print("Error occurred:", e)
-#         db.session.rollback()  # Rollback in case of error
-    
-#     return redirect(url_for('views.viewShift'))  # Redirect to viewShift after processing
-    
-#  new_shift = Shift_time(shiftIntime="06:00",shift_Outtime="14:00",shiftType="8A",work_Duration="08:00")
-#     db.session.add(new_shift)
-#     db.session.commit()
-#     emp=Attendance.query.get(2)
-#     emp.inTime="08:16"
-#     emp.outTime="18:56"
-#     db.session.commit()
-
-@views.route('/shift')
-def viewShift():
-    records=Shift_time.query.order_by(Shift_time.id)  
-    return render_template('shift.html',records=records)
-
-@views.route('/attendance')
-def readXl_update_atten():
-    try:
-            file_path = os.path.join(app.config['EXCEL_FOLDER'], 'attendance.xlsx')  # Use correct case 'EXCEL_FOLDER'
-            attend_excel_data(file_path)  # Call the data processing function
-       
-
-    except Exception as e:
-        print("Error occurred:", e)
-        db.session.rollback()  # Rollback in case of error    
-    return redirect(url_for('views.calculate'))
-
-@views.route('/backup', methods=['POST', 'GET'])
-def backup_data():
-            
-
-    # Retrieve all records from the Attendance table
-    attendance_records = Attendance.query.all()
-
-    # Create new Backup objects and copy data from Attendance records
-    backup_records = []
-    for attendance_record in attendance_records:
-        backup_record = Backup(
-            date=attendance_record.date,
-            emp_id=attendance_record.emp_id,
-            attendance=attendance_record.attendance,
-            wages_per_Day=attendance_record.wages_per_Day,
-            inTime=attendance_record.inTime,
-            outTime=attendance_record.outTime,
-            overtime=attendance_record.overtime,
-            shiftType=attendance_record.shiftType,
-            shiftIntime=attendance_record.shiftIntime,
-            shift_Outtime=attendance_record.shift_Outtime,
-            TotalDuration=attendance_record.TotalDuration,
-            lateBy=attendance_record.lateBy,
-            earlyGoingBy=attendance_record.earlyGoingBy,
-            punchRecords=attendance_record.punchRecords
-        )
-        backup_records.append(backup_record)
-
-    # Add the new Backup records to the database
-    db.session.bulk_save_objects(backup_records)
-
-    # Delete the records from the Attendance table
-    for attendance_record in attendance_records:
-        db.session.delete(attendance_record)
-
-    # Commit the changes to the database
-    db.session.commit()
-    return redirect(url_for('views.admin'))
+@views.route('/delete_flash_message', methods=['POST'])
+def delete_flash_message():
+    delete_session()
+    return jsonify({'message': 'Flash message deleted'})
 
 @socketio.on('connect')
 def handle_connect():
@@ -284,11 +109,13 @@ def handle_lateform_callback(lateDet):
 
         all_latedata = {'id' : id,'date':str(date),'emp_id':emp_id, 'emp_name':emp_name, 'reason':reason, 'from_time':from_time, 'to_time':to_time,'approved_by':approved_by, 'status':status, 'hr_approval':hr_approval}
         print("EMP ID : ",all_latedata['emp_id'])
-        flash('New notification','success')
+        # flash('New notification','success')
+        session['flash_message']=['Request Sent','success']
 
         emit('late', all_latedata, broadcast=True)
 
     except Exception as e:
+        session['flash_message']=['Request Not sent','error']
         print(f"An error occurred: {str(e)}")
 
 
@@ -312,8 +139,6 @@ def handle_leaveform_callback(leaveDet):
     approved_by='Hod Name'
     hr_approval='Pending'
 
-
-    
     try:
         new_request=leave(emp_id=emp_id,emp_name=emp_name,reason=reason,from_time=from_time,to_time=to_time,approved_by=approved_by,status=status,hr_approval=hr_approval)
         db.session.add(new_request)
@@ -328,11 +153,13 @@ def handle_leaveform_callback(leaveDet):
         
         all_leaveData={'id':id,'date':str(date),'emp_id':emp_id,'emp_name':emp_name,'reason':reason,'from_time':from_time,'to_time':to_time,'approved_by':approved_by,'status':status,'hr_approval':hr_approval}
         print(all_leaveData)
-        flash('New notification','success')
+        session['flash_message']=['Request Sent','success']
+        # flash('New notification','success')
 
         emit('leave', all_leaveData, broadcast=True)
 
     except Exception as e:
+        session['flash_message']=['Request Not sent','error']
         print(f"An error occurred: {str(e)}")
 
 
@@ -356,42 +183,42 @@ def user_dashboard():
             'wop':0
         }
 
-        # attendance_details['present']=Attendance.query.filter(emp_id=emp_id,attendance='Present').count()
-        # attendance_details['absent']=Attendance.query.filter(emp_id=emp_id,attendance='Leave').count()
-        # attendance_details['half_day']=Attendance.query.filter(emp_id=emp_id,attendance='half-day').count()
-        # attendance_details['communicated']=Attendance.query.filter(emp_id=emp_id,attendance='communicated').count()
-        # attendance_details['wrong_shift']=Attendance.query.filter(emp_id=emp_id,attendance='wrong-shift').count()
-        # attendance_details['week_off']=Attendance.query.filter(emp_id=emp_id,attendance='week-off').count()
-        # attendance_details['c_off']=Attendance.query.filter(emp_id=emp_id,attendance='c-off').count()
-        # attendance_details['wop']=Attendance.query.filter(emp_id=emp_id,attendance='wop').count()
+        attendance_details['present']=Attendance.query.filter(Attendance.emp_id==emp_id,Attendance.attendance=='Present').count()
+        attendance_details['absent']=Attendance.query.filter(Attendance.emp_id==emp_id,Attendance.attendance=='Absent').count()
+        attendance_details['half_day']=Attendance.query.filter(Attendance.emp_id==emp_id,Attendance.attendance=='Half day').count()
+        attendance_details['communicated']=Attendance.query.filter(Attendance.emp_id==emp_id,Attendance.attendance=='Leave').count()
+        attendance_details['wrong_shift']=Attendance.query.filter(Attendance.emp_id==emp_id,Attendance.attendance=='Wrong Shift').count()
+        attendance_details['week_off']=Attendance.query.filter(Attendance.emp_id==emp_id,Attendance.attendance=='Week Off').count()
+        attendance_details['c_off']=Attendance.query.filter(Attendance.emp_id==emp_id,Attendance.attendance=='C off').count()
+        attendance_details['wop']=Attendance.query.filter(Attendance.emp_id==emp_id,Attendance.attendance=='wop').count()
 
-        employees=Attendance.query.filter_by(emp_id=emp_id).all()
+        # employees=Attendance.query.filter_by(emp_id=emp_id).all()
 
 
-        for emp in employees:
-            if emp.attendance=='Absent':
-                attendance_details['absent']+=1
+        # for emp in employees:
+        #     if emp.attendance=='Absent':
+        #         attendance_details['absent']+=1
 
-            elif emp.attendance=='half-day':
-                attendance_details['half_day']+=1
+        #     elif emp.attendance=='half-day':
+        #         attendance_details['half_day']+=1
 
-            elif emp.attendance=='Wrong Shift':
-                attendance_details['wrong_shift']+=1
+        #     elif emp.attendance=='Wrong Shift':
+        #         attendance_details['wrong_shift']+=1
             
-            elif emp.attendance=='Leave':
-                attendance_details['communicated']+=1
+        #     elif emp.attendance=='Leave':
+        #         attendance_details['communicated']+=1
             
-            elif emp.attendance=='Week Off':
-                attendance_details['week_off']+=1
+        #     elif emp.attendance=='Week Off':
+        #         attendance_details['week_off']+=1
             
-            elif emp.attendance=='C Off':
-                attendance_details['c_off']+=1
+        #     elif emp.attendance=='C Off':
+        #         attendance_details['c_off']+=1
 
-            elif emp.attendance=='Wop':
-                attendance_details['wop']+=1
+        #     elif emp.attendance=='Wop':
+        #         attendance_details['wop']+=1
             
-            else:
-                attendance_details['present']+=1
+        #     else:
+        #         attendance_details['present']+=1
         print(attendance_details)
 
         late_det=False
@@ -400,23 +227,25 @@ def user_dashboard():
         late_det=late.query.filter_by(emp_id=emp_id).all()
         leave_det=leave.query.filter_by(emp_id=emp_id).all()
         # all_permission = late.query.filter(late.date).union(leave.query.filter(leave.date)).order_by(text('date')).all()
-        flash('Logged In Successfully','success')        
+        # flash('Logged In Successfully','success') 
+        
+
     return render_template("emp_dashboard.html",user=user,date=date,attendance_details=attendance_details,late=late_det,leave=leave_det)
 
-@views.route("/attendance_upload",methods=['POST','GET'])
-@login_required
-def upload_attendance():
-    if(request.method=='POST'):
-        file=request.files['attendance']
-        filename = secure_filename(file.filename)
-        print(filename)
-        file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
-        file.save(file_path)
-        attend_excel_data(file_path)
-        flash('Attendance Uploaded','success')
-        return redirect(url_for('views.calculate'))
+# @views.route("/attendance_upload",methods=['POST','GET'])
+# @login_required
+# def upload_attendance():
+#     if(request.method=='POST'):
+#         file=request.files['attendance']
+#         filename = secure_filename(file.filename)
+#         print(filename)
+#         file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
+#         file.save(file_path)
+#         attend_excel_data(file_path)
+#         flash('Attendance Uploaded','success')
+#         return redirect(url_for('views.calculate'))
 
-    return redirect(url_for('views.admin'))
+#     return redirect(url_for('views.admin'))
 
 
 @views.route('/late_approve', methods=['POST', 'GET'])
@@ -614,50 +443,6 @@ def leave_decline():
             print("Sms Not Sent",e)
     return jsonify(response_data)
 
-# @views.route("/req_notify")
-# def req_notify():
-#     notify_id=request.args.get("notify_id")
-#     permission=request.args.get('permission')
-#     print("Notify id : ", notify_id)
-#     print("permission : ",permission)
-#     notify = notifications.query.filter_by(permission=permission, id=notify_id).first()
-#     print(notify)
-#     if notify:
-#         # If the notifications exists, delete it
-#         db.session.delete(notify)
-#         db.session.commit()
-
-#     # Redirect to a different page after handling the notification
-#     return redirect(url_for('views.' + permission.lower() + '_req_table'))
-
-# @views.route("/addemp",methods=['POST','GET'])
-# @login_required
-# def upload_emp():
-#     if(request.method=='POST'):
-#         file=request.files['emp']
-#         filename = secure_filename(file.filename)
-#         print(filename)
-#         file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
-#         file.save(file_path)
-#         add_employee(file_path)
-#         return redirect(url_for('views.admin'))
-#     return render_template("addrmp.html")
-
-
-
-
-# @views.route('/festival-upload',methods=['POST',"GET"])
-# def upload_festival():
-#     if request.method == 'POST':
-#         file=request.files['excel']
-#         filename = secure_filename(file.filename)
-#         print(filename)
-#         file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
-#         file.save(file_path)
-#         up_festival(file_path)
-#         #return redirect(url_for('views.admin'))
-#     return render_template("uploadfesti.html")
-
 @views.route('/getshift',methods = ['POST'])
 def getshift():
     get_signal = request.get_json()
@@ -682,7 +467,7 @@ def upload_select():
     if(request.method=='POST'):
 
         file_type = request.form.get('filetype')
-
+        print('Entered here 685')
         # Handle file upload
         if 'emp' in request.files:
             file = request.files['emp']
@@ -705,10 +490,32 @@ def upload_select():
             if file_type == 'addEmployee':
                 filename = secure_filename(file.filename)
                 # print(filename)
-                file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
-                file.save(file_path)
-                add_employee(file_path)
+                try:
+                    file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
+                    file.save(file_path)
+                    add_employee(file_path)
+                    session['flash_message']=['File Uploaded Successfully','success']
+
+                except Exception as e:
+                    print("Error type:", type(e).__name__)
+                    session['flash_message']=['File Not Uploaded','error']
+
                 return redirect(url_for('views.admin'))
+            
+            elif file_type == 'employeeShifts':
+                filename = secure_filename(file.filename)
+                try:
+                    file_path=os.path.join(app.config['EXCEL_FOLDER'], filename)
+                    file.save(file_path)
+                    addEmpShifts(file_path)
+                    session['flash_message']=['File Uploaded Successfully','success']
+
+                except Exception as e:
+                    print("Error type:", type(e).__name__)
+                    session['flash_message']=['File Not Uploaded','error']
+
+                return redirect(url_for('views.admin'))
+
             
             elif file_type == 'shift':
                 filename = secure_filename(file.filename)
@@ -718,10 +525,12 @@ def upload_select():
                     # print('nuubyv')
                     file.save(file_path)
                     process_excel_data(file_path)  # Call the data processing function
+                    session['flash_message']=['File Uploaded Successfully','success']
 
 
                 except Exception as e:
                     print("Error type:", type(e).__name__)
+                    session['flash_message']=['File Not Uploaded','error']
                     print("Error message:", str(e))
                     db.session.rollback() 
 
@@ -733,10 +542,12 @@ def upload_select():
                     # print('nuubyv')
                     file.save(file_path)
                     up_festival(file_path)  # Call the data processing function
+                    session['flash_message']=['File Uploaded Successfully','success']
 
 
                 except Exception as e:
                     print("Error type:", type(e).__name__)
+                    session['flash_message']=['File Not Uploaded','error']
                     print("Error message:", str(e))
                     db.session.rollback()
 
@@ -748,13 +559,16 @@ def upload_select():
                     # print('nuubyv')
                     file.save(file_path)
                     read_weekoff(file_path)  # Call the data processing function
+                    session['flash_message']=['File Uploaded Successfully','success']
 
 
                 except Exception as e:
                     print("Error type:", type(e).__name__)
+                    session['flash_message']=['File Not Uploaded','error']
                     print("Error message:", str(e))
                    
         else :
+            print('No file uploaded')
             return 'No file uploaded'
 
     return redirect(url_for('views.admin'))
@@ -767,10 +581,12 @@ def del_single_emp():
     emp=Emp_login.query.filter_by(emp_id=emp_id).first()
     atten_emp=Attendance.query.filter_by(emp_id=emp_id).all()
     notify= notifications.query.filter_by(emp_id=emp_id).all()
-    db.session.delete(notify)
+    for notify in notify:
+        db.session.delete(notify)
     db.session.commit()
-    user=user_edit.query.filter_by(emp_id=emp_id).all()
-    db.session.delete(user)
+    users=user_edit.query.filter_by(emp_id=emp_id).all()
+    for user in users:
+        db.session.delete(user)
     db.session.commit()
 
     atten_emp_count = Attendance.query.filter((Attendance.emp_id == emp_id) & ((Attendance.attendance == "Present") | (Attendance.attendance == "Half day"))).count()
@@ -791,16 +607,15 @@ def del_single_emp():
             role=emp.role,
             address=emp.address,
             gender=emp.gender,
-            shift=emp.shift,
             worked=atten_emp_count
         )
         db.session.add(backup_entry) 
         db.session.delete(emp)
         db.session.commit()
         print(f"Row with emp_id {emp_id} deleted successfully.")
-        flash('Employee Deleted Succesfully','success')
+        session['flash_message']=['Employee Deleted Succesfully','success']
     else:
-        flash('Employee Not Deleted','error')
+        session['flash_message']=['Employee Not Deleted','error']
         print(f"Row with emp_id {emp_id} not found.")
     return redirect(url_for('views.admin'))
 
@@ -822,11 +637,15 @@ def del_multiple_emp():
                     db.session.commit()
 
             notify= notifications.query.filter_by(emp_id=emplo).all()
-            db.session.delete(notify)
+            for notif in notify:
+                db.session.delete(notif)
             db.session.commit()
-            user=user_edit.query.filter_by(emp_id=emplo).all()
-            db.session.delete(user)
+
+            users=user_edit.query.filter_by(emp_id=emplo).all()
+            for user in users:
+                db.session.delete(user)
             db.session.commit()
+            
             backup_entry = Backup(
                 date=datetime.now(),
                 email=emp.email,
@@ -838,7 +657,7 @@ def del_multiple_emp():
                 role=emp.role,
                 address=emp.address,
                 gender=emp.gender,
-                shift=emp.shift,
+                # shift=emp.shift,
                 worked=atten_emp_count
                 
             )
@@ -860,10 +679,10 @@ def del_multiple_emp():
     
     # if employees_deleted:
     #     db.session.commit()
-            flash('Employees Deleted Successfully', 'success')
+            session['flash_message']=['Employees Deleted Successfully', 'success']
             print("Rows deleted successfully.")
         else:
-            flash('Employees Not Deleted', 'error')
+            session['flash_message']=['Employee Not Deleted','error']
             print("Rows not found.")
     return redirect(url_for('views.admin'))
 @views.route('/edit_employee',methods=['POST'])
@@ -897,21 +716,26 @@ def handle_user_editform_callback():
         data = request.json
         print("data :",data)
         new_req=None
-        emp_id=data.get('empId')
+        emp_id=current_user.emp_id
         print(emp_id)
         user=Emp_login.query.filter_by(emp_id=emp_id).first()
         name = user.name
         newdata = data.get('new')
         data_type = data.get('type')
         olddata = data.get('old')
-        new_req=user_edit(emp_id=emp_id, name=name, old_data=olddata, new_data=newdata, data_type=data_type)
+        if data_type=='password':
+            new_req=user_edit(emp_id=emp_id, name=name, old_data='-', new_data=generate_password_hash(newdata), data_type=data_type)
+        else:
+            new_req=user_edit(emp_id=emp_id, name=name, old_data=olddata, new_data=newdata, data_type=data_type)
         db.session.add(new_req)
         db.session.commit()
-        result={'status':True,'message':'Message Sene Successfully'}
+        result={'status':True,'message':'Message Sent Successfully'}
+        session['flash_message']=['Request Sent Successfully','success']
 
     except Exception as e:
         print("line 972",e)
         result={'status':False,'message':'Message Not Sent'}
+        session['flash_message']=['Request Not Sent','success']
 
     return jsonify(result)
     
@@ -925,7 +749,13 @@ def handle_user_editform():
         user_edits = user_edit.query.all()
 
         # Convert the user_edit objects to a format that can be JSON-serialized
-        user_edit_data = [{'id': user.id,'name':user.name, 'data_type': user.data_type, 'old_data': user.old_data, 'new_data': user.new_data, 'emp_id': user.emp_id} for user in user_edits]
+        user_edit_data = [{'id': user.id,
+                   'name': user.name,
+                   'data_type': user.data_type,
+                   'old_data': '-' if user.data_type == 'password' else user.old_data,
+                   'new_data': '-' if user.data_type == 'password' else user.new_data,
+                   'emp_id': user.emp_id} for user in user_edits]
+
 
         # Send the data as JSON
         return jsonify({'success': True, 'data': user_edit_data})
@@ -937,13 +767,13 @@ def handle_user_editform():
 @views.route('/accept_edit',methods=['POST'])
 @login_required
 def accept_edit():
-    data=request.json
-    id=data.get('id')
-    emp_id=data.get('emp_id')
-    name=data.get('name')
-    data_type=data.get('data_type')
-    old_data=data.get('old_data')
-    new_data=data.get('new_data')
+    id=request.json.get('id')
+    data=user_edit.query.filter_by(id=id).first()
+    emp_id=data.emp_id
+    # name=data.name
+    data_type=data.data_type
+    # old_data=data.get('old_data')
+    new_data=data.new_data
 
     if data_type=='name':
         atten=Attendance.query.filter_by(emp_id=emp_id).all()
@@ -953,20 +783,27 @@ def accept_edit():
 
     emp=Emp_login.query.filter_by(emp_id=emp_id).first()
     # old_value=getattr(emp,data_type)
-    setattr(emp,data_type,new_data)
+    if data_type=='password':
+        setattr(emp,data_type,new_data)
+    else:
+        setattr(emp,data_type,new_data)
+    db.session.commit()
 
     late_table=late.query.filter_by(emp_id=emp_id).first()
     if late_table:
-        # old_value=getattr(emp,data_type)    
-        setattr(emp,data_type,new_data)
+        try:
+            setattr(late_table,data_type,new_data)
+        except:
+            print('eror here at 972')
+    db.session.commit()
         
     leave_table=leave.query.filter_by(emp_id=emp_id).first()
     if leave_table:
-        # old_value=getattr(emp,data_type)
-        
-        setattr(emp,data_type,new_data)
-        
-    
+        try:
+            setattr(leave_table,data_type,new_data)
+        except:
+            print('eror here at 972')
+    db.session.commit()
     
     user=user_edit.query.filter_by(id=id).first()
     db.session.delete(user)
@@ -976,8 +813,7 @@ def accept_edit():
 @views.route('/decline_edit',methods=['POST'])
 @login_required
 def decline_edit():
-    data=request.json
-    id=data.get('id')
+    id=request.json.get('id')
     user=user_edit.query.filter_by(id=id).first()
     db.session.delete(user)
     db.session.commit()
@@ -1044,7 +880,7 @@ def send_message_data():
         
         if last_shift_db:
             for record in last_shift_db:
-                if record.outTime == '-':
+                if record.outTime == None:
                     check_send_sms(record.emp_id)
                     
     except Exception as e:
@@ -1205,7 +1041,7 @@ def bring_req_profile():
         'address':user.address,
         'status':table.status,
         'approval':table.hr_approval,
-        'shift':user.shift,
+        # 'shift':user.shift,
         'req_date':req_date,
         'req_time':req_time,
         'from_time':from_time,
@@ -1242,7 +1078,7 @@ def save_attendance():
         elif punchIn=='communicated':
             attendance.attendance='Leave'
             db.session.commit()
-    else:
+    elif attendance.lateBy:
         # hours, minutes = map(int, attendance.lateBy.split(':'))
         hours=attendance.lateBy.hour
         minutes=attendance.lateBy.minute
@@ -1257,10 +1093,12 @@ def save_attendance():
                 db.session.commit()
 
 
-    if attendance.outTime=='-' and attendance.inTime!='-':
+    if attendance.outTime==None and attendance.inTime!=None:
         punchOut=form_data['punchOut'] # mis-pinch, shift-continue
         if punchOut=='mis-pinch':
-            attendance.outTime='Miss Punch'
+            print("\n\n\n\n\n\n\n",punchOut)
+            attendance.outTime=datetime(1, 1, 1, 0, 0, 0)
+            # punch_out_reminder(emp_id)
             db.session.commit()
         elif punchOut=='shift-continue':
             new_req=comp_off(emp_id=emp_id,date=date)                        
@@ -1272,15 +1110,18 @@ def save_attendance():
         if wrongshift=='wrong-shift':
             attendance.attendance='Wrong Shift'
             db.session.commit()
-        elif attendance.branch == 'KKL':
+        elif wrongshift=='call-duty':
             new_req=call_duty(emp_id=emp_id,date=date,inTime=attendance.inTime,outTime=attendance.outTime)
             db.session.add(new_req)
+            db.session.commit()
+        elif wrongshift=='present':
+            attendance.attendance='Present'
             db.session.commit()
         else:
             overtime=attendance.overtime  # need to write code for this.......
             print(overtime)
             db.session.commit()
-    print('\n\n\n\n Attendance saved successfully \n\n\n\n')
+    # print('\n\n\n\n Attendance saved successfully \n\n\n\n')
 
 
     return jsonify({'message': 'Attendance saved successfully'})
@@ -1293,70 +1134,93 @@ def save_attendance():
 #     leave_det=leave.query.filter_by(emp_id=emp_id).all()
 #     return jsonify ({'late_det':late_det,'leave_det':leave_det})
 
+# @views.route('get_chart')
+# @login_required
+# def get_chart():
+#     chartDet={
+#         'total_present':0,
+#         'kkl_employee':0,
+#         'dr_employee':0,
+#         'ft_employee':0,
+#     }
+#     current_date=datetime.now()
+#     today = current_date.strftime('%Y-%m-%d')
+#     attendance = Attendance.query.filter(Attendance.inTime != None, Attendance.outTime == None).all()
+#     chartDet['total_present']=len(attendance)
+#     chartDet['kkl_employee']=Attendance.query.filter(Attendance.branch=='KKL',Attendance.inTime != None, Attendance.outTime == None).count()
+#     chartDet['dr_employee']=Attendance.query.filter(Attendance.branch=='DR',Attendance.inTime != None, Attendance.outTime == None).count()
+#     chartDet['ft_employee']=Attendance.query.filter(Attendance.branch=='FT',Attendance.inTime != None, Attendance.outTime == None).count()
+
+
+#     return jsonify (chartDet)
+
+
+# @views.route('get_chart')
+# @login_required
+# def get_chart():
+#     chartDet={
+#         'total_present':[],
+#         'kkl_employee':[],
+#         'dr_employee':[],
+#         'ft_employee':[],
+#     }
+#     current_date=datetime.now()
+#     today = current_date.strftime('%Y-%m-%d')
+#     chartDet['total_present'] = Attendance.query.filter(Attendance.inTime != None, Attendance.outTime == None).all()
+#     # chartDet['total_present']=len(attendance)
+#     chartDet['kkl_employee']=Attendance.query.filter(Attendance.branch=='KKL',Attendance.inTime != None, Attendance.outTime == None).all()
+#     chartDet['dr_employee']=Attendance.query.filter(Attendance.branch=='DR',Attendance.inTime != None, Attendance.outTime == None).all()
+#     chartDet['ft_employee']=Attendance.query.filter(Attendance.branch=='FT',Attendance.inTime != None, Attendance.outTime == None).all()
+
+#     return jsonify (chartDet)
+
 @views.route('get_chart')
 @login_required
 def get_chart():
-    chartDet={
-        'total_present':0,
-        'kkl_employee':0,
-        'dr_employee':0,
-        'ft_employee':0,
+    chartDet = {
+        'total_present': [],
+        'kkl_employee': [],
+        'dr_employee': [],
+        'ft_employee': [],
     }
-    current_date=datetime.now()
+    current_date = datetime.now()
     today = current_date.strftime('%Y-%m-%d')
-    # print('today',today)
-    # yesterday = (current_date - timedelta(days=1)).strftime('%Y-%m-%d')
-    # print('yesterday',yesterday)
-    # week_off=Week_off.query.filter_by(date=today).count()
-    # Emp=Emp_login.query.filter_by(freezed_account=0).count()
 
-    # chartDet['total_employee']=Emp-week_off
-    # chartDet['total_absent']=Attendance.query.filter(Attendance.attendance=='Leave',func.date(Attendance.date)==today).count()
-    attendance = Attendance.query.filter(Attendance.inTime != None, Attendance.outTime == None).all()
-    chartDet['total_present']=len(attendance)
-    chartDet['kkl_employee']=Attendance.query.filter(Attendance.branch=='KKL',Attendance.inTime != None, Attendance.outTime == None).count()
-    chartDet['dr_employee']=Attendance.query.filter(Attendance.branch=='DR',Attendance.inTime != None, Attendance.outTime == None).count()
-    chartDet['ft_employee']=Attendance.query.filter(Attendance.branch=='FT',Attendance.inTime != None, Attendance.outTime == None).count()
-    # chartDet['yesterday_total_absent']=Attendance.query.filter(Attendance.attendance=='Leave',func.date(Attendance.date)==yesterday).count()
-    # chartDet['yesterday_total_present'] = Attendance.query.filter(Attendance.inTime != '-', Attendance.outTime == '-',func.date(Attendance.date)==yesterday).count()
+    # Convert Attendance objects to dictionaries
+    total_present_attendance = [{'emp_id': attendance.emp_id, 'name': attendance.name, 'outTime': attendance.outTime, 'branch': attendance.branch} for attendance in Attendance.query.filter(Attendance.inTime != None, Attendance.outTime == None).all()]
+    kkl_employee_attendance = [{'emp_id': attendance.emp_id, 'name': attendance.name, 'outTime': attendance.outTime, 'branch': attendance.branch} for attendance in Attendance.query.filter(Attendance.branch == 'KKL', Attendance.inTime != None, Attendance.outTime == None).all()]
+    dr_employee_attendance = [{'emp_id': attendance.emp_id, 'name': attendance.name, 'outTime': attendance.outTime, 'branch': attendance.branch} for attendance in Attendance.query.filter(Attendance.branch == 'DR', Attendance.inTime != None, Attendance.outTime == None).all()]
+    ft_employee_attendance = [{'emp_id': attendance.emp_id, 'name': attendance.name, 'outTime': attendance.outTime, 'branch': attendance.branch} for attendance in Attendance.query.filter(Attendance.branch == 'FT', Attendance.inTime != None, Attendance.outTime == None).all()]
 
-    # print('\n\n\n\n', chartDet)
+    # Assign the converted dictionaries to the chartDet dictionary
+    chartDet['total_present'] = total_present_attendance
+    chartDet['kkl_employee'] = kkl_employee_attendance
+    chartDet['dr_employee'] = dr_employee_attendance
+    chartDet['ft_employee'] = ft_employee_attendance
 
-    return jsonify (chartDet)
+    return jsonify(chartDet)
 
-# @views.route('/start',methods =['POST',"GET"])
-# def start():
-#     scheduler = BackgroundScheduler()
-#     scheduler.add_job(fetch_and_store_data, trigger='interval', seconds=10)
-#     scheduler.add_job(create_dummy_attendance, trigger='cron', hour='6')
-#     scheduler.add_job(create_dummy_attendance, trigger='cron', hour='14')
-#     scheduler.add_job(create_dummy_attendance, trigger='cron', hour='22')
 
-#     scheduler.add_job(out_time_reminder_email, trigger='cron', hour='6', minute='10')
-#     scheduler.add_job(out_time_reminder_email, trigger='cron', hour='14', minute='10')
-#     scheduler.add_job(out_time_reminder_email, trigger='cron', hour='22', minute='10')
-    
-#     scheduler.add_job(out_time_reminder_message, trigger='cron', hour='6', minute='10')
-#     scheduler.add_job(out_time_reminder_message, trigger='cron', hour='14', minute='10')
-#     scheduler.add_job(out_time_reminder_message, trigger='cron', hour='22', minute='10')
-
-#     scheduler.start()
-#     return redirect('/')
 
 @views.route('/start',methods =['POST',"GET"])
 @login_required
 def start():
+    create_dummy_attendance() 
     scheduler = BackgroundScheduler()
     shifts=Shift_time.query.all()
     print("\n\n\n\n\n\n\n\n\n\n\n\n",shifts)
-    scheduler.add_job(fetch_and_store_data, trigger='interval', seconds=10)
-    scheduler.add_job(create_dummy_attendance, trigger='interval', seconds=10)
+    # scheduler.add_job(create_dummy_attendance, trigger='interval', seconds=10)
+    try:
+        scheduler.add_job(fetch_and_store_data, trigger='interval', seconds=10)
+    except Exception as e:
+        print('background scheduler error' ,e)
+        
     for shift in shifts:
         shift_time = shift.shiftIntime
         hour = shift_time.hour
         print("\n\n\n\n\n\n\n\n\n\n",hour)
         scheduler.add_job(call_fun, trigger='cron', hour=hour, minute='15')
-        
+
     scheduler.start()
     return redirect('/')
 
@@ -1413,6 +1277,49 @@ def unfreeze():
         flash('Employee Not exists')
         return jsonify("Employee Not exists",emp_id)
 
-
-
+@views.route('/searchEmployee',methods=['POST'])
+@login_required
+def searchEmployee():
+    data=request.json
+    print(data)
+    emp_id=data['emp_id']
+    startDate=data['startDate']
+    endDate=data['endDate']
     
+    empData={
+        'emp_id' :emp_id,
+        'name' :'',
+        'gender':'',
+        'present':0,
+        'absent':0, 
+        'wrongShift':0, 
+        'halfDay':0, 
+        'weekOff':0, 
+        'wop':0, 
+        'holiday':0, 
+        'hp':0, 
+        'callDuty':0, 
+        'leave':0, 
+        'rest':0
+    }
+
+    if startDate and endDate:
+        last_month_attendance = session_sqlite.query(Attendance).filter(Attendance.date.between(startDate, endDate), Attendance.emp_id==emp_id).all()
+    else:
+        last_month_attendance = session_sqlite.query(Attendance).filter_by(emp_id=emp_id).all()
+    empData['gender']=Emp_login.query.filter_by(emp_id=emp_id).first().gender
+    empData['name']=Emp_login.query.filter_by(emp_id=emp_id).first().name
+    empData['present'] = len([attendance for attendance in last_month_attendance if attendance.attendance == 'Present'])
+    empData['absent'] = len([attendance for attendance in last_month_attendance if attendance.attendance == 'Absent'])
+    empData['wrongShift'] = len([attendance for attendance in last_month_attendance if attendance.attendance == 'Wrong Shift'])
+    empData['halfDay'] = len([attendance for attendance in last_month_attendance if attendance.attendance == 'Half day'])
+    empData['weekOff'] = len([attendance for attendance in last_month_attendance if attendance.attendance == 'Week Off'])
+    empData['wop'] = len([attendance for attendance in last_month_attendance if attendance.attendance == 'Wop'])
+    empData['holiday'] = len([attendance for attendance in last_month_attendance if attendance.attendance == 'Holiday'])
+    empData['hp'] = len([attendance for attendance in last_month_attendance if attendance.attendance == 'Hp'])
+    empData['callDuty'] = len([attendance for attendance in last_month_attendance if attendance.attendance == 'Call Duty'])
+    empData['leave'] = len([attendance for attendance in last_month_attendance if attendance.attendance == 'Leave'])
+    empData['rest'] = len([attendance for attendance in last_month_attendance if attendance.attendance == 'Rest'])
+
+
+    return jsonify(empData)

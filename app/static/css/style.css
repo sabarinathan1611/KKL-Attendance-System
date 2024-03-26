@@ -7,6 +7,44 @@
 }
 
 /* css to copy  */
+.flash-div{
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flash-message{
+  width: auto;
+  border-radius: 10px;
+  height: 30px;
+  backdrop-filter: blur(2px);
+  position: fixed;
+  top: 55px;
+  z-index: 1000;
+  display: flex;
+  transition: .3s;
+  animation: .3s flash;
+  justify-content: center;
+  align-items: center;
+  font-size: 17px;
+  gap: 30px;
+  color: white;
+  padding: 6px 20px;
+}
+.flash-message.error{
+  background-color: rgb(214, 89, 70);
+}
+.flash-message.success{
+  background-color: #008000;
+}
+@keyframes flash {
+  from{
+    top: -30px;
+  }
+  to{
+    top:55px;
+  }
+}
 
 .alert {
   padding: 15px;
@@ -378,7 +416,7 @@ li {
 }
 
 .sidebar.active {
-  width: 160px;
+  width: 200px;
 }
 
 .side-menu {
@@ -435,11 +473,11 @@ li {
 }
 
 .main {
-  width: calc(100vw - 180px);
+  width: calc(100vw - 210px);
   min-height: calc(100vh - 60px);
   position: relative;
   top: 60px;
-  left: 160px;
+  left: 200px;
   padding: 10px;
   z-index: 5;
   transition: all 0.5s;
@@ -1026,4 +1064,138 @@ tr.Declined {
 
 .logo img {
   max-height: 50px;
+}
+.unfreeze-btn{
+  cursor: pointer;
+}
+
+
+
+form.addEmployee {
+  max-width: 100%;
+  flex-wrap: wrap;
+  padding: 10px;
+  display: flex;
+  justify-content: space-evenly;
+  gap: 10px;
+}
+
+.input_field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 300px;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.addEmployeeBtn {
+  padding: 10px 20px;
+  border-radius: 30px;
+  border: none;
+  background: purple;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+form.addEmployee input,
+form.addEmployee textarea,
+form.addEmployee select {
+  padding: 10px;
+  border: 2px solid #afafff;
+  border-radius: 4px;
+  outline: none;
+}
+
+.currentEmpTable th {
+  text-transform: capitalize;
+}
+
+.currentEmpTable {
+  min-width: 500px;
+  margin-top: 10px;
+}
+
+.multi-options {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.searchInput {
+  padding: 10px;
+  border: 2px solid #fff;
+  border-radius: 20px;
+  min-width: 150px;
+  width: 200px;
+}
+
+.printBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #fff;
+  color: #3f3f3f;
+  cursor: pointer;
+}
+
+.serac_card {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  margin-top: 10px;
+  position: relative;
+  /* display: none; */
+}
+
+.empDetail {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.emp_details {
+  max-width: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.empDetail {
+  margin-top: 10px;
+  padding: 5px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.empDetail span {
+  padding: 5px;
+  border-radius: 3px;
+  background: #555;
+  color: #fff;
+}
+
+.card_display {
+  display: flex;
+  flex-direction: column;
+}
+
+.dataTextDisplay {
+  display: block;
+}
+
+.okBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  margin-left: 10px;
+  background: #008000;
+  color: #fff;
 }

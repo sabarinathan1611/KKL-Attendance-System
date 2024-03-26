@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_socketio import SocketIO
 import os
+import logging
 
 from sqlalchemy import create_engine
 
@@ -43,20 +44,12 @@ def create_app():
     app.config['MYSQL_USER'] = 'mahaveer'
     app.config['MYSQL_PASSWORD'] = '#Mahaveer1234'
     app.config['MYSQL_DB'] = 'server'
+    # app.config['MYSQL_HOST'] = '172.16.22.83'
     # app.config['MYSQL_USER'] = 'jacky'
     # app.config['MYSQL_PASSWORD'] = 'jacky123'
     # app.config['MYSQL_DB'] = 'server'
-    # app.config['MYSQL_USER'] = 'sabari'
-    # app.config['MYSQL_PASSWORD'] = '12345678'
-    # app.config['MYSQL_DB'] = 'server'
+    
 
- 
-
-    # Initialize LoginManager
-
-
-
-    # Import and initialize Flask-SocketIO with the app
     from . import models
     from .models import Attendance,Emp_login
     models.db.init_app(app)

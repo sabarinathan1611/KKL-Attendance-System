@@ -63,21 +63,27 @@ all_input.forEach((input) => {
     input.removeAttribute("readonly");
     let type = input.getAttribute("name");
     user.type = type;
-    user.old = input.value;
+    if (type === 'password') {
+      user.old = '-';
+    } else {
+      user.old = input.value;
+    }
     input.parentElement.classList.add("active");
   });
 });
 
 all_btn.forEach((btn) => {
   btn.addEventListener("click", () => {
-    let newvalue = btn.previousElementSibling.value;
-    if (newvalue.length > 0) {
-      user.new = newvalue;
-    } else {
-      user.new = user.old;
-    }
-    btn.previousElementSibling.value = user.new;
-    // send data to backend
+    let confirmation = confirm("Confirm To send Request to HR")
+    if (confirmation) {
+      let newvalue = btn.previousElementSibling.value;
+      if (newvalue.length > 0) {
+        user.new = newvalue;
+      } else {
+        user.new = user.old;
+      }
+      btn.previousElementSibling.value = user.new;
+      // send data to backend
       console.log(user);
       fetch("/user-edit", {
         method: "POST",
@@ -88,36 +94,56 @@ all_btn.forEach((btn) => {
       })
         .then((data) => data.json())
         .then((data) => {
-            btn.parentElement.classList.remove("active");
+          btn.parentElement.classList.remove("active");
           console.log(data);
           let model = document.querySelector(".message_model");
-            model.classList.add("active");
-            if (data.status == true) {
-                model.classList.add("success");
-                model.querySelector(".title").innerHTML = `
+          model.classList.add("active");
+          if (data.status == true) {
+            model.classList.add("success");
+            model.querySelector(".title").innerHTML = `
                     <i class="fas fa-check-circle"></i>
                     Success
                 `
-            }else{
-                model.classList.add("error");
-                model.querySelector(".title").innerHTML = `
+          } else {
+            model.classList.add("error");
+            model.querySelector(".title").innerHTML = `
                     <i class="fas fa-exclamation-circle"></i>
                     Error
         `
-    }
+          }
+        
 
           model.querySelector(".message").innerHTML = data.message;
 
-    setTimeout(() => {
-        model.classList.remove("active");
-    }, 5005);
+          setTimeout(() => {
+            model.classList.remove("active");
+          }, 5000);
 
 
 
         })
         .catch((error) => console.error("Error:", error));
-    // after response
+      // after response
+    }
+    });
+});
+
+all_field.forEach(field => {
+  field.addEventListener("click", ()=>{
+      all_field.forEach(fld => {
+          let input = fld.querySelector(".input");
+          if (input) {
+              input.setAttribute("readonly",true)
+          }
+          fld.classList.remove("active")
+      });
+      let input = field.querySelector(".input");
+        if (input) {
+            input.removeAttribute("readonly");
+            field.classList.add("active");
+        }
   });
+
 });
 
 all_cancel.forEach((btn) => {
@@ -151,3 +177,31 @@ all_field.forEach((field) => {
 //     });
 // };
 // setInterval(check(emp_id),1000);
+
+let deleteFlash=document.getElementById('delete-message-btn');
+if(deleteFlash){
+  deleteFlash.addEventListener('click', flashDel);
+  setInterval(() => {
+    flashDel
+  }, 3000);
+  
+  function autoRemoveFlash(){
+    document.querySelector('.flash-message').style.top='-60px'
+  }
+  function flashDel() {
+      fetch('/delete_flash_message', {
+        method: 'POST'
+      })
+      .then(response => response.json())
+      .then(data => {
+          // Handle response
+          console.log(data.message);
+          // document.querySelector('.flash-message').style.top = '-60px';
+          autoRemoveFlash()
+
+      })
+      .catch(error => {
+          console.error('Error:', error);
+      });
+      }
+}

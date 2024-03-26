@@ -30,7 +30,44 @@
     <link rel="stylesheet" href="static/css/chart.css">
   </head>
   <body>
-    
+    {% if 'flash_message' in session %}
+      <div class="flash-div">
+        <div id="flash-message" class="flash-message {{session['flash_message'][1]}}">
+          <p>{{ session['flash_message'][0] }}</p>
+          <div id="delete-message-btn" class="flash-close">
+            <i class="fas fa-times"></i>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    <!-- <script>
+      let deleteFlash=document.getElementById('delete-message-btn');
+      if(deleteFlash){
+        deleteFlash.addEventListener('click', function() {
+            fetch('/delete_flash_message', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Handle response
+                console.log(data.message);
+                // document.querySelector('.flash-div').innerHTML = '';
+                document.querySelector('.flash-message').style.top='-30px'
+
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+        setInterval(() => {
+          autoRemoveFlash()
+        }, 3000);
+
+        function autoRemoveFlash(){
+          document.querySelector('.flash-message').style.top='-30px'
+        }
+      }
+    </script> -->
     <!-- {% block flash %} {% endblock %} -->
     <!-- {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -161,7 +198,7 @@
         </a>
       </ul>
     </nav>
-    <aside class="sidebar">
+    <aside class="sidebar active">
       <ul class="side-menu">
         <li class="menu-option active action-menu" index="4">
           <span class="icon">
@@ -184,6 +221,18 @@
             </span>
             <p class="menu-name">Employees</p>
           <!-- </a> -->
+        </li>
+        <li class="menu-option action-menu" index="6">
+          <span class="icon">
+            <i class="fas fa-user-plus"></i>
+          </span>
+          <p class="menu-name">Add Employee</p>
+        </li>
+        <li class="menu-option action-menu" index="7">
+          <span class="icon">
+            <i class="fas fa-search"></i>
+          </span>
+          <p class="menu-name">Search Employee</p>
         </li>
         
         <li class="menu-option action-menu" index="2">
@@ -230,12 +279,12 @@
           </span>
           <p class="menu-name">Edit Employee</p>
         </li>
-        <li class="menu-option reload-option">
+        <!-- <li class="menu-option reload-option">
           <span class="icon">
             <i class="fas fa-sync"></i>
           </span>
           <p class="menu-name">Reload</p>
-        </li>
+        </li> -->
       </ul>
     </aside>
     <div class="reload">
@@ -338,7 +387,7 @@
 </div>
   </section>
 
-    <main class="main active">
+    <main class="main">
       <header class="details-bar">
         <div class="user-details">
           <h1 class="user-role">User ~ <span class="role tag">Admin</span></h1>
@@ -372,7 +421,7 @@
                 value="shift"
                 id="filetype2"
               />
-              Shift excel
+              Shift Timings
             </label>
             <label class="label">
               <input
@@ -381,7 +430,16 @@
                 value="addEmployee"
                 id="filetype2"
               />
-              add employee
+              Add Employee
+            </label>
+            <label class="label">
+              <input
+                type="radio"
+                name="filetype"
+                value="employeeShifts"
+                id="filetype2"
+              />
+              Employee Shifts
             </label>
             <label class="label">
               <input
@@ -391,15 +449,6 @@
                 id="filetype2"
               />
               Festival Days
-            </label>
-            <label class="label">
-              <input
-                type="radio"
-                name="filetype"
-                value="weekoff"
-                id="filetype2"
-              />
-              Week OFF
             </label>
           </div>
           <div class="drag-drop-area" id="drop-area">
@@ -731,6 +780,7 @@
     <script src="static/js/script.js"></script>
     <script src="/static/js/filter.js"></script>
     <script src="/static/js/action.js"></script>
+    <script src="/static/js/search.js"></script>
 
   </body>
 </html>

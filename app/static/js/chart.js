@@ -1,14 +1,6 @@
 console.log("chart.js");
 
-var myData,
-  total_employee,
-  total_absent,
-  total_present,
-  kkl_employee,
-  dr_employee,
-  ft_employee,
-  yesterday_total_present,
-  yesterday_total_absent;
+var myData, total_present, kkl_employee, dr_employee, ft_employee;
 fetch("/get_chart")
   .then((response) => response.json())
   .then((data) => {
@@ -19,35 +11,27 @@ fetch("/get_chart")
   .catch((error) => console.error("Error fetching data:", error));
 
 function processData(data) {
-  total_present = data.total_present;
-  kkl_employee = data.kkl_employee;
-  dr_employee = data.dr_employee;
-  ft_employee = data.ft_employee;
+  total_present = (data.total_present).length;
+  kkl_employee = (data.kkl_employee).length;
+  dr_employee = (data.dr_employee).length;
+  ft_employee = (data.ft_employee).length;
 
   console.log(data);
 
+  let table = document.querySelector('.analysis-table');
+  data.total_present.forEach((data)=>{
+    table.innerHTML += ` <tr>
+                            <td>${data.emp_id}</td>
+                            <td>${data.name}</td>
+                            <td>${data.branch}</td>
+                          </tr> `;
+  })
+
   let totalData = [
-    // { label: "Total Present", value: total_present },
     { label: "KKL Present", value: kkl_employee },
     { label: "DR Present", value: dr_employee },
     { label: "FT Present", value: ft_employee },
   ];
-
-  // let present = [
-  //   { label: "KKL Present", value: kkl_employee },
-  //   { label: "DR Present", value: dr_employee },
-  //   { label: "FT Present", value: ft_employee },
-  // ];
-
-  // let absent = [
-  //   { label: "KKL Absent", value: ft_employee },
-  //   { label: "DR Absent", value: kkl_employee },
-  //   { label: "FT Absent", value: dr_employee },
-  // ];
-  // let yesterdayData = [
-  //   { label: "Total Present", value: yesterday_total_present },
-  //   { label: "Total Absent", value: yesterday_total_absent },
-  // ];
 
   let ctx = document.getElementById("myPieChart").getContext("2d");
   let myPieChart; // Declare myPieChart in the global scope
@@ -101,22 +85,7 @@ function processData(data) {
 
   employeeDisplay("today employee", totalData);
 
-  // Function to handle changes in the select element
-  // document
-  //   .getElementById("selectOption")
-  //   .addEventListener("change", function () {
-  //     let selectedOption = this.value;
-  //     if (selectedOption === "today employee") {
-  //       employeeDisplay(this.value, totalData);
-  //     } else if (selectedOption === "today attendance") {
-  //       employeeDisplay(this.value, present);
-  //     } else if (selectedOption === "yesterday employee") {
-  //       employeeDisplay(this.value, yesterdayData); // Change this to yesterday's employee data if available
-  //     }
-  //     // else if (selectedOption === "yesterday attendance") {
-  //     //     employeeDisplay(this.value, absent); // Change this to yesterday's attendance data if available
-  //     // }
-  //   });
+
 
   document
     .querySelector(".downloadImage")

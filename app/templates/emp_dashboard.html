@@ -31,6 +31,16 @@
     <link rel="icon" type="png" href="../static/img/logomain.png" />
   </head>
   <body>
+    <div class="flash-div">
+    {% if 'flash_message' in session %}
+      <div id="flash-message" class="flash-message {{session['flash_message'][1]}}">
+        <p>{{ session['flash_message'][0] }}</p>
+        <div id="delete-message-btn" class="flash-close">
+          <i class="fas fa-times"></i>
+        </div>
+      </div>
+      {% endif %}
+    </div>
     <div class="employee_page">
       <nav class="nav_bar">
         <div class="profile">
@@ -196,7 +206,7 @@
                 <div class="detail_icon">
                   <i class="fas fa-check-circle"></i>
                 </div>
-                Status: Status: {% if user.freezed_account==False %} Active {%
+                Status: {% if user.freezed_account==False %} Active {%
                 else %} Freezed {% endif %}
               </li>
             </ul>
@@ -242,7 +252,7 @@
                   ></textarea>
                 </div>
                 <div class="input_field">
-                  <button type="submit" class="requestButton leavesubmit">
+                  <button type="button" class="requestButton leavesubmit">
                     Request
                   </button>
                 </div>
@@ -295,7 +305,7 @@
                   ></textarea>
                 </div>
                 <div class="input_field">
-                  <button type="submit" class="requestButton latesubmit">
+                  <button type="button" class="requestButton latesubmit">
                     Request
                   </button>
                 </div>
@@ -369,6 +379,19 @@
                   class="input"
                   value="{{date}}"
                   readonly
+                />
+                <button class="btn submit">save</button>
+                <button class="btn cancel">cancel</button>
+              </div>
+              <div class="input_field">
+                <label>Password</label>
+                <input
+                type="text"
+                name="password"
+                id="password"
+                class="input"
+                placeholder="Enter new password"
+                readonly
                 />
                 <button class="btn submit">save</button>
                 <button class="btn cancel">cancel</button>
@@ -610,7 +633,7 @@
       socket.on('dicconnect', () => {
     console.log('Disconnected from backend server.');
 });
-
+      let flashDiv=document.querySelector('.flash-div');
       socket.on("leave", function (leave_permission) {
         var tbody = document.querySelector(".request_table_tbody");
         let count = tbody.childElementCount + 1;
@@ -625,6 +648,19 @@
                     <td>${leave_permission.hr_approval}</td>
                   </tr>
         `;
+        flashDiv.innerHTML=`<div id="flash-message" class="flash-message success">
+        <p>Request sent successfully</p>
+        <div id="delete-message-btn" class="flash-close">
+          <i class="fas fa-times"></i>
+        </div>
+      </div>`;
+      setInterval(() => {
+        autoRemoveFlash()
+      }, 3000);
+      
+      function autoRemoveFlash(){
+        document.querySelector('.flash-message').style.top='-60px'
+      }
       });
       socket.on("late", function (late_permission) {
         var tbody = document.querySelector(".request_table_tbody");
@@ -640,6 +676,19 @@
                     <td>${late_permission.hr_approval}</td>
                   </tr>
         `;
+        flashDiv.innerHTML=`<div id="flash-message" class="flash-message success">
+        <p>Request sent successfully</p>
+        <div id="delete-message-btn" class="flash-close">
+          <i class="fas fa-times"></i>
+        </div>
+      </div>`;
+      setInterval(() => {
+        autoRemoveFlash()
+      }, 3000);
+      
+      function autoRemoveFlash(){
+        document.querySelector('.flash-message').style.top='-60px'
+      }
       });
 
     </script>
