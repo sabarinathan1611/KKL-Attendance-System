@@ -1053,8 +1053,7 @@ def calculate_Attendance_from_db(id):
             print('attendance.TotalDuration',attendance.TotalDuration)
 
             session_sqlite.commit()
-            # session_sqlite.close()
-
+            
 
     except Exception as e:
             print("Exception:", e)
